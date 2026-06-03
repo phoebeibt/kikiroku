@@ -4,7 +4,7 @@ import Nav from '../components/Nav'
 import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
 import { useLang } from '../contexts/LangContext'
-import { getTagLabel, SAKE_TYPES } from '../lib/i18n'
+import { getTagLabel, getFlavorTagLabel, SAKE_TYPES } from '../lib/i18n'
 
 const WaveDivider = () => (
   <svg style={{ display: 'block', width: '100%', height: 18, margin: '2px 0' }}
@@ -170,7 +170,7 @@ export default function Display({ session }) {
           <div style={s.chips}>
             <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
             {visibleTags.map(tag => (
-              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tag}</button>
+              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
             ))}
             {allTags.length > 6 && (
               <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
@@ -218,7 +218,7 @@ export default function Display({ session }) {
                 {e.contributor_name && <div style={s.cardContributor}>{e.contributor_name}</div>}
                 {e.tags?.length > 0 && (
                   <div style={s.cardTags}>
-                    {e.tags.slice(0, 4).map(t => <span key={t} style={s.cardTag}>{t}</span>)}
+                    {e.tags.slice(0, 4).map(t => <span key={t} style={s.cardTag}>{getFlavorTagLabel(t, lang)}</span>)}
                   </div>
                 )}
               </div>
@@ -299,7 +299,7 @@ export default function Display({ session }) {
               )}
               {detail.tags?.length > 0 && (
                 <div style={s.detTagsRow}>
-                  {detail.tags.map(tg => <span key={tg} style={s.detTag}>{tg}</span>)}
+                  {detail.tags.map(tg => <span key={tg} style={s.detTag}>{getFlavorTagLabel(tg, lang)}</span>)}
                 </div>
               )}
             </div>

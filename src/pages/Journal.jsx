@@ -6,8 +6,9 @@ import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
 import { BreweryInput, BrandInput, RiceInput } from '../components/Autocomplete'
 import TastingTagPicker from '../components/TastingTagPicker'
+import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
-import { SAKE_TYPES, TASTING_TAGS, getTagLabel } from '../lib/i18n'
+import { SAKE_TYPES, TASTING_TAGS, getTagLabel, getFlavorTagLabel } from '../lib/i18n'
 
 
 const ScanIcon = () => (
@@ -440,7 +441,7 @@ export default function Journal({ session }) {
           <div style={s.chips}>
             <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
             {visibleTags.map(tag => (
-              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tag}</button>
+              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
             ))}
             {allTags.length > 8 && (
               <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>{tagsExp ? t('less') : t('more')}</button>
@@ -469,7 +470,7 @@ export default function Journal({ session }) {
                 <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}</div>
                 {e.tags?.length > 0 && (
                   <div style={s.cardTags}>
-                    {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{tag}</span>)}
+                    {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{getFlavorTagLabel(tag, lang)}</span>)}
                   </div>
                 )}
               </div>
@@ -525,7 +526,7 @@ export default function Journal({ session }) {
               </div>
             )}
             {detail.tags?.length > 0 && (
-              <div style={s.detTagsRow}>{detail.tags.map(tag => <span key={tag} style={s.detTag}>{tag}</span>)}</div>
+              <div style={s.detTagsRow}>{detail.tags.map(tag => <span key={tag} style={s.detTag}>{getFlavorTagLabel(tag, lang)}</span>)}</div>
             )}
             {detail.is_public && (
               <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -700,7 +701,7 @@ export default function Journal({ session }) {
               {/* Flavor tags */}
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.flavorTags')}</div>
-                <TagInput tags={formTags} onChange={setFormTags} t={t} />
+                <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
               </div>
 
               {/* Share */}

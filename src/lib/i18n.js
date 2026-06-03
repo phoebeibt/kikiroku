@@ -385,3 +385,25 @@ export function getTagLabel(id, category, lang) {
   const tag = TASTING_TAGS[category]?.find(t => t.id === id)
   return tag ? (tag[lang] || tag.ja) : id
 }
+
+export const FLAVOR_TAGS = [
+  { id: 'osusume',    ja: 'おすすめ',  zh: '推荐',    en: 'Recommend' },
+  { id: 'repeat',     ja: 'リピート',  zh: '回购',    en: 'Buy Again' },
+  { id: 'discovery',  ja: '新発見',    zh: '新发现',  en: 'New Find' },
+  { id: 'gift',       ja: 'ギフト',    zh: '礼物',    en: 'Gift' },
+  { id: 'nama',       ja: '生酒',      zh: '生酒',    en: 'Nama' },
+  { id: 'nigori',     ja: 'にごり',    zh: '浊酒',    en: 'Nigori' },
+  { id: 'koshu',      ja: '古酒',      zh: '古酒',    en: 'Aged' },
+  { id: 'limited',    ja: '限定',      zh: '限定',    en: 'Limited' },
+  { id: 'seasonal',   ja: '季節限定',  zh: '季节限定', en: 'Seasonal' },
+  { id: 'home',       ja: '家飲み',    zh: '家饮',    en: 'At Home' },
+  { id: 'bar',        ja: '酒場',      zh: '酒吧',    en: 'Bar' },
+  { id: 'restaurant', ja: '飲食店',    zh: '餐厅',    en: 'Restaurant' },
+  { id: 'anniversary',ja: '記念日',    zh: '纪念日',  en: 'Anniversary' },
+  { id: 'pairing',    ja: '料理に合う', zh: '佐餐',   en: 'Food Pairing' },
+]
+
+export function getFlavorTagLabel(id, lang) {
+  const tag = FLAVOR_TAGS.find(t => t.id === id)
+  return tag ? (tag[lang] || tag.ja) : id
+}
