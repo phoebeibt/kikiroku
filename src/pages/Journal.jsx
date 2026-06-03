@@ -329,7 +329,6 @@ export default function Journal({ session }) {
         body: { image_base64: base64, mime_type: mimeType },
       })
       if (error) throw error
-      alert(JSON.stringify(data))
       if (data?.error) throw new Error(data.error)
       setForm(prev => ({
         ...prev,
