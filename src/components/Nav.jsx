@@ -32,9 +32,9 @@ const s = {
     background: 'var(--bg)', position: 'sticky', top: 0, zIndex: 10,
   },
   brand: { display: 'flex', alignItems: 'center', gap: 10 },
-  logo: { fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.05em' },
-  logoEm: { fontStyle: 'normal', color: 'var(--text)' },
-  logoSmall: { display: 'block', fontFamily: 'var(--font-sans)', fontSize: 10, fontWeight: 400, color: 'var(--sub)', letterSpacing: '0.12em', marginTop: 1 },
+  logo: { fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, color: 'var(--text)', letterSpacing: '0.06em' },
+  logoEm: { fontStyle: 'normal', color: 'var(--accent)' },
+  logoSmall: { display: 'block', fontFamily: 'var(--font-sans)', fontSize: 9, fontWeight: 300, color: 'var(--sub)', letterSpacing: '0.14em', marginTop: 2 },
   right: { display: 'flex', alignItems: 'center', gap: 6 },
   link: { fontSize: 13, padding: '6px 12px', borderRadius: 20, color: 'var(--sub)' },
   iconBtn: {
@@ -45,7 +45,7 @@ const s = {
   },
   langSelect: {
     padding: '5px 24px 5px 10px', borderRadius: 20, border: '1px solid var(--border)',
-    background: `var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238C7E74'/%3E%3C/svg%3E") no-repeat right 8px center`,
+    background: `var(--surface-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238C7E74'/%3E%3C/svg%3E") no-repeat right 8px center`,
     color: 'var(--sub)', fontSize: 12, outline: 'none', appearance: 'none', cursor: 'pointer',
     fontFamily: 'var(--font-sans)',
   },
@@ -66,7 +66,7 @@ export default function Nav({ session }) {
         <BrandMark size={30} />
         <div style={s.logo}>
           酒<em style={s.logoEm}>記</em>録
-          <small style={s.logoSmall}>Kikiroku</small>
+          <small style={s.logoSmall}>sake journal</small>
         </div>
       </Link>
       <div style={s.right}>

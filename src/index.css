@@ -1,16 +1,19 @@
 :root {
-  --bg: #F4F0E8;
-  --surface: #FFFFFF;
-  --border: #E5DED4;
-  --text: #1A1614;
-  --sub: #8C7E74;
-  --accent: #7C3A28;
-  --accent-h: #5C2B1C;
-  --accent-bg: #F5EBE6;
-  --green: #4A7A35;
-  --r: 16px;
-  --font-serif: 'Noto Serif JP', serif;
-  --font-sans: 'Noto Sans JP', sans-serif;
+  --bg:           #F4F0E8;  /* 和紙 — page background */
+  --surface:      #EDE8DE;  /* 薄雲 — section/card surfaces */
+  --surface-card: #FFFFFF;  /* pure white for modal cards */
+  --border:       #E5DED4;  /* 境界 */
+  --text:         #1A1614;  /* 墨 */
+  --sub:          #8C7E74;  /* 煙 */
+  --accent:       #7C3A28;  /* 朱木 — primary brand */
+  --accent-mid:   #A05540;  /* 柿渋 — hover */
+  --accent-light: #D9A882;  /* 蜜柑 */
+  --accent-h:     #5C2B1C;
+  --accent-bg:    rgba(124,58,40,.07);
+  --green:        #4A7A35;  /* 杉玉 center */
+  --r:            16px;
+  --font-serif:   'Noto Serif JP', serif;
+  --font-sans:    'Noto Sans JP', sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -20,6 +23,7 @@ html, body, #root {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   margin: 0;
   padding: 0;
@@ -36,6 +40,6 @@ dialog {
   max-width: 100vw;
   width: 100%;
 }
-dialog::backdrop { background: rgba(26,22,20,.5); }
+dialog::backdrop { background: rgba(26,22,20,.52); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
