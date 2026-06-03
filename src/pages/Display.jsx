@@ -15,7 +15,7 @@ const WaveDivider = () => (
 )
 
 const MARK_SVG_ABS = (
-  <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .065, pointerEvents: 'none', zIndex: 0 }}
+  <svg style={{ position: 'absolute', right: -30, bottom: -30, width: 160, height: 160, opacity: .055, pointerEvents: 'none', zIndex: 0 }}
     viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
     <g transform="translate(44,44)">
       <path d="M-15,-37 C-30,-30 -40,-14 -40,4 C-40,22 -32,36 -18,40 C-4,44 14,40 26,28 C36,18 40,2 36,-14 C32,-28 20,-38 4,-40" fill="none" stroke="#7C3A28" strokeWidth="1.1" strokeLinecap="round" />
@@ -60,28 +60,28 @@ const s = {
   cardTag: { fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.1)', color: 'rgba(255,245,230,.85)', border: '1px solid rgba(255,245,230,.12)' },
   // Detail
   backdrop: { position: 'fixed', inset: 0, background: 'rgba(26,22,20,.6)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  detModal: { background: 'var(--surface-card)', borderRadius: 20, width: '100%', maxWidth: 720, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative' },
-  detClose: { position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  detTop: { display: 'flex', gap: 0 },
-  detPhoto: { width: 240, height: 240, objectFit: 'cover', flexShrink: 0, borderRadius: '20px 0 0 0' },
-  detPhotoPlaceholder: { width: 240, height: 240, background: '#2d2520', flexShrink: 0, borderRadius: '20px 0 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, color: 'rgba(255,245,230,.1)' },
-  detRight: { flex: 1, padding: '24px 24px 20px', minWidth: 0, position: 'relative', overflow: 'hidden' },
-  detTypeTag: { fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 8 },
-  detName: { fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, lineHeight: 1.3, marginBottom: 8, letterSpacing: '.04em' },
-  detBrewery: { fontSize: 13, color: 'var(--sub)', marginTop: 6 },
-  detMeta: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
-  detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 },
-  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' },
-  statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)', overflow: 'hidden' },
-  statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3 },
-  detLower: { padding: '16px 24px 24px', position: 'relative', overflow: 'hidden' },
+  detModal: { background: 'var(--surface-card)', borderRadius: 20, width: '100%', maxWidth: 660, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative' },
+  detClose: { position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  detTop: { display: 'flex', gap: 0, alignItems: 'flex-start', padding: '16px 16px 8px' },
+  detPhoto: { width: 148, height: 186, objectFit: 'cover', flexShrink: 0, borderRadius: 12 },
+  detPhotoPlaceholder: { width: 148, height: 186, background: '#2d2520', flexShrink: 0, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'rgba(255,245,230,.1)' },
+  detRight: { flex: 1, padding: '4px 36px 0 16px', minWidth: 0, position: 'relative', overflow: 'hidden' },
+  detTypeTag: { fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 5 },
+  detName: { fontFamily: 'var(--font-serif)', fontSize: 19, fontWeight: 400, lineHeight: 1.3, marginBottom: 7, letterSpacing: '.03em' },
+  detBrewery: { fontSize: 12, color: 'var(--sub)', marginTop: 5 },
+  detMeta: { fontSize: 11, color: 'var(--sub)', marginTop: 2 },
+  detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 },
+  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', margin: '0 16px' },
+  statItem: { padding: '11px 14px', borderRight: '1px solid var(--border)', overflow: 'hidden' },
+  statLabel: { fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  statValue: { fontSize: 17, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3 },
+  detLower: { padding: '4px 24px 20px', position: 'relative', overflow: 'hidden' },
   detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4 },
-  detCell: { padding: '12px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
-  detCellLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 3 },
-  detCellValue: { fontSize: 14, color: 'var(--text)' },
-  detTagsRow: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 16 },
-  detTag: { fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'var(--accent-bg)', color: 'var(--accent)' },
+  detCell: { padding: '10px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
+  detCellLabel: { fontSize: 9, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 2 },
+  detCellValue: { fontSize: 13, color: 'var(--text)' },
+  detTagsRow: { display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 14 },
+  detTag: { fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--accent-bg)', color: 'var(--accent)' },
   empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
 }
 
@@ -261,17 +261,16 @@ export default function Display({ session }) {
               </div>
             </div>
 
-            <div style={{ padding: '0 24px' }}><WaveDivider /></div>
+            <div style={{ padding: '0 16px' }}><WaveDivider /></div>
             <div style={s.statsBar}>
               <StatItem label={t('detail.polishing')} value={detail.polishing} />
               <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
               <StatItem label={t('detail.smv')} value={detail.smv} />
               <StatItem label={t('detail.acidity')} value={detail.acidity} />
             </div>
-            <div style={{ padding: '0 24px' }}><WaveDivider /></div>
+            <div style={{ padding: '0 16px' }}><WaveDivider /></div>
 
             <div style={s.detLower}>
-              <WaveDivider />
               <div style={s.detGrid2}>
                 <Cell label={t('detail.rice')} value={detail.rice} />
                 <Cell label={t('detail.yeast')} value={detail.yeast} />
