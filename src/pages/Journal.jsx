@@ -302,32 +302,39 @@ export default function Journal({ session }) {
 
   const SAKE_TYPE_IDS = ['純米','純米吟醸','純米大吟醸','吟醸','大吟醸','特別純米','本醸造','普通酒','その他']
 
-  const runOcr = async (file) => {
+  const toBase64 = (blob) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: blob.type || 'image/jpeg' })
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+
+  const runOcr = async () => {
     setOcrLoading(true)
     try {
-      let base64, mimeType
-      if (file) {
-        mimeType = file.type || 'image/jpeg'
-        base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result.split(',')[1])
-          reader.onerror = reject
-          reader.readAsDataURL(file)
-        })
-      } else if (photoPreview) {
-        const resp = await fetch(photoPreview)
-        const blob = await resp.blob()
-        mimeType = blob.type || 'image/jpeg'
-        base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result.split(',')[1])
-          reader.onerror = reject
-          reader.readAsDataURL(blob)
-        })
-      } else return
-      const { data, error } = await supabase.functions.invoke('ocr-sake', {
-        body: { image_base64: base64, mime_type: mimeType },
-      })
+      // Collect blobs for both photo slots
+      const getBlob = async (file, preview) => {
+        if (file) return file
+        if (preview) { const r = await fetch(preview); return r.blob() }
+        return null
+      }
+      const [blob1, blob2] = await Promise.all([
+        getBlob(photoFile, photoPreview),
+        getBlob(photoFile2, photoPreview2),
+      ])
+      if (!blob1 && !blob2) return
+
+      const [img1, img2] = await Promise.all([
+        blob1 ? toBase64(blob1) : null,
+        blob2 ? toBase64(blob2) : null,
+      ])
+
+      const body = {
+        image_base64: (img1 ?? img2).base64,
+        mime_type: (img1 ?? img2).mimeType,
+        ...(img1 && img2 ? { image_base64_2: img2.base64, mime_type_2: img2.mimeType } : {}),
+      }
+      const { data, error } = await supabase.functions.invoke('ocr-sake', { body })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
       setForm(prev => ({
@@ -561,7 +568,7 @@ export default function Journal({ session }) {
                     </div>
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto} />
                     {(photoFile || photoPreview) && (
-                      <button type="button" disabled={ocrLoading} onClick={() => runOcr(photoFile)}
+                      <button type="button" disabled={ocrLoading} onClick={() => runOcr()}
                         style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: ocrLoading ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: ocrLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                         {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : <><ScanIcon />{t('ocr.scan')}</>}
                       </button>
