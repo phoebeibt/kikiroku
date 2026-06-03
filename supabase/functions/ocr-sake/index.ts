@@ -6,16 +6,22 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Strip company legal suffixes so "旭酒造株式会社" matches "旭酒造" in DB
 function stripBrewerySuffix(name: string): string {
   return name
     .replace(/\s*(株式会社|合名会社|合資会社|有限会社|農業生産法人|（株）|\(株\)|㈱)\s*/g, '')
     .trim()
 }
 
-// Extract core rice name — "山田錦100%" → "山田錦", "山田錦・五百万石" → first variety
 function coreRice(name: string): string {
   return name.split(/[・＆&\/、,\s]+/)[0].replace(/\d+%?$/, '').trim()
+}
+
+function extractJson(raw: string): Record<string, unknown> {
+  try { return JSON.parse(raw) } catch { /* fall through */ }
+  // Find the outermost {...} block
+  const m = raw.match(/\{[\s\S]*\}/)
+  if (m) { try { return JSON.parse(m[0]) } catch { /* ignore */ } }
+  return {}
 }
 
 serve(async (req) => {
@@ -30,86 +36,84 @@ serve(async (req) => {
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     if (!apiKey) throw new Error('GEMINI_API_KEY not set')
 
-    // Build image parts — include second image if provided
     const imageParts = [
       { inline_data: { mime_type, data: image_base64 } },
       ...(image_base64_2 ? [{ inline_data: { mime_type: mime_type_2, data: image_base64_2 } }] : []),
     ]
 
-    const prompt = `あなたは日本酒ラベル情報抽出の専門家です。提供された画像（表ラベル・裏ラベルの一方または両方）から情報を読み取り、以下のJSONを返してください。
+    const prompt = `あなたは日本酒ラベル情報抽出の専門家です。提供された画像（表ラベル・裏ラベルの一方または両方）から情報を正確に読み取り、以下のJSON形式で返してください。
 
-【裏ラベルの主な記載項目と読み取り方】
-- 精米歩合：「精米歩合 ○○%」「精米步合○○」→ polishing（単位なし数字のみ）
-- アルコール分：「アルコール分 ○○度」「アルコール ○○%」→ alcohol（単位なし数字のみ）
-- 日本酒度：「日本酒度 +○」「日本酒度 ±○」→ smv（符号付き数字）
-- 酸度：「酸度 ○.○」→ acidity（数字のみ）
-- 使用酵母：「使用酵母 ○○」「酵母 ○○」→ yeast
-- 原料米：「原料米 ○○○○」「使用米 ○○○○」→ rice（品種名のみ、産地・割合は除く）
-- 製造年月：「製造年月 ○○年○○月」→ bottling_date（YYYY-MM形式）
-- 蔵元：製造者住所の前後に記載 → brewery（法人格を除いた蔵元名のみ）
-- 都道府県：住所や産地表示から → region
+【抽出ルール】
 
-【表ラベルの主な記載項目】
-- 銘柄名：最も大きく書かれた商品名 → name
-- 種類：純米/純米吟醸/純米大吟醸/吟醸/大吟醸/特別純米/本醸造/普通酒 のいずれか → type
+■ name（商品の完全な名前）
+- 表ラベルの「銘柄名＋商品種別・グレード名」を全て含める
+- 例：「獺祭 純米大吟醸 磨き三割九分」「久保田 萬寿」「八海山 純米吟醸」
+- 銘柄名だけでなく、ラベルに書かれた固有のグレード名・商品名を全て含めること
 
-【重要な注意点】
-- 数値フィールド（polishing/alcohol/smv/acidity）は必ず単位を除いた数値のみを返す
-- 縦書き・横書きを問わず全テキストを読む
-- 見つからない・判別不能な場合は null を返す
-- breweryには「株式会社」「合名会社」等の法人格を含めない
+■ brewery（蔵元名）
+- 法人格（株式会社・合名会社・有限会社等）は除く
+- 例：「旭酒造」「朝日酒造」「八海醸造」
 
-以下のJSONオブジェクトのみ返してください（説明・markdownは不要）:
-{
-  "name": "銘柄名 or null",
-  "brewery": "蔵元名（法人格なし）or null",
-  "region": "都道府県 or null",
-  "type": "純米/純米吟醸/純米大吟醸/吟醸/大吟醸/特別純米/本醸造/普通酒/その他 or null",
-  "rice": "原料米品種 or null",
-  "yeast": "使用酵母 or null",
-  "polishing": 数字 or null,
-  "alcohol": 数字 or null,
-  "smv": "符号付き数字文字列 or null",
-  "acidity": 数字 or null,
-  "bottling_date": "YYYY-MM or null"
-}`
+■ region（都道府県）
+- 住所・産地表示から「○○県」「○○府」を抽出
+
+■ type（種類）
+- 純米 / 純米吟醸 / 純米大吟醸 / 吟醸 / 大吟醸 / 特別純米 / 本醸造 / 普通酒 / その他 のいずれか
+
+■ 裏ラベルの数値フィールド（単位を除いた数値のみ）
+- polishing（精米歩合）: 「精米歩合○○%」→ 数値のみ。例: 50
+- alcohol（アルコール分）: 「アルコール分○○度」→ 数値のみ。例: 15.5
+- smv（日本酒度）: 「日本酒度＋○」「日本酒度−○」→ 符号付き文字列。例: "+3" or "-2"
+- acidity（酸度）: 「酸度○.○」→ 数値のみ。例: 1.4
+
+■ rice（原料米）
+- 「原料米：山田錦」「使用米：五百万石」から品種名のみ
+- 産地・割合・ブレンド情報は除く
+
+■ yeast（使用酵母）
+- 「使用酵母：○○」「酵母：○○」から酵母名・番号
+
+■ bottling_date（製造年月）
+- 「製造年月 令和○年○月」「製造年月 ○○年○月」→ YYYY-MM 形式
+
+【注意】
+- 縦書き・横書き・斜め書きを問わず全テキストを読む
+- 数値は必ず単位なしの数値のみを返す
+- 見つからない場合は null を返す
+
+以下のJSON形式のみで返してください（説明文・マークダウン・コードブロックは一切不要）:
+{"name":null,"brewery":null,"region":null,"type":null,"rice":null,"yeast":null,"polishing":null,"alcohol":null,"smv":null,"acidity":null,"bottling_date":null}`
 
     const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
       {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [...imageParts, { text: prompt }] }],
-          generationConfig: {
-            temperature: 0,
-            responseMimeType: 'application/json',
-            thinkingConfig: { thinkingBudget: 2048 },
-          },
+          generationConfig: { temperature: 0 },
         }),
       }
     )
 
     const gemini = await resp.json()
     if (gemini.error) throw new Error(`Gemini: ${gemini.error.message ?? JSON.stringify(gemini.error)}`)
+
     const parts = gemini.candidates?.[0]?.content?.parts ?? []
-    const raw = (parts.find((p: { thought?: boolean; text?: string }) => !p.thought)?.text ?? '{}').trim()
+    const raw = parts
+      .filter((p: { thought?: boolean; text?: string }) => !p.thought && p.text)
+      .map((p: { text?: string }) => p.text)
+      .join('')
+      .trim()
 
-    let extracted: Record<string, unknown> = {}
-    try {
-      extracted = JSON.parse(raw)
-    } catch {
-      const m = raw.match(/\{[\s\S]*\}/)
-      if (m) extracted = JSON.parse(m[0])
-    }
+    const extracted: Record<string, unknown> = extractJson(raw)
 
-    // DB matching
+    // DB matching for brewery and rice (normalize to canonical names)
     const db = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Brewery: try with suffix stripped, then as-is
     if (extracted.brewery) {
       const candidates = [...new Set([
         stripBrewerySuffix(String(extracted.brewery)),
@@ -117,10 +121,8 @@ serve(async (req) => {
       ])]
       for (const candidate of candidates) {
         const { data: rows } = await db
-          .from('sake_breweries')
-          .select('name, area_id')
-          .ilike('name', `%${candidate}%`)
-          .limit(1)
+          .from('sake_breweries').select('name, area_id')
+          .ilike('name', `%${candidate}%`).limit(1)
         if (rows?.length) {
           extracted.brewery = rows[0].name
           if (!extracted.region && rows[0].area_id) {
@@ -133,19 +135,11 @@ serve(async (req) => {
       }
     }
 
-    // Rice: strip blends and percentages, try core name
     if (extracted.rice) {
       const core = coreRice(String(extracted.rice))
       const { data: rows } = await db
         .from('sake_rice').select('name').ilike('name', `%${core}%`).limit(1)
       if (rows?.length) extracted.rice = rows[0].name
-    }
-
-    // Brand name
-    if (extracted.name) {
-      const { data: rows } = await db
-        .from('sake_brands').select('name').ilike('name', `%${extracted.name}%`).limit(1)
-      if (rows?.length) extracted.name = rows[0].name
     }
 
     return new Response(JSON.stringify(extracted), {

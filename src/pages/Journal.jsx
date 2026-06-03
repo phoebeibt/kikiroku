@@ -304,10 +304,10 @@ export default function Journal({ session }) {
   const runOcr = async () => {
     setOcrLoading(true)
     try {
-      // For OCR: re-compress to JPEG at 1.5 MB (converts HEIC, keeps quality high enough)
-      const OCR_MAX = 1.5 * 1024 * 1024
+      // For OCR: re-compress to JPEG at 3 MB with 2000px max (high quality for small text)
+      const OCR_MAX = 3 * 1024 * 1024
       const getOcrBlob = async (raw, file, preview) => {
-        if (raw) return compressImage(raw, 1400, OCR_MAX)
+        if (raw) return compressImage(raw, 2000, OCR_MAX)
         if (file) return file
         if (preview) { const r = await fetch(preview); return r.blob() }
         return null
@@ -617,10 +617,19 @@ export default function Journal({ session }) {
                 <div style={s.secLabel}>{t('form.basic')}</div>
                 <div style={s.field}>
                   <label style={s.label}>{t('form.name')}</label>
-                  <BrandInput style={s.input} value={form.name} onChange={v => f('name', v)}
-                    onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                    onBlur={inferBreweryFromName}
-                    placeholder={t('form.namePH')} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <BrandInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
+                      onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
+                      onBlur={inferBreweryFromName}
+                      placeholder={t('form.namePH')} />
+                    <button type="button"
+                      disabled={searchLoading || (!form.name && !form.brewery)}
+                      onClick={() => runSearch(form)}
+                      title={t('ocr.searching')}
+                      style={{ flexShrink: 0, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: searchLoading ? 'var(--accent-bg)' : 'var(--surface)', color: searchLoading ? 'var(--accent)' : 'var(--sub)', fontSize: 12, cursor: (searchLoading || (!form.name && !form.brewery)) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                      {searchLoading ? <SpinIcon /> : '🔍'}{t('form.webSearch')}
+                    </button>
+                  </div>
                 </div>
                 <div style={s.row2}>
                   <div style={s.field}>
