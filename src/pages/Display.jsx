@@ -6,6 +6,14 @@ import { BrandMarkFull } from '../components/BrandMark'
 import { useLang } from '../contexts/LangContext'
 import { getTagLabel, SAKE_TYPES } from '../lib/i18n'
 
+const WaveDivider = () => (
+  <svg style={{ display: 'block', width: '100%', height: 18, margin: '2px 0' }}
+    viewBox="0 0 400 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,10 C30,4 60,3 100,8 C140,13 160,14 200,10 C240,6 270,4 310,8 C340,11 370,13 400,10"
+      fill="none" stroke="#7C3A28" strokeWidth="1" opacity="0.35" strokeLinecap="round" />
+  </svg>
+)
+
 const MARK_SVG_ABS = (
   <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .065, pointerEvents: 'none', zIndex: 0 }}
     viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
@@ -63,12 +71,12 @@ const s = {
   detBrewery: { fontSize: 13, color: 'var(--sub)', marginTop: 6 },
   detMeta: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
   detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 },
-  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' },
+  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' },
   statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)' },
   statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4 },
   statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)' },
   detLower: { padding: '16px 24px 24px', position: 'relative', overflow: 'hidden' },
-  detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4, borderTop: '1px solid var(--border)' },
+  detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4 },
   detCell: { padding: '12px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
   detCellLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 3 },
   detCellValue: { fontSize: 14, color: 'var(--text)' },
@@ -245,14 +253,17 @@ export default function Display({ session }) {
               </div>
             </div>
 
+            <div style={{ padding: '0 24px' }}><WaveDivider /></div>
             <div style={s.statsBar}>
               <StatItem label={t('detail.polishing')} value={detail.polishing} />
               <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
               <StatItem label={t('detail.smv')} value={detail.smv} />
               <StatItem label={t('detail.acidity')} value={detail.acidity} />
             </div>
+            <div style={{ padding: '0 24px' }}><WaveDivider /></div>
 
             <div style={s.detLower}>
+              <WaveDivider />
               <div style={s.detGrid2}>
                 <Cell label={t('detail.rice')} value={detail.rice} />
                 <Cell label={t('detail.yeast')} value={detail.yeast} />
