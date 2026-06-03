@@ -5,7 +5,7 @@ const MAX_BYTES = 500 * 1024  // 500 KB
 
 // Compress image to JPEG, resize to maxWidth, and iterate quality until under MAX_BYTES.
 // Returns a Blob.
-export function compressImage(file, maxWidth = 1400) {
+export function compressImage(file, maxWidth = 1400, maxBytes = MAX_BYTES) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -22,7 +22,7 @@ export function compressImage(file, maxWidth = 1400) {
       const tryQuality = (q) => {
         canvas.toBlob(blob => {
           if (!blob) return reject(new Error('canvas toBlob failed'))
-          if (blob.size <= MAX_BYTES || q <= 0.3) return resolve(blob)
+          if (blob.size <= maxBytes || q <= 0.3) return resolve(blob)
           tryQuality(Math.round((q - 0.1) * 10) / 10)
         }, 'image/jpeg', q)
       }

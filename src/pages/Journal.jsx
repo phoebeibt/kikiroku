@@ -303,16 +303,17 @@ export default function Journal({ session }) {
   const runOcr = async () => {
     setOcrLoading(true)
     try {
-      // For OCR, prefer original high-res file over compressed blob; fall back to URL
-      const getBlob = async (raw, file, preview) => {
-        if (raw) return raw
+      // For OCR: re-compress to JPEG at 1.5 MB (converts HEIC, keeps quality high enough)
+      const OCR_MAX = 1.5 * 1024 * 1024
+      const getOcrBlob = async (raw, file, preview) => {
+        if (raw) return compressImage(raw, 1400, OCR_MAX)
         if (file) return file
         if (preview) { const r = await fetch(preview); return r.blob() }
         return null
       }
       const [blob1, blob2] = await Promise.all([
-        getBlob(photoRaw, photoFile, photoPreview),
-        getBlob(photoRaw2, photoFile2, photoPreview2),
+        getOcrBlob(photoRaw, photoFile, photoPreview),
+        getOcrBlob(photoRaw2, photoFile2, photoPreview2),
       ])
       if (!blob1 && !blob2) return
 
