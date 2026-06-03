@@ -37,3 +37,5 @@ dialog {
   width: 100%;
 }
 dialog::backdrop { background: rgba(26,22,20,.5); }
+
+@keyframes spin { to { transform: rotate(360deg); } }

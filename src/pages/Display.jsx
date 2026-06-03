@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
+import { useLang } from '../contexts/LangContext'
+import { getTagLabel, SAKE_TYPES } from '../lib/i18n'
 
 const MARK_SVG_ABS = (
   <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .065, pointerEvents: 'none', zIndex: 0 }}
@@ -19,7 +21,8 @@ const MARK_SVG_ABS = (
 const s = {
   page: { minHeight: '100svh', background: 'var(--bg)' },
   main: { maxWidth: 1100, margin: '0 auto', padding: '20px 16px 60px' },
-  // filters
+  searchRow: { display: 'flex', gap: 10, marginBottom: 14, alignItems: 'center' },
+  searchInput: { flex: 1, padding: '9px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 14, outline: 'none' },
   chips: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 },
   chip: (active) => ({
     padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
@@ -34,8 +37,7 @@ const s = {
     background: `var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238C7E74'/%3E%3C/svg%3E") no-repeat right 12px center`,
     color: 'var(--text)', fontSize: 13, outline: 'none', appearance: 'none', cursor: 'pointer',
   },
-  // cards
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 },
   card: { borderRadius: 14, overflow: 'hidden', cursor: 'pointer', position: 'relative', aspectRatio: '3/4' },
   cardImg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   cardOverlay: { position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(0,0,0,.25) 40%, rgba(0,0,0,.75) 75%, rgba(0,0,0,.88) 100%)' },
@@ -45,6 +47,7 @@ const s = {
   cardName: { fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 600, lineHeight: 1.35, marginBottom: 3 },
   cardBrewery: { fontSize: 11, color: 'rgba(255,245,230,.75)', marginBottom: 5 },
   cardMeta: { fontSize: 9, color: 'rgba(255,245,230,.5)', marginTop: 4 },
+  cardContributor: { fontSize: 9, color: 'rgba(255,245,230,.45)', marginTop: 2 },
   cardTags: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 7 },
   cardTag: { fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.1)', color: 'rgba(255,245,230,.85)', border: '1px solid rgba(255,245,230,.12)' },
   // Detail
@@ -59,12 +62,11 @@ const s = {
   detName: { fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 },
   detBrewery: { fontSize: 13, color: 'var(--sub)', marginTop: 6 },
   detMeta: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
-  // Stats bar
+  detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 },
   statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' },
   statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)' },
   statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4 },
   statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 600, color: 'var(--text)' },
-  // Lower grid
   detLower: { padding: '16px 24px 24px', position: 'relative', overflow: 'hidden' },
   detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4, borderTop: '1px solid var(--border)' },
   detCell: { padding: '12px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
@@ -76,12 +78,23 @@ const s = {
 }
 
 export default function Display({ session }) {
+  const { lang, t } = useLang()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState('')
   const [tagsExp, setTagsExp] = useState(false)
   const [filters, setFilters] = useState({ type: '', brewery: '', rice: '', rating: '' })
   const [detail, setDetail] = useState(null)
+
+  const typeLabel = type => {
+    if (!type) return ''
+    const found = SAKE_TYPES.find(s => s.id === type)
+    if (!found) return type
+    if (lang === 'zh') return found.zh
+    if (lang === 'en') return found.en
+    return found.id
+  }
 
   useEffect(() => {
     supabase.from('sake_entries').select('*').eq('is_public', true)
@@ -105,6 +118,14 @@ export default function Display({ session }) {
     if (filters.brewery && e.brewery !== filters.brewery) return false
     if (filters.rice && e.rice !== filters.rice) return false
     if (filters.rating && (e.rating || 0) < Number(filters.rating)) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (e.name || '').toLowerCase().includes(q) ||
+        (e.brewery || '').toLowerCase().includes(q) ||
+        (e.region || '').toLowerCase().includes(q) ||
+        (e.contributor_name || '').toLowerCase().includes(q) ||
+        e.tags?.some(t => t.toLowerCase().includes(q))
+    }
     return true
   })
 
@@ -121,16 +142,25 @@ export default function Display({ session }) {
       <Nav session={session} />
       <BrandMarkFull />
       <div style={s.main}>
+
+        {/* Search */}
+        <div style={s.searchRow}>
+          <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={t('search')} />
+          {search && <button onClick={() => setSearch('')}
+            style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>}
+        </div>
+
         {/* Tag chips */}
         {allTags.length > 0 && (
           <div style={s.chips}>
-            <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>すべて</button>
-            {visibleTags.map(t => (
-              <button key={t} style={s.chip(activeTag === t)} onClick={() => setActiveTag(activeTag === t ? '' : t)}>{t}</button>
+            <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
+            {visibleTags.map(tag => (
+              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tag}</button>
             ))}
             {allTags.length > 6 && (
               <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
-                {tagsExp ? '▲ 閉じる' : '▼ もっと見る'}
+                {tagsExp ? t('less') : t('more')}
               </button>
             )}
           </div>
@@ -139,26 +169,26 @@ export default function Display({ session }) {
         {/* Dropdown filters */}
         <div style={s.dropRow}>
           <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
-            <option value="">種別</option>
-            {types.map(t => <option key={t}>{t}</option>)}
+            <option value="">{t('filter.type')}</option>
+            {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
           </select>
           <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
-            <option value="">酒造</option>
+            <option value="">{t('filter.brewery')}</option>
             {breweries.map(b => <option key={b}>{b}</option>)}
           </select>
           <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
-            <option value="">使用米</option>
+            <option value="">{t('filter.rice')}</option>
             {rices.map(r => <option key={r}>{r}</option>)}
           </select>
           <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
-            <option value="">評価</option>
-            <option value="4">★★★★ 以上</option>
-            <option value="5">★★★★★</option>
+            <option value="">{t('filter.rating')}</option>
+            <option value="4">{t('filter.rating4')}</option>
+            <option value="5">{t('filter.rating5')}</option>
           </select>
         </div>
 
-        {loading && <p style={s.empty}>読み込み中…</p>}
-        {!loading && filtered.length === 0 && <p style={s.empty}>記録がありません。</p>}
+        {loading && <p style={s.empty}>{t('loading')}</p>}
+        {!loading && filtered.length === 0 && <p style={s.empty}>{search ? t('noResults', { q: search }) : t('noEntries')}</p>}
 
         <div style={s.grid}>
           {filtered.map(e => (
@@ -166,11 +196,12 @@ export default function Display({ session }) {
               {e.photo_url ? <img style={s.cardImg} src={e.photo_url} alt={e.name} /> : <div style={s.cardNo}>🍶</div>}
               <div style={s.cardOverlay} />
               <div style={s.cardBody}>
-                {e.type && <div style={s.cardType}>{e.type}</div>}
+                {e.type && <div style={s.cardType}>{typeLabel(e.type)}</div>}
                 <div style={s.cardName}>{e.name}</div>
                 {e.brewery && <div style={s.cardBrewery}>{e.brewery}</div>}
                 <StarsLight rating={e.rating} />
                 <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}</div>
+                {e.contributor_name && <div style={s.cardContributor}>{e.contributor_name}</div>}
                 {e.tags?.length > 0 && (
                   <div style={s.cardTags}>
                     {e.tags.slice(0, 4).map(t => <span key={t} style={s.cardTag}>{t}</span>)}
@@ -188,51 +219,74 @@ export default function Display({ session }) {
           <div style={s.detModal} onClick={e => e.stopPropagation()}>
             <button style={s.detClose} onClick={() => setDetail(null)}>✕</button>
 
-            {/* Top: photo + info */}
             <div style={s.detTop}>
               {detail.photo_url
                 ? <img style={s.detPhoto} src={detail.photo_url} alt={detail.name} />
                 : <div style={s.detPhotoPlaceholder}>🍶</div>}
               <div style={s.detRight}>
                 {MARK_SVG_ABS}
-                {detail.type && <div style={s.detTypeTag}>{detail.type}</div>}
+                {detail.type && <div style={s.detTypeTag}>{typeLabel(detail.type)}</div>}
                 <div style={s.detName}>{detail.name}</div>
                 <Stars rating={detail.rating} size={13} />
                 {detail.brewery && <div style={s.detBrewery}>{detail.brewery}</div>}
                 <div style={s.detMeta}>{[detail.region, detail.tasted_at].filter(Boolean).join(' · ')}</div>
+                {detail.contributor_name && (
+                  <div style={s.detContributor}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4A7A35', display: 'inline-block', flexShrink: 0 }} />
+                    {detail.contributor_name}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Stats bar */}
             {(detail.polishing || detail.alcohol || detail.smv || detail.acidity) && (
               <div style={s.statsBar}>
-                <StatItem label="精米歩合" value={detail.polishing} />
-                <StatItem label="アルコール" value={detail.alcohol} />
-                <StatItem label="日本酒度" value={detail.smv} />
-                <StatItem label="酸度" value={detail.acidity} />
+                <StatItem label={t('detail.polishing')} value={detail.polishing} />
+                <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
+                <StatItem label={t('detail.smv')} value={detail.smv} />
+                <StatItem label={t('detail.acidity')} value={detail.acidity} />
               </div>
             )}
 
-            {/* Lower details */}
             <div style={s.detLower}>
-              {(detail.rice || detail.yeast || detail.bottling_date || detail.drinking_date) && (
+              {(detail.rice || detail.yeast || detail.bottling_date || detail.tasted_at) && (
                 <div style={s.detGrid2}>
-                  <Cell label="使用米" value={detail.rice} />
-                  <Cell label="酵母" value={detail.yeast} />
-                  <Cell label="装瓶日" value={detail.bottling_date} />
-                  <Cell label="飲用日" value={detail.drinking_date || detail.tasted_at} />
+                  <Cell label={t('detail.rice')} value={detail.rice} />
+                  <Cell label={t('detail.yeast')} value={detail.yeast} />
+                  <Cell label={t('detail.bottling')} value={detail.bottling_date} />
+                  <Cell label={t('detail.drinking')} value={detail.tasted_at} />
+                </div>
+              )}
+              {detail.aroma_tags?.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.aroma')}</div>
+                  <div style={s.detTagsRow}>
+                    {detail.aroma_tags.map(id => (
+                      <span key={id} style={s.detTag}>{getTagLabel(id, 'aroma', lang)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {detail.taste_tags?.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.taste')}</div>
+                  <div style={s.detTagsRow}>
+                    {detail.taste_tags.map(id => (
+                      <span key={id} style={{ ...s.detTag, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{getTagLabel(id, 'taste', lang)}</span>
+                    ))}
+                  </div>
                 </div>
               )}
               {(detail.aroma || detail.taste || detail.notes) && (
                 <div style={{ marginTop: 12, fontSize: 14, color: 'var(--sub)', lineHeight: 1.7 }}>
-                  {detail.aroma && <p><strong>香り：</strong>{detail.aroma}</p>}
-                  {detail.taste && <p><strong>味：</strong>{detail.taste}</p>}
+                  {detail.aroma && <p><strong>{t('detail.aroma')}：</strong>{detail.aroma}</p>}
+                  {detail.taste && <p><strong>{t('detail.taste')}：</strong>{detail.taste}</p>}
                   {detail.notes && <p>{detail.notes}</p>}
                 </div>
               )}
               {detail.tags?.length > 0 && (
                 <div style={s.detTagsRow}>
-                  {detail.tags.map(t => <span key={t} style={s.detTag}>{t}</span>)}
+                  {detail.tags.map(tg => <span key={tg} style={s.detTag}>{tg}</span>)}
                 </div>
               )}
             </div>
