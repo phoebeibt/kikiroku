@@ -384,7 +384,7 @@ export default function Journal({ session }) {
         ...(data.smv       != null && !prev.smv       ? { smv: String(data.smv) }           : {}),
         ...(data.acidity   != null && !prev.acidity   ? { acidity: String(data.acidity) }   : {}),
       }))
-    } catch { /* silently ignore search errors */ }
+    } catch (e) { console.warn('search-sake:', e.message) }
     finally { setSearchLoading(false) }
   }
 

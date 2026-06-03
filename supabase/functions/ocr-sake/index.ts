@@ -84,7 +84,7 @@ serve(async (req) => {
           generationConfig: {
             temperature: 0,
             responseMimeType: 'application/json',
-            thinkingConfig: { thinkingBudget: 0 },
+            thinkingConfig: { thinkingBudget: 2048 },
           },
         }),
       }
