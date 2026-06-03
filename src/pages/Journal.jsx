@@ -179,7 +179,6 @@ export default function Journal({ session }) {
   const [detail, setDetail] = useState(null)
   const fileRef = useRef()
   const fileRef2 = useRef()
-  const fileRefMulti = useRef()
 
   useEffect(() => { fetchEntries() }, [])
 
@@ -259,18 +258,6 @@ export default function Journal({ session }) {
     setPhotoRaw2(f); setPhotoFile2(blob); setPhotoPreview2(URL.createObjectURL(blob))
   }
 
-  const onPhotoMulti = async e => {
-    const files = [...e.target.files].slice(0, 2)
-    if (!files.length) return
-    const [blobs, date] = await Promise.all([
-      Promise.all(files.map(f => compressImage(f))),
-      readExifDate(files[0]),
-    ])
-    if (date) setForm(p => ({ ...p, tasted_at: date }))
-    if (blobs[0]) { setPhotoRaw(files[0]); setPhotoFile(blobs[0]); setPhotoPreview(URL.createObjectURL(blobs[0])) }
-    if (blobs[1]) { setPhotoRaw2(files[1]); setPhotoFile2(blobs[1]); setPhotoPreview2(URL.createObjectURL(blobs[1])) }
-    e.target.value = ''
-  }
 
 
   const save = async () => {
@@ -583,12 +570,6 @@ export default function Journal({ session }) {
               {/* Photos */}
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.photos')}</div>
-                <button type="button" onClick={() => fileRefMulti.current.click()}
-                  style={{ width: '100%', marginBottom: 10, padding: '8px 0', borderRadius: 8, border: '1px dashed var(--accent)', background: 'transparent', color: 'var(--accent)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                  {t('form.selectBoth')}
-                </button>
-                <input ref={fileRefMulti} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={onPhotoMulti} />
                 <div style={s.row2}>
                   <div>
                     <div style={s.label}>{t('form.mainPhoto')}</div>
