@@ -165,8 +165,10 @@ export default function Journal({ session }) {
   const [aromaTags, setAromaTags] = useState([])
   const [tasteTags, setTasteTags] = useState([])
   const [editId, setEditId] = useState(null)
-  const [photoFile, setPhotoFile] = useState(null)
+  const [photoFile, setPhotoFile] = useState(null)   // compressed, for upload
   const [photoFile2, setPhotoFile2] = useState(null)
+  const [photoRaw, setPhotoRaw] = useState(null)     // original, for OCR
+  const [photoRaw2, setPhotoRaw2] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [photoPreview2, setPhotoPreview2] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -212,7 +214,8 @@ export default function Journal({ session }) {
 
   const openAdd = () => {
     setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setEditId(null)
-    setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null)
+    setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null)
+    setPhotoPreview(null); setPhotoPreview2(null)
     setSheet('form')
   }
   const openEdit = e => {
@@ -229,7 +232,7 @@ export default function Journal({ session }) {
     setAromaTags(e.aroma_tags || [])
     setTasteTags(e.taste_tags || [])
     setEditId(e.id)
-    setPhotoFile(null); setPhotoFile2(null)
+    setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null)
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
     setSheet('form')
   }
@@ -247,13 +250,13 @@ export default function Journal({ session }) {
   const onPhoto = async e => {
     const file = e.target.files[0]; if (!file) return
     const [blob, date] = await Promise.all([compressImage(file), readExifDate(file)])
-    setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
+    setPhotoRaw(file); setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
     if (date) setForm(p => ({ ...p, tasted_at: date }))
   }
   const onPhoto2 = async e => {
     const f = e.target.files[0]; if (!f) return
     const blob = await compressImage(f)
-    setPhotoFile2(blob); setPhotoPreview2(URL.createObjectURL(blob))
+    setPhotoRaw2(f); setPhotoFile2(blob); setPhotoPreview2(URL.createObjectURL(blob))
   }
 
   const onPhotoMulti = async e => {
@@ -264,8 +267,8 @@ export default function Journal({ session }) {
       readExifDate(files[0]),
     ])
     if (date) setForm(p => ({ ...p, tasted_at: date }))
-    if (blobs[0]) { setPhotoFile(blobs[0]); setPhotoPreview(URL.createObjectURL(blobs[0])) }
-    if (blobs[1]) { setPhotoFile2(blobs[1]); setPhotoPreview2(URL.createObjectURL(blobs[1])) }
+    if (blobs[0]) { setPhotoRaw(files[0]); setPhotoFile(blobs[0]); setPhotoPreview(URL.createObjectURL(blobs[0])) }
+    if (blobs[1]) { setPhotoRaw2(files[1]); setPhotoFile2(blobs[1]); setPhotoPreview2(URL.createObjectURL(blobs[1])) }
     e.target.value = ''
   }
 
@@ -313,15 +316,16 @@ export default function Journal({ session }) {
   const runOcr = async () => {
     setOcrLoading(true)
     try {
-      // Collect blobs for both photo slots
-      const getBlob = async (file, preview) => {
+      // For OCR, prefer original high-res file over compressed blob; fall back to URL
+      const getBlob = async (raw, file, preview) => {
+        if (raw) return raw
         if (file) return file
         if (preview) { const r = await fetch(preview); return r.blob() }
         return null
       }
       const [blob1, blob2] = await Promise.all([
-        getBlob(photoFile, photoPreview),
-        getBlob(photoFile2, photoPreview2),
+        getBlob(photoRaw, photoFile, photoPreview),
+        getBlob(photoRaw2, photoFile2, photoPreview2),
       ])
       if (!blob1 && !blob2) return
 
