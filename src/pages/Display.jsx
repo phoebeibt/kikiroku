@@ -129,13 +129,19 @@ export default function Display({ session }) {
     return true
   })
 
-  const StatItem = ({ label, value }) => value ? (
-    <div style={s.statItem}><div style={s.statLabel}>{label}</div><div style={s.statValue}>{value}</div></div>
-  ) : <div style={s.statItem} />
+  const StatItem = ({ label, value }) => (
+    <div style={s.statItem}>
+      <div style={s.statLabel}>{label}</div>
+      {value != null && value !== '' && <div style={s.statValue}>{value}</div>}
+    </div>
+  )
 
-  const Cell = ({ label, value }) => value ? (
-    <div style={s.detCell}><div style={s.detCellLabel}>{label}</div><div style={s.detCellValue}>{value}</div></div>
-  ) : <div style={s.detCell} />
+  const Cell = ({ label, value }) => (
+    <div style={s.detCell}>
+      <div style={s.detCellLabel}>{label}</div>
+      {value != null && value !== '' && <div style={s.detCellValue}>{value}</div>}
+    </div>
+  )
 
   return (
     <div style={s.page}>
@@ -239,24 +245,20 @@ export default function Display({ session }) {
               </div>
             </div>
 
-            {(detail.polishing || detail.alcohol || detail.smv || detail.acidity) && (
-              <div style={s.statsBar}>
-                <StatItem label={t('detail.polishing')} value={detail.polishing} />
-                <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
-                <StatItem label={t('detail.smv')} value={detail.smv} />
-                <StatItem label={t('detail.acidity')} value={detail.acidity} />
-              </div>
-            )}
+            <div style={s.statsBar}>
+              <StatItem label={t('detail.polishing')} value={detail.polishing} />
+              <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
+              <StatItem label={t('detail.smv')} value={detail.smv} />
+              <StatItem label={t('detail.acidity')} value={detail.acidity} />
+            </div>
 
             <div style={s.detLower}>
-              {(detail.rice || detail.yeast || detail.bottling_date || detail.tasted_at) && (
-                <div style={s.detGrid2}>
-                  <Cell label={t('detail.rice')} value={detail.rice} />
-                  <Cell label={t('detail.yeast')} value={detail.yeast} />
-                  <Cell label={t('detail.bottling')} value={detail.bottling_date} />
-                  <Cell label={t('detail.drinking')} value={detail.tasted_at} />
-                </div>
-              )}
+              <div style={s.detGrid2}>
+                <Cell label={t('detail.rice')} value={detail.rice} />
+                <Cell label={t('detail.yeast')} value={detail.yeast} />
+                <Cell label={t('detail.bottling')} value={detail.bottling_date} />
+                <Cell label={t('detail.drinking')} value={detail.tasted_at} />
+              </div>
               {detail.aroma_tags?.length > 0 && (
                 <div style={{ marginTop: 14 }}>
                   <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.aroma')}</div>
