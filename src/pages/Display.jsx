@@ -143,7 +143,9 @@ export default function Display({ session }) {
     return (
       <div style={s.statItem}>
         <div style={s.statLabel}>{label}</div>
-        {str && <div style={{ ...s.statValue, fontSize }} title={str}>{str}</div>}
+        {str
+          ? <div style={{ ...s.statValue, fontSize }} title={str}>{str}</div>
+          : <div style={{ ...s.statValue, fontSize: 14, color: 'var(--border)' }}>N/A</div>}
       </div>
     )
   }
@@ -151,7 +153,9 @@ export default function Display({ session }) {
   const Cell = ({ label, value }) => (
     <div style={s.detCell}>
       <div style={s.detCellLabel}>{label}</div>
-      {value != null && value !== '' && <div style={s.detCellValue}>{value}</div>}
+      {value != null && value !== ''
+        ? <div style={s.detCellValue}>{value}</div>
+        : <div style={{ ...s.detCellValue, color: 'var(--border)' }}>N/A</div>}
     </div>
   )
 
