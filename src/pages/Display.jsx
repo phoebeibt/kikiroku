@@ -1,0 +1,244 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import Nav from '../components/Nav'
+import Stars, { StarsLight } from '../components/Stars'
+import { BrandMarkFull } from '../components/BrandMark'
+
+const MARK_SVG_ABS = (
+  <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .065, pointerEvents: 'none', zIndex: 0 }}
+    viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(44,44)">
+      <path d="M-15,-37 C-30,-30 -40,-14 -40,4 C-40,22 -32,36 -18,40 C-4,44 14,40 26,28 C36,18 40,2 36,-14 C32,-28 20,-38 4,-40" fill="none" stroke="#7C3A28" strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M-10,-27 C-22,-22 -30,-10 -30,4 C-30,18 -22,28 -10,32 C2,36 16,30 24,20 C30,12 30,-2 24,-14 C18,-24 6,-30 -4,-30" fill="none" stroke="#7C3A28" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M-6,-18 C-14,-14 -20,-6 -20,4 C-20,14 -14,20 -4,22 C6,24 16,18 20,10 C22,4 20,-6 14,-12 C8,-18 0,-20 -4,-20" fill="none" stroke="#7C3A28" strokeWidth="2" strokeLinecap="round" />
+      <circle r="10" fill="#4A7A35" />
+    </g>
+  </svg>
+)
+
+const s = {
+  page: { minHeight: '100svh', background: 'var(--bg)' },
+  main: { maxWidth: 1100, margin: '0 auto', padding: '20px 16px 60px' },
+  // filters
+  chips: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 },
+  chip: (active) => ({
+    padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
+    background: active ? 'var(--accent)' : 'var(--surface)',
+    color: active ? '#fff' : 'var(--text)',
+    fontFamily: 'var(--font-sans)',
+    boxShadow: active ? 'none' : '0 1px 4px rgba(26,22,20,.06)',
+  }),
+  dropRow: { display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
+  drop: {
+    padding: '8px 32px 8px 14px', borderRadius: 10, border: '1px solid var(--border)',
+    background: `var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238C7E74'/%3E%3C/svg%3E") no-repeat right 12px center`,
+    color: 'var(--text)', fontSize: 13, outline: 'none', appearance: 'none', cursor: 'pointer',
+  },
+  // cards
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 12 },
+  card: { borderRadius: 14, overflow: 'hidden', cursor: 'pointer', position: 'relative', aspectRatio: '3/4' },
+  cardImg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
+  cardOverlay: { position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.05) 0%, rgba(0,0,0,.25) 40%, rgba(0,0,0,.75) 75%, rgba(0,0,0,.88) 100%)' },
+  cardNo: { position: 'absolute', inset: 0, background: '#2d2520', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'rgba(255,245,230,.15)' },
+  cardBody: { position: 'absolute', inset: 0, padding: '10px 11px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' },
+  cardType: { fontSize: 9, letterSpacing: '.08em', color: 'rgba(255,245,230,.7)', marginBottom: 3 },
+  cardName: { fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 600, lineHeight: 1.35, marginBottom: 3 },
+  cardBrewery: { fontSize: 11, color: 'rgba(255,245,230,.75)', marginBottom: 5 },
+  cardMeta: { fontSize: 9, color: 'rgba(255,245,230,.5)', marginTop: 4 },
+  cardTags: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 7 },
+  cardTag: { fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.1)', color: 'rgba(255,245,230,.85)', border: '1px solid rgba(255,245,230,.12)' },
+  // Detail
+  backdrop: { position: 'fixed', inset: 0, background: 'rgba(26,22,20,.6)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  detModal: { background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 720, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative' },
+  detClose: { position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  detTop: { display: 'flex', gap: 0 },
+  detPhoto: { width: 240, height: 240, objectFit: 'cover', flexShrink: 0, borderRadius: '20px 0 0 0' },
+  detPhotoPlaceholder: { width: 240, height: 240, background: '#2d2520', flexShrink: 0, borderRadius: '20px 0 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, color: 'rgba(255,245,230,.1)' },
+  detRight: { flex: 1, padding: '24px 24px 20px', minWidth: 0, position: 'relative', overflow: 'hidden' },
+  detTypeTag: { fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 8 },
+  detName: { fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 },
+  detBrewery: { fontSize: 13, color: 'var(--sub)', marginTop: 6 },
+  detMeta: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
+  // Stats bar
+  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' },
+  statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)' },
+  statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4 },
+  statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 600, color: 'var(--text)' },
+  // Lower grid
+  detLower: { padding: '16px 24px 24px', position: 'relative', overflow: 'hidden' },
+  detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4, borderTop: '1px solid var(--border)' },
+  detCell: { padding: '12px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
+  detCellLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 3 },
+  detCellValue: { fontSize: 14, color: 'var(--text)' },
+  detTagsRow: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 16 },
+  detTag: { fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'var(--accent-bg)', color: 'var(--accent)' },
+  empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
+}
+
+export default function Display({ session }) {
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeTag, setActiveTag] = useState('')
+  const [tagsExp, setTagsExp] = useState(false)
+  const [filters, setFilters] = useState({ type: '', brewery: '', rice: '', rating: '' })
+  const [detail, setDetail] = useState(null)
+
+  useEffect(() => {
+    supabase.from('sake_entries').select('*').eq('is_public', true)
+      .order('tasted_at', { ascending: false }).limit(200)
+      .then(({ data }) => { setEntries(data || []); setLoading(false) })
+  }, [])
+
+  const allTags = [...new Set(entries.flatMap(e => e.tags || []))]
+  const topTags = allTags.slice(0, 6)
+  const visibleTags = tagsExp ? allTags : topTags
+
+  const types = [...new Set(entries.map(e => e.type).filter(Boolean))]
+  const breweries = [...new Set(entries.map(e => e.brewery).filter(Boolean))]
+  const rices = [...new Set(entries.map(e => e.rice).filter(Boolean))]
+
+  const setF = (k, v) => setFilters(p => ({ ...p, [k]: v }))
+
+  const filtered = entries.filter(e => {
+    if (activeTag && !e.tags?.includes(activeTag)) return false
+    if (filters.type && e.type !== filters.type) return false
+    if (filters.brewery && e.brewery !== filters.brewery) return false
+    if (filters.rice && e.rice !== filters.rice) return false
+    if (filters.rating && (e.rating || 0) < Number(filters.rating)) return false
+    return true
+  })
+
+  const StatItem = ({ label, value }) => value ? (
+    <div style={s.statItem}><div style={s.statLabel}>{label}</div><div style={s.statValue}>{value}</div></div>
+  ) : <div style={s.statItem} />
+
+  const Cell = ({ label, value }) => value ? (
+    <div style={s.detCell}><div style={s.detCellLabel}>{label}</div><div style={s.detCellValue}>{value}</div></div>
+  ) : <div style={s.detCell} />
+
+  return (
+    <div style={s.page}>
+      <Nav session={session} />
+      <BrandMarkFull />
+      <div style={s.main}>
+        {/* Tag chips */}
+        {allTags.length > 0 && (
+          <div style={s.chips}>
+            <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>すべて</button>
+            {visibleTags.map(t => (
+              <button key={t} style={s.chip(activeTag === t)} onClick={() => setActiveTag(activeTag === t ? '' : t)}>{t}</button>
+            ))}
+            {allTags.length > 6 && (
+              <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
+                {tagsExp ? '▲ 閉じる' : '▼ もっと見る'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Dropdown filters */}
+        <div style={s.dropRow}>
+          <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
+            <option value="">種別</option>
+            {types.map(t => <option key={t}>{t}</option>)}
+          </select>
+          <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
+            <option value="">酒造</option>
+            {breweries.map(b => <option key={b}>{b}</option>)}
+          </select>
+          <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
+            <option value="">使用米</option>
+            {rices.map(r => <option key={r}>{r}</option>)}
+          </select>
+          <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
+            <option value="">評価</option>
+            <option value="4">★★★★ 以上</option>
+            <option value="5">★★★★★</option>
+          </select>
+        </div>
+
+        {loading && <p style={s.empty}>読み込み中…</p>}
+        {!loading && filtered.length === 0 && <p style={s.empty}>記録がありません。</p>}
+
+        <div style={s.grid}>
+          {filtered.map(e => (
+            <div key={e.id} style={s.card} onClick={() => setDetail(e)}>
+              {e.photo_url ? <img style={s.cardImg} src={e.photo_url} alt={e.name} /> : <div style={s.cardNo}>🍶</div>}
+              <div style={s.cardOverlay} />
+              <div style={s.cardBody}>
+                {e.type && <div style={s.cardType}>{e.type}</div>}
+                <div style={s.cardName}>{e.name}</div>
+                {e.brewery && <div style={s.cardBrewery}>{e.brewery}</div>}
+                <StarsLight rating={e.rating} />
+                <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}</div>
+                {e.tags?.length > 0 && (
+                  <div style={s.cardTags}>
+                    {e.tags.slice(0, 4).map(t => <span key={t} style={s.cardTag}>{t}</span>)}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Detail modal */}
+      {detail && (
+        <div style={s.backdrop} onClick={() => setDetail(null)}>
+          <div style={s.detModal} onClick={e => e.stopPropagation()}>
+            <button style={s.detClose} onClick={() => setDetail(null)}>✕</button>
+
+            {/* Top: photo + info */}
+            <div style={s.detTop}>
+              {detail.photo_url
+                ? <img style={s.detPhoto} src={detail.photo_url} alt={detail.name} />
+                : <div style={s.detPhotoPlaceholder}>🍶</div>}
+              <div style={s.detRight}>
+                {MARK_SVG_ABS}
+                {detail.type && <div style={s.detTypeTag}>{detail.type}</div>}
+                <div style={s.detName}>{detail.name}</div>
+                <Stars rating={detail.rating} size={13} />
+                {detail.brewery && <div style={s.detBrewery}>{detail.brewery}</div>}
+                <div style={s.detMeta}>{[detail.region, detail.tasted_at].filter(Boolean).join(' · ')}</div>
+              </div>
+            </div>
+
+            {/* Stats bar */}
+            {(detail.polishing || detail.alcohol || detail.smv || detail.acidity) && (
+              <div style={s.statsBar}>
+                <StatItem label="精米歩合" value={detail.polishing} />
+                <StatItem label="アルコール" value={detail.alcohol} />
+                <StatItem label="日本酒度" value={detail.smv} />
+                <StatItem label="酸度" value={detail.acidity} />
+              </div>
+            )}
+
+            {/* Lower details */}
+            <div style={s.detLower}>
+              {(detail.rice || detail.yeast || detail.bottling_date || detail.drinking_date) && (
+                <div style={s.detGrid2}>
+                  <Cell label="使用米" value={detail.rice} />
+                  <Cell label="酵母" value={detail.yeast} />
+                  <Cell label="装瓶日" value={detail.bottling_date} />
+                  <Cell label="飲用日" value={detail.drinking_date || detail.tasted_at} />
+                </div>
+              )}
+              {(detail.aroma || detail.taste || detail.notes) && (
+                <div style={{ marginTop: 12, fontSize: 14, color: 'var(--sub)', lineHeight: 1.7 }}>
+                  {detail.aroma && <p><strong>香り：</strong>{detail.aroma}</p>}
+                  {detail.taste && <p><strong>味：</strong>{detail.taste}</p>}
+                  {detail.notes && <p>{detail.notes}</p>}
+                </div>
+              )}
+              {detail.tags?.length > 0 && (
+                <div style={s.detTagsRow}>
+                  {detail.tags.map(t => <span key={t} style={s.detTag}>{t}</span>)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
