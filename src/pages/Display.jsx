@@ -72,9 +72,9 @@ const s = {
   detMeta: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
   detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 },
   statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' },
-  statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)' },
-  statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4 },
-  statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)' },
+  statItem: { padding: '14px 20px', borderRight: '1px solid var(--border)', overflow: 'hidden' },
+  statLabel: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  statValue: { fontSize: 18, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3 },
   detLower: { padding: '16px 24px 24px', position: 'relative', overflow: 'hidden' },
   detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4 },
   detCell: { padding: '12px 0', borderBottom: '1px solid var(--border)', paddingRight: 16 },
@@ -137,12 +137,16 @@ export default function Display({ session }) {
     return true
   })
 
-  const StatItem = ({ label, value }) => (
-    <div style={s.statItem}>
-      <div style={s.statLabel}>{label}</div>
-      {value != null && value !== '' && <div style={s.statValue}>{value}</div>}
-    </div>
-  )
+  const StatItem = ({ label, value }) => {
+    const str = value != null && value !== '' ? String(value) : null
+    const fontSize = str && str.length > 8 ? 13 : str && str.length > 5 ? 15 : 18
+    return (
+      <div style={s.statItem}>
+        <div style={s.statLabel}>{label}</div>
+        {str && <div style={{ ...s.statValue, fontSize }} title={str}>{str}</div>}
+      </div>
+    )
+  }
 
   const Cell = ({ label, value }) => (
     <div style={s.detCell}>
