@@ -172,6 +172,7 @@ export default function Journal({ session }) {
   const [saving, setSaving] = useState(false)
 
   const [ocrLoading, setOcrLoading] = useState(false)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
   const [detail, setDetail] = useState(null)
   const fileRef = useRef()
@@ -337,22 +338,54 @@ export default function Journal({ session }) {
       const { data, error } = await supabase.functions.invoke('ocr-sake', { body })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
-      setForm(prev => ({
-        ...prev,
-        ...(data.name      ? { name: data.name }           : {}),
-        ...(data.brewery   ? { brewery: data.brewery }     : {}),
-        ...(data.region    ? { region: data.region }       : {}),
-        ...(data.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
-        ...(data.rice      ? { rice: data.rice }           : {}),
-        ...(data.yeast     ? { yeast: data.yeast }         : {}),
-        ...(data.polishing != null ? { polishing: String(data.polishing) } : {}),
-        ...(data.alcohol   != null ? { alcohol: String(data.alcohol) }   : {}),
-        ...(data.smv       != null ? { smv: String(data.smv) }           : {}),
-        ...(data.acidity   != null ? { acidity: String(data.acidity) }   : {}),
-        ...(data.bottling_date ? { bottling_date: data.bottling_date } : {}),
-      }))
+      const merged = applyOcrData(form, data)
+      setForm(merged)
+      // Auto-trigger web search to fill remaining gaps
+      runSearch(merged)
     } catch (e) { alert('識別失敗: ' + e.message) }
     finally { setOcrLoading(false) }
+  }
+
+  function applyOcrData(prev, data) {
+    return {
+      ...prev,
+      ...(data.name      ? { name: data.name }           : {}),
+      ...(data.brewery   ? { brewery: data.brewery }     : {}),
+      ...(data.region    ? { region: data.region }       : {}),
+      ...(data.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
+      ...(data.rice      ? { rice: data.rice }           : {}),
+      ...(data.yeast     ? { yeast: data.yeast }         : {}),
+      ...(data.polishing != null ? { polishing: String(data.polishing) } : {}),
+      ...(data.alcohol   != null ? { alcohol: String(data.alcohol) }   : {}),
+      ...(data.smv       != null ? { smv: String(data.smv) }           : {}),
+      ...(data.acidity   != null ? { acidity: String(data.acidity) }   : {}),
+      ...(data.bottling_date ? { bottling_date: data.bottling_date } : {}),
+    }
+  }
+
+  const runSearch = async (currentForm) => {
+    const src = currentForm ?? form
+    if (!src.name && !src.brewery) return
+    setSearchLoading(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('search-sake', { body: src })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      setForm(prev => ({
+        ...prev,
+        ...(data.name      && !prev.name      ? { name: data.name }           : {}),
+        ...(data.brewery   && !prev.brewery   ? { brewery: data.brewery }     : {}),
+        ...(data.region    && !prev.region    ? { region: data.region }       : {}),
+        ...(data.type && !prev.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
+        ...(data.rice      && !prev.rice      ? { rice: data.rice }           : {}),
+        ...(data.yeast     && !prev.yeast     ? { yeast: data.yeast }         : {}),
+        ...(data.polishing != null && !prev.polishing ? { polishing: String(data.polishing) } : {}),
+        ...(data.alcohol   != null && !prev.alcohol   ? { alcohol: String(data.alcohol) }   : {}),
+        ...(data.smv       != null && !prev.smv       ? { smv: String(data.smv) }           : {}),
+        ...(data.acidity   != null && !prev.acidity   ? { acidity: String(data.acidity) }   : {}),
+      }))
+    } catch { /* silently ignore search errors */ }
+    finally { setSearchLoading(false) }
   }
 
   // On name blur: if brewery not yet filled, scan name for any known brand
@@ -568,9 +601,9 @@ export default function Journal({ session }) {
                     </div>
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto} />
                     {(photoFile || photoPreview) && (
-                      <button type="button" disabled={ocrLoading} onClick={() => runOcr()}
-                        style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: ocrLoading ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: ocrLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                        {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : <><ScanIcon />{t('ocr.scan')}</>}
+                      <button type="button" disabled={ocrLoading || searchLoading} onClick={() => runOcr()}
+                        style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: (ocrLoading || searchLoading) ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: (ocrLoading || searchLoading) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : searchLoading ? <><SpinIcon />{t('ocr.searching')}</> : <><ScanIcon />{t('ocr.scan')}</>}
                       </button>
                     )}
                   </div>
