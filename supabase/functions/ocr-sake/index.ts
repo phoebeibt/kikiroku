@@ -45,14 +45,15 @@ JSONオブジェクトのみ返してください。説明やmarkdown不要。`,
               },
             ],
           }],
-          generationConfig: { temperature: 0, responseMimeType: 'application/json' },
+          generationConfig: { temperature: 0, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } },
         }),
       }
     )
 
     const gemini = await resp.json()
     if (gemini.error) throw new Error(`Gemini API error: ${gemini.error.message ?? JSON.stringify(gemini.error)}`)
-    const raw = gemini.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '{}'
+    const parts = gemini.candidates?.[0]?.content?.parts ?? []
+    const raw = (parts.find((p: {thought?: boolean, text?: string}) => !p.thought)?.text ?? '{}').trim()
 
     let extracted: Record<string, string | null> = {}
     try {

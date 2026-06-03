@@ -338,10 +338,10 @@ export default function Journal({ session }) {
         ...(data.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
         ...(data.rice      ? { rice: data.rice }           : {}),
         ...(data.yeast     ? { yeast: data.yeast }         : {}),
-        ...(data.polishing ? { polishing: data.polishing } : {}),
-        ...(data.alcohol   ? { alcohol: data.alcohol }     : {}),
-        ...(data.smv       ? { smv: data.smv }             : {}),
-        ...(data.acidity   ? { acidity: data.acidity }     : {}),
+        ...(data.polishing != null ? { polishing: String(data.polishing) } : {}),
+        ...(data.alcohol   != null ? { alcohol: String(data.alcohol) }   : {}),
+        ...(data.smv       != null ? { smv: String(data.smv) }           : {}),
+        ...(data.acidity   != null ? { acidity: String(data.acidity) }   : {}),
         ...(data.bottling_date ? { bottling_date: data.bottling_date } : {}),
       }))
     } catch (e) { alert('識別失敗: ' + e.message) }
