@@ -96,16 +96,20 @@ serve(async (req) => {
       }
     )
 
-    const gemini = await resp.json()
-    if (gemini.error) throw new Error(`Gemini: ${gemini.error.message ?? JSON.stringify(gemini.error)}`)
+    const geminiText = await resp.text()
+    let gemini: Record<string, unknown>
+    try { gemini = JSON.parse(geminiText) } catch { throw new Error(`Gemini non-JSON: ${geminiText.slice(0, 200)}`) }
+    if (gemini.error) throw new Error(`Gemini: ${(gemini.error as { message?: string }).message ?? JSON.stringify(gemini.error)}`)
 
-    const parts = gemini.candidates?.[0]?.content?.parts ?? []
+    const candidates = (gemini.candidates as Array<{ content?: { parts?: Array<{ thought?: boolean; text?: string }> } }>) ?? []
+    const parts = candidates[0]?.content?.parts ?? []
     const raw = parts
-      .filter((p: { thought?: boolean; text?: string }) => !p.thought && p.text)
-      .map((p: { text?: string }) => p.text)
+      .filter(p => !p.thought && p.text)
+      .map(p => p.text)
       .join('')
       .trim()
 
+    if (!raw) throw new Error(`Gemini returned no text. Full response: ${geminiText.slice(0, 300)}`)
     const extracted: Record<string, unknown> = extractJson(raw)
 
     // DB matching for brewery and rice (normalize to canonical names)

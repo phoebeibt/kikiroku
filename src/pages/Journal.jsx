@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadPhoto, compressImage } from '../lib/upload'
 import Nav from '../components/Nav'
 import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
-import { BreweryInput, BrandInput, RiceInput } from '../components/Autocomplete'
+import { BreweryInput, BrandInput, RiceInput, ProductInput } from '../components/Autocomplete'
 import TastingTagPicker from '../components/TastingTagPicker'
 import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
@@ -153,8 +154,128 @@ const s = {
   empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
 }
 
+function CropModal({ src, onConfirm, onCancel }) {
+  const imgRef = useRef(null)
+  const [box, setBox] = useState({ x: 0.05, y: 0.1, w: 0.9, h: 0.8 })
+  const [ready, setReady] = useState(false)
+  const sizeRef = useRef({ w: 0, h: 0 })
+  const dragRef = useRef(null)
+
+  const onLoad = () => {
+    const img = imgRef.current
+    sizeRef.current = { w: img.offsetWidth, h: img.offsetHeight }
+    setReady(true)
+  }
+
+  const getPos = (e) => {
+    const rect = imgRef.current.getBoundingClientRect()
+    const pt = e.touches?.[0] ?? e
+    return { x: pt.clientX - rect.left, y: pt.clientY - rect.top }
+  }
+
+  const onDown = (e) => {
+    const { w, h } = sizeRef.current
+    if (!w || !h) return
+    const { x, y } = getPos(e)
+    const b = box
+    const bx = b.x * w, by = b.y * h, bw = b.w * w, bh = b.h * h
+    const HS = 26
+    let type = null, corner = null
+    if      (Math.abs(x - bx) < HS && Math.abs(y - by) < HS)           { type = 'corner'; corner = 'nw' }
+    else if (Math.abs(x - (bx + bw)) < HS && Math.abs(y - by) < HS)    { type = 'corner'; corner = 'ne' }
+    else if (Math.abs(x - bx) < HS && Math.abs(y - (by + bh)) < HS)    { type = 'corner'; corner = 'sw' }
+    else if (Math.abs(x - (bx + bw)) < HS && Math.abs(y - (by + bh)) < HS) { type = 'corner'; corner = 'se' }
+    else if (x >= bx && x <= bx + bw && y >= by && y <= by + bh)        { type = 'move' }
+    if (type) { e.preventDefault(); dragRef.current = { type, corner, startX: x, startY: y, startBox: { ...b } } }
+  }
+
+  const onMove = (e) => {
+    if (!dragRef.current) return
+    e.preventDefault()
+    const { w, h } = sizeRef.current
+    const { x, y } = getPos(e)
+    const { type, corner, startX, startY, startBox: sb } = dragRef.current
+    const dx = (x - startX) / w, dy = (y - startY) / h
+    const MIN = 0.05
+    let { x: bx, y: by, w: bw, h: bh } = sb
+    if (type === 'move') {
+      bx = Math.max(0, Math.min(1 - bw, bx + dx))
+      by = Math.max(0, Math.min(1 - bh, by + dy))
+    } else {
+      const r = bx + bw, bot = by + bh
+      if (corner === 'nw') {
+        bx = Math.max(0, Math.min(r - MIN, bx + dx)); bw = r - bx
+        by = Math.max(0, Math.min(bot - MIN, by + dy)); bh = bot - by
+      } else if (corner === 'ne') {
+        by = Math.max(0, Math.min(bot - MIN, by + dy)); bh = bot - by
+        bw = Math.max(MIN, Math.min(1 - bx, bw + dx))
+      } else if (corner === 'sw') {
+        bx = Math.max(0, Math.min(r - MIN, bx + dx)); bw = r - bx
+        bh = Math.max(MIN, Math.min(1 - by, bh + dy))
+      } else if (corner === 'se') {
+        bw = Math.max(MIN, Math.min(1 - bx, bw + dx))
+        bh = Math.max(MIN, Math.min(1 - by, bh + dy))
+      }
+    }
+    setBox({ x: bx, y: by, w: bw, h: bh })
+  }
+
+  const onUp = () => { dragRef.current = null }
+
+  const confirm = () => {
+    const img = imgRef.current
+    const { w, h } = sizeRef.current
+    const sx = img.naturalWidth / w, sy = img.naturalHeight / h
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(box.w * w * sx)
+    canvas.height = Math.round(box.h * h * sy)
+    canvas.getContext('2d').drawImage(img, box.x * w * sx, box.y * h * sy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob(blob => onConfirm(blob), 'image/jpeg', 0.92)
+  }
+
+  const { w, h } = sizeRef.current
+  const bx = box.x * w, by = box.y * h, bw = box.w * w, bh = box.h * h
+  const HH = 20
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+      <div style={{ position: 'relative', touchAction: 'none', cursor: 'crosshair', lineHeight: 0 }}
+        onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
+        <img ref={imgRef} src={src} onLoad={onLoad} draggable={false}
+          style={{ maxWidth: '100vw', maxHeight: 'calc(100vh - 110px)', display: 'block', userSelect: 'none' }} />
+        {ready && <>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: by, background: 'rgba(0,0,0,.55)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: by + bh, left: 0, width: '100%', height: h - by - bh, background: 'rgba(0,0,0,.55)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: by, left: 0, width: bx, height: bh, background: 'rgba(0,0,0,.55)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: by, left: bx + bw, width: w - bx - bw, height: bh, background: 'rgba(0,0,0,.55)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: by, left: bx, width: bw, height: bh, border: '1.5px solid rgba(255,255,255,.85)', boxSizing: 'border-box', pointerEvents: 'none' }}>
+            {[['nw',{top:-HH/2,left:-HH/2}],['ne',{top:-HH/2,right:-HH/2}],['sw',{bottom:-HH/2,left:-HH/2}],['se',{bottom:-HH/2,right:-HH/2}]].map(([id,pos])=>(
+              <div key={id} style={{ position: 'absolute', width: HH, height: HH, background: '#fff', borderRadius: 3, ...pos }} />
+            ))}
+          </div>
+        </>}
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button onClick={onCancel} style={{ padding: '9px 22px', borderRadius: 20, border: '1px solid rgba(255,255,255,.3)', background: 'transparent', color: '#fff', fontSize: 13, cursor: 'pointer' }}>取消</button>
+        <button onClick={confirm} style={{ padding: '9px 22px', borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer' }}>確認裁剪</button>
+      </div>
+    </div>
+  )
+}
+
+const DRAFT_KEY = 'kikiroku-draft'
+const saveDraft = (form, tags, aroma, taste) => {
+  if (form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste }))
+  else localStorage.removeItem(DRAFT_KEY)
+}
+const loadDraft = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY)) } catch { return null } }
+const clearDraft = () => localStorage.removeItem(DRAFT_KEY)
+
 export default function Journal({ session }) {
   const { lang, t } = useLang()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -173,15 +294,45 @@ export default function Journal({ session }) {
   const [photoPreview, setPhotoPreview] = useState(null)
   const [photoPreview2, setPhotoPreview2] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [confirmDel, setConfirmDel] = useState(null)
+  const [draftRestored, setDraftRestored] = useState(false)
+  const [hasDraft, setHasDraft] = useState(() => !!loadDraft())
+  const [awardYears, setAwardYears] = useState([])
 
+  const [cropSrc, setCropSrc] = useState(null)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
   const [detail, setDetail] = useState(null)
   const fileRef = useRef()
   const fileRef2 = useRef()
+  const fileRefBoth = useRef()
 
   useEffect(() => { fetchEntries() }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('new') === '1') {
+      navigate('/journal', { replace: true })
+      openAdd()
+    }
+  }, [location.search])
+
+  useEffect(() => {
+    const brewery = form.brewery?.trim()
+    if (!brewery || brewery.length < 2) { setAwardYears([]); return }
+    const keyword = brewery.replace(/(株式会社|有限会社|合資会社|合名会社|㈱|㈲)/g, '').trim().split(/[\s　]+/)[0]
+    if (!keyword || keyword.length < 2) { setAwardYears([]); return }
+    supabase
+      .from('sake_awards')
+      .select('year,brand_name,is_gold')
+      .ilike('brewery_name', `%${keyword}%`)
+      .eq('is_gold', true)
+      .gte('year', 2019)
+      .order('year', { ascending: false })
+      .limit(6)
+      .then(({ data }) => setAwardYears(data || []))
+  }, [form.brewery])
 
   const fetchEntries = async () => {
     setLoading(true)
@@ -213,7 +364,16 @@ export default function Journal({ session }) {
   const defaultName = session.user.user_metadata?.display_name || session.user.email.split('@')[0]
 
   const openAdd = () => {
-    setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setEditId(null)
+    const draft = loadDraft()
+    if (draft) {
+      setForm(draft.form); setFormTags(draft.tags || [])
+      setAromaTags(draft.aroma || []); setTasteTags(draft.taste || [])
+      setDraftRestored(true)
+    } else {
+      setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([])
+      setDraftRestored(false)
+    }
+    setEditId(null)
     setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
     setSheet('form')
@@ -236,7 +396,14 @@ export default function Journal({ session }) {
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
     setSheet('form')
   }
-  const close = () => { setSheet(null); setDetail(null) }
+  const close = () => {
+    if (sheet === 'form' && !editId) {
+      saveDraft(form, formTags, aromaTags, tasteTags)
+      setHasDraft(!!form.name.trim())
+    }
+    setSheet(null); setDetail(null)
+  }
+  const closeClean = () => { setSheet(null); setDetail(null) }
 
   const readExifDate = async (file) => {
     try {
@@ -253,13 +420,32 @@ export default function Journal({ session }) {
     setPhotoRaw(file); setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
     if (date) setForm(p => ({ ...p, tasted_at: date }))
   }
-  const onPhoto2 = async e => {
+  const onPhoto2 = (e) => {
     const f = e.target.files[0]; if (!f) return
-    const blob = await compressImage(f)
-    setPhotoRaw2(f); setPhotoFile2(blob); setPhotoPreview2(URL.createObjectURL(blob))
+    setPhotoRaw2(f)
+    setCropSrc(URL.createObjectURL(f))
+    e.target.value = ''
+  }
+  const onPhotoBoth = async e => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+    const [blob1, date] = await Promise.all([compressImage(files[0]), readExifDate(files[0])])
+    setPhotoRaw(files[0]); setPhotoFile(blob1); setPhotoPreview(URL.createObjectURL(blob1))
+    if (date) setForm(p => ({ ...p, tasted_at: date }))
+    if (files[1]) {
+      setPhotoRaw2(files[1])
+      setCropSrc(URL.createObjectURL(files[1]))
+    }
+    e.target.value = ''
   }
 
-
+  const onCropConfirm = async (croppedBlob) => {
+    setCropSrc(null)
+    const compressed = await compressImage(croppedBlob)
+    setPhotoFile2(compressed)
+    setPhotoPreview2(URL.createObjectURL(compressed))
+  }
+  const onCropCancel = () => { setCropSrc(null); setPhotoRaw2(null) }
 
   const save = async () => {
     if (!form.name.trim()) return
@@ -283,9 +469,34 @@ export default function Journal({ session }) {
         photo_url, photo_url2, user_id: uid,
         contributor_name: form.is_public ? (form.contributor_name.trim() || defaultName) : null,
       }
-      if (editId) await supabase.from('sake_entries').update(payload).eq('id', editId)
-      else await supabase.from('sake_entries').insert(payload)
-      await fetchEntries(); close()
+      if (editId) {
+        await supabase.from('sake_entries').update(payload).eq('id', editId)
+      } else {
+        await supabase.from('sake_entries').insert(payload)
+        // Contribute new sake to the product database if it doesn't exist yet
+        if (form.name.trim()) {
+          const { count } = await supabase
+            .from('sake_products')
+            .select('id', { count: 'exact', head: true })
+            .ilike('name', form.name.trim())
+          if (count === 0) {
+            await supabase.from('sake_products').insert({
+              name:         form.name.trim(),
+              brewery_name: form.brewery.trim() || null,
+              region:       form.region.trim()  || null,
+              type:         form.type           || null,
+              rice:         form.rice.trim()    || null,
+              yeast:        form.yeast.trim()   || null,
+              polishing:    form.polishing ? parseFloat(form.polishing) : null,
+              alcohol:      form.alcohol  ? parseFloat(form.alcohol)   : null,
+              smv:          form.smv.trim()     || null,
+              acidity:      form.acidity  ? parseFloat(form.acidity)   : null,
+            })
+          }
+        }
+      }
+      clearDraft(); setHasDraft(false)
+      await fetchEntries(); closeClean()
     } catch (e) { alert(e.message) }
     finally { setSaving(false) }
   }
@@ -304,38 +515,28 @@ export default function Journal({ session }) {
   const runOcr = async () => {
     setOcrLoading(true)
     try {
-      // For OCR: re-compress to JPEG at 3 MB with 2000px max (high quality for small text)
-      const OCR_MAX = 3 * 1024 * 1024
+      const OCR_MAX = 1.2 * 1024 * 1024
       const getOcrBlob = async (raw, file, preview) => {
-        if (raw) return compressImage(raw, 2000, OCR_MAX)
+        if (raw) return compressImage(raw, 1600, OCR_MAX)
         if (file) return file
         if (preview) { const r = await fetch(preview); return r.blob() }
         return null
       }
-      const [blob1, blob2] = await Promise.all([
-        getOcrBlob(photoRaw, photoFile, photoPreview),
-        getOcrBlob(photoRaw2, photoFile2, photoPreview2),
-      ])
-      if (!blob1 && !blob2) return
-
-      const [img1, img2] = await Promise.all([
-        blob1 ? toBase64(blob1) : null,
-        blob2 ? toBase64(blob2) : null,
-      ])
-
-      const body = {
-        image_base64: (img1 ?? img2).base64,
-        mime_type: (img1 ?? img2).mimeType,
-        ...(img1 && img2 ? { image_base64_2: img2.base64, mime_type_2: img2.mimeType } : {}),
-      }
+      const blob = await getOcrBlob(photoRaw2, photoFile2, photoPreview2)
+      if (!blob) return
+      const img = await toBase64(blob)
+      const body = { image_base64: img.base64, mime_type: img.mimeType }
       const { data, error } = await supabase.functions.invoke('ocr-sake', { body })
-      if (error) throw error
+      if (error) {
+        const detail = await error.context?.json?.().catch(() => null)
+        throw new Error(detail?.error || error.message)
+      }
       if (data?.error) throw new Error(data.error)
       const merged = applyOcrData(form, data)
       setForm(merged)
       // Auto-trigger web search to fill remaining gaps
       runSearch(merged)
-    } catch (e) { alert('識別失敗: ' + e.message) }
+    } catch (e) { alert('識別失敗: ' + (e.message || JSON.stringify(e))) }
     finally { setOcrLoading(false) }
   }
 
@@ -450,9 +651,10 @@ export default function Journal({ session }) {
         )}
 
         <div style={s.grid}>
-          <div style={s.addCard} onClick={openAdd}>
+          <div style={{ ...s.addCard, position: 'relative' }} onClick={openAdd}>
+            {hasDraft && <span style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
             <span style={{ fontSize: 28, color: 'var(--border)' }}>+</span>
-            <span style={{ fontSize: 13 }}>{t('form.newEntry')}</span>
+            <span style={{ fontSize: 13 }}>{hasDraft ? (lang === 'ja' ? '草稿を続ける' : lang === 'zh' ? '繼續草稿' : 'Continue Draft') : t('form.newEntry')}</span>
           </div>
           {!loading && filtered.length === 0 && search && (
             <div style={{ ...s.empty, gridColumn: '1/-1' }}>{t('noResults', { q: search })}</div>
@@ -536,15 +738,14 @@ export default function Journal({ session }) {
             )}
             <div style={s.detActions}>
               <button style={s.editBtn} onClick={() => { setDetail(null); openEdit(detail) }}>{t('edit')}</button>
-              <button style={s.delBtn} onClick={async () => {
-                if (!confirm(t('confirmDelete'))) return
-                await supabase.from('sake_entries').delete().eq('id', detail.id)
-                await fetchEntries(); close()
-              }}>{t('delete')}</button>
+              <button style={s.delBtn} onClick={() => setConfirmDel(detail)}>{t('delete')}</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Back label crop */}
+      {cropSrc && <CropModal src={cropSrc} onConfirm={onCropConfirm} onCancel={onCropCancel} />}
 
       {/* Photo lightbox */}
       {lightbox && (
@@ -555,6 +756,24 @@ export default function Journal({ session }) {
             style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,.3)', background: 'rgba(0,0,0,.5)', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {confirmDel && (
+        <div style={s.backdrop} onClick={() => setConfirmDel(null)}>
+          <div style={{ background: 'var(--surface-card)', borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8, color: 'var(--text)' }}>{t('confirmDelete')}</div>
+            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 24 }}>{confirmDel.name}</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button style={s.editBtn} onClick={() => setConfirmDel(null)}>{lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}</button>
+              <button style={s.delBtn} onClick={async () => {
+                await supabase.from('sake_entries').delete().eq('id', confirmDel.id)
+                setConfirmDel(null); await fetchEntries(); closeClean()
+              }}>{t('delete')}</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -569,9 +788,23 @@ export default function Journal({ session }) {
             </div>
             <div style={s.formInner}>
 
+              {draftRestored && (
+                <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span style={{ color: 'var(--accent)' }}>{lang === 'ja' ? '草稿を復元しました' : lang === 'zh' ? '已恢復草稿' : 'Draft restored'}</span>
+                  <button onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
+                    style={{ background: 'none', border: 'none', color: 'var(--sub)', fontSize: 12, cursor: 'pointer' }}>
+                    {lang === 'ja' ? '破棄' : lang === 'zh' ? '放棄草稿' : 'Discard'}
+                  </button>
+                </div>
+              )}
+
               {/* Photos */}
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.photos')}</div>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 0', borderRadius: 10, border: '1.5px dashed var(--border)', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', background: 'var(--bg)', marginBottom: 10, boxSizing: 'border-box' }}>
+                  <span>📷</span>{t('form.selectBoth')}
+                  <input ref={fileRefBoth} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={onPhotoBoth} />
+                </label>
                 <div style={s.row2}>
                   <div>
                     <div style={s.label}>{t('form.mainPhoto')}</div>
@@ -587,12 +820,6 @@ export default function Journal({ session }) {
                         : <div style={s.photoLbl}>{t('form.tapToAdd')}</div>}
                     </div>
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto} />
-                    {(photoFile || photoPreview) && (
-                      <button type="button" disabled={ocrLoading || searchLoading} onClick={() => runOcr()}
-                        style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: (ocrLoading || searchLoading) ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: (ocrLoading || searchLoading) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                        {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : searchLoading ? <><SpinIcon />{t('ocr.searching')}</> : <><ScanIcon />{t('ocr.scan')}</>}
-                      </button>
-                    )}
                   </div>
                   <div>
                     <div style={s.label}>{t('form.subPhoto')}</div>
@@ -608,17 +835,35 @@ export default function Journal({ session }) {
                         : <div style={s.photoLbl}>{t('form.tapToAdd')}</div>}
                     </div>
                     <input ref={fileRef2} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto2} />
+                    {(photoFile2 || photoPreview2) && (
+                      <button type="button" disabled={ocrLoading || searchLoading} onClick={() => runOcr()}
+                        style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: (ocrLoading || searchLoading) ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: (ocrLoading || searchLoading) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : searchLoading ? <><SpinIcon />{t('ocr.searching')}</> : <><ScanIcon />{t('ocr.scan')}</>}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Basic */}
+              {/* Name / Brewery */}
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.basic')}</div>
                 <div style={s.field}>
                   <label style={s.label}>{t('form.name')}</label>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <BrandInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
+                    <ProductInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
+                      onProductFill={p => setForm(prev => ({
+                        ...prev,
+                        brewery:  prev.brewery  || p.brewery  || '',
+                        region:   prev.region   || p.region   || '',
+                        type:     prev.type     || p.type     || '',
+                        rice:     prev.rice     || p.rice     || '',
+                        yeast:    prev.yeast    || p.yeast    || '',
+                        polishing:prev.polishing|| p.polishing|| '',
+                        alcohol:  prev.alcohol  || p.alcohol  || '',
+                        smv:      prev.smv      || p.smv      || '',
+                        acidity:  prev.acidity  || p.acidity  || '',
+                      }))}
                       onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
                       onBlur={inferBreweryFromName}
                       placeholder={t('form.namePH')} />
@@ -642,41 +887,26 @@ export default function Journal({ session }) {
                     <input style={s.input} value={form.region} onChange={e => f('region', e.target.value)} placeholder={t('form.regionPH')} />
                   </div>
                 </div>
-                <div style={s.row2}>
-                  <div style={s.field}>
-                    <label style={s.label}>{t('form.type')}</label>
-                    <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
-                      <option value="">{t('form.typeSelect')}</option>
-                      {SAKE_TYPES.map(tp => (
-                        <option key={tp.id} value={tp.id}>
-                          {lang === 'ja' ? tp.id : `${tp.id} · ${tp[lang] || tp.en}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div style={s.field}>
-                    <label style={s.label}>{t('form.date')}</label>
-                    <input style={s.input} type="date" value={form.tasted_at} onChange={e => f('tasted_at', e.target.value)} />
+                <div style={s.field}>
+                  <label style={s.label}>{t('form.date')}</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input style={{ ...s.input, flex: 1, minWidth: 0 }} type="date" value={form.tasted_at} onChange={e => f('tasted_at', e.target.value)} />
+                    <button type="button"
+                      onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
+                      style={{ flexShrink: 0, padding: '0 13px', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>
+                      {lang === 'ja' ? 'リセット' : lang === 'zh' ? '重置' : 'Reset'}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Specs */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.specs')}</div>
-                <div style={s.row2}>
-                  <div style={s.field}><label style={s.label}>{t('form.rice')}</label><RiceInput style={s.input} value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.yeast')}</label><input style={s.input} value={form.yeast} onChange={e => f('yeast', e.target.value)} /></div>
-                </div>
-                <div style={s.row4}>
-                  <div style={s.field}><label style={s.label}>{t('form.polishing')}</label><input style={s.input} value={form.polishing} onChange={e => f('polishing', e.target.value)} placeholder="60%" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.alcohol')}</label><input style={s.input} value={form.alcohol} onChange={e => f('alcohol', e.target.value)} placeholder="15%" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.smv')}</label><input style={s.input} value={form.smv} onChange={e => f('smv', e.target.value)} placeholder="+1" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.acidity')}</label><input style={s.input} value={form.acidity} onChange={e => f('acidity', e.target.value)} placeholder="1.5" /></div>
-                </div>
-                <div style={s.row2}>
-                  <div style={s.field}><label style={s.label}>{t('form.bottling')}</label><input style={{ ...s.input, colorScheme: 'light' }} type="month" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} /></div>
-                </div>
+                {awardYears.length > 0 && (
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 4 }}>
+                    {awardYears.map((a, i) => (
+                      <span key={i} title={a.brand_name} style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, background: 'rgba(180,140,0,.10)', color: '#8A6C00', border: '1px solid rgba(180,140,0,.25)', whiteSpace: 'nowrap' }}>
+                        ★ 金賞 {a.year}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Rating */}
@@ -711,6 +941,35 @@ export default function Journal({ session }) {
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.flavorTags')}</div>
                 <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+              </div>
+
+              {/* Specs — search auto-fills here */}
+              <div style={s.sec}>
+                <div style={s.secLabel}>{t('form.specs')}</div>
+                <div style={s.row2}>
+                  <div style={s.field}>
+                    <label style={s.label}>{t('form.type')}</label>
+                    <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
+                      <option value="">{t('form.typeSelect')}</option>
+                      {SAKE_TYPES.map(tp => (
+                        <option key={tp.id} value={tp.id}>
+                          {lang === 'ja' ? tp.id : `${tp.id} · ${tp[lang] || tp.en}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={s.field}><label style={s.label}>{t('form.bottling')}</label><input style={{ ...s.input, colorScheme: 'light' }} type="month" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} /></div>
+                </div>
+                <div style={s.row2}>
+                  <div style={s.field}><label style={s.label}>{t('form.rice')}</label><RiceInput style={s.input} value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} /></div>
+                  <div style={s.field}><label style={s.label}>{t('form.yeast')}</label><input style={s.input} value={form.yeast} onChange={e => f('yeast', e.target.value)} /></div>
+                </div>
+                <div style={s.row4}>
+                  <div style={s.field}><label style={s.label}>{t('form.polishing')}</label><input style={s.input} value={form.polishing} onChange={e => f('polishing', e.target.value)} placeholder="60%" /></div>
+                  <div style={s.field}><label style={s.label}>{t('form.alcohol')}</label><input style={s.input} value={form.alcohol} onChange={e => f('alcohol', e.target.value)} placeholder="15%" /></div>
+                  <div style={s.field}><label style={s.label}>{t('form.smv')}</label><input style={s.input} value={form.smv} onChange={e => f('smv', e.target.value)} placeholder="+1" /></div>
+                  <div style={s.field}><label style={s.label}>{t('form.acidity')}</label><input style={s.input} value={form.acidity} onChange={e => f('acidity', e.target.value)} placeholder="1.5" /></div>
+                </div>
               </div>
 
               {/* Share */}
