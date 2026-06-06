@@ -52,7 +52,7 @@ export default function Profile({ session }) {
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [stats, setStats] = useState({ total: 0, avg: null, shared: 0 })
+  const [stats, setStats] = useState({ total: 0, avg: null, shared: 0, topTypes: [], topRegions: [] })
 
   useEffect(() => {
     if (!session) { nav('/login'); return }
@@ -60,14 +60,23 @@ export default function Profile({ session }) {
     setDisplayName(meta.display_name || meta.full_name || '')
 
     supabase.from('sake_entries')
-      .select('id, rating, is_public', { count: 'exact' })
+      .select('id, rating, is_public, type, region', { count: 'exact' })
       .eq('user_id', session.user.id)
       .then(({ data, count }) => {
         const entries = data || []
         const withRating = entries.filter(e => e.rating != null)
         const avg = withRating.length ? withRating.reduce((s, e) => s + e.rating, 0) / withRating.length : null
         const shared = entries.filter(e => e.is_public).length
-        setStats({ total: count || 0, avg, shared })
+
+        const typeCounts = {}
+        entries.forEach(e => { if (e.type) typeCounts[e.type] = (typeCounts[e.type] || 0) + 1 })
+        const topTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+        const regionCounts = {}
+        entries.forEach(e => { if (e.region) regionCounts[e.region] = (regionCounts[e.region] || 0) + 1 })
+        const topRegions = Object.entries(regionCounts).sort((a, b) => b[1] - a[1]).slice(0, 4)
+
+        setStats({ total: count || 0, avg, shared, topTypes, topRegions })
       })
   }, [session, nav])
 
@@ -126,9 +135,7 @@ export default function Profile({ session }) {
               <div style={s.statLabel}>{lang === 'ja' ? '記録した酒' : lang === 'zh' ? '記錄總數' : 'Entries'}</div>
             </div>
             <div style={s.statItem}>
-              <div style={s.statNum}>
-                {stats.avg != null ? stats.avg.toFixed(1) : '–'}
-              </div>
+              <div style={s.statNum}>{stats.avg != null ? stats.avg.toFixed(1) : '–'}</div>
               <div style={s.statLabel}>{lbl('avgRating', lang)}</div>
             </div>
             <div style={{ ...s.statItem, borderRight: 'none' }}>
@@ -137,6 +144,39 @@ export default function Profile({ session }) {
             </div>
           </div>
         </div>
+
+        {/* Type breakdown */}
+        {stats.topTypes.length > 0 && (
+          <div style={s.section}>
+            <div style={s.sectionTitle}>{(lang === 'ja' ? '種類別' : lang === 'zh' ? '種類分佈' : 'By Type').toUpperCase()}</div>
+            {stats.topTypes.map(([type, count]) => (
+              <div key={type} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>
+                  <span>{type}</span>
+                  <span style={{ color: 'var(--sub)' }}>{count} {lbl('bottles', lang)}</span>
+                </div>
+                <div style={{ height: 5, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 3, background: 'var(--accent)', width: `${Math.round(count / stats.total * 100)}%`, transition: 'width .4s' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Region breakdown */}
+        {stats.topRegions.length > 0 && (
+          <div style={s.section}>
+            <div style={s.sectionTitle}>{(lang === 'ja' ? '産地別' : lang === 'zh' ? '產地分佈' : 'By Region').toUpperCase()}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {stats.topRegions.map(([region, count]) => (
+                <div key={region} style={{ background: 'var(--bg)', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{region}</div>
+                  <div style={{ fontSize: 11, color: 'var(--sub)' }}>{count} {lbl('bottles', lang)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

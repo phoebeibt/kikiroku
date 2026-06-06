@@ -370,7 +370,7 @@ export default function Journal({ session }) {
       setAromaTags(draft.aroma || []); setTasteTags(draft.taste || [])
       setDraftRestored(true)
     } else {
-      setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([])
+      setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([])
       setDraftRestored(false)
     }
     setEditId(null)

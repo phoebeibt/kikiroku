@@ -8,6 +8,7 @@ import Journal from './pages/Journal'
 import Display from './pages/Display'
 import Wiki from './pages/Wiki'
 import Profile from './pages/Profile'
+import EntryDetail from './pages/EntryDetail'
 
 function FAB({ session }) {
   const navigate = useNavigate()
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
         <Route path="/wiki" element={<Wiki session={session} />} />
         <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
+        <Route path="/entry/:id" element={<EntryDetail session={session} />} />
         <Route path="/" element={<Display session={session} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

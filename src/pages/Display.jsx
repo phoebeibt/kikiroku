@@ -137,6 +137,7 @@ export default function Display({ session }) {
   const [detailAwards, setDetailAwards] = useState([])
   const [detailBrand, setDetailBrand] = useState(null) // null=unfetched, false=not found, object
   const [showDetailReading, setShowDetailReading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const typeLabel = type => {
     if (!type) return ''
@@ -247,15 +248,15 @@ export default function Display({ session }) {
     <div style={s.page}>
       <Nav session={session} />
       <BrandMarkFull />
-      {session && (
-        <div style={s.stickyBar}>
-          <div style={s.stickyInner}>
-            {/* Search bar */}
-            <div style={{ ...s.searchRow, marginBottom: filtersOpen ? 10 : 0 }}>
-              <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={t('search')} />
-              {search && <button onClick={() => setSearch('')}
-                style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
+      <div style={s.stickyBar}>
+        <div style={s.stickyInner}>
+          {/* Search bar — always visible */}
+          <div style={{ ...s.searchRow, marginBottom: session && filtersOpen ? 10 : 0 }}>
+            <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={t('search')} />
+            {search && <button onClick={() => setSearch('')}
+              style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
+            {session && (
               <button onClick={() => setFiltersOpen(x => !x)}
                 style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '0 14px', height: 42, borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
                 {t('display.filters')}
@@ -263,48 +264,48 @@ export default function Display({ session }) {
                   ? <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{activeFilterCount}</span>
                   : <span style={{ fontSize: 10, opacity: 0.8 }}>{filtersOpen ? '▲' : '▼'}</span>}
               </button>
-            </div>
-
-            {/* Collapsible filter panel */}
-            {filtersOpen && (
-              <>
-                {allTags.length > 0 && (
-                  <div style={s.chips}>
-                    <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
-                    {visibleTags.map(tag => (
-                      <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
-                    ))}
-                    {allTags.length > 6 && (
-                      <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
-                        {tagsExp ? t('less') : t('more')}
-                      </button>
-                    )}
-                  </div>
-                )}
-                <div style={s.dropRow}>
-                  <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
-                    <option value="">{t('filter.type')}</option>
-                    {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
-                  </select>
-                  <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
-                    <option value="">{t('filter.brewery')}</option>
-                    {breweries.map(b => <option key={b}>{b}</option>)}
-                  </select>
-                  <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
-                    <option value="">{t('filter.rice')}</option>
-                    {rices.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                  <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
-                    <option value="">{t('filter.rating')}</option>
-                    <option value="4">{t('filter.rating4')}</option>
-                    <option value="5">{t('filter.rating5')}</option>
-                  </select>
-                </div>
-              </>
             )}
           </div>
+
+          {/* Collapsible filter panel — logged-in only */}
+          {session && filtersOpen && (
+            <>
+              {allTags.length > 0 && (
+                <div style={s.chips}>
+                  <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
+                  {visibleTags.map(tag => (
+                    <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
+                  ))}
+                  {allTags.length > 6 && (
+                    <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
+                      {tagsExp ? t('less') : t('more')}
+                    </button>
+                  )}
+                </div>
+              )}
+              <div style={s.dropRow}>
+                <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
+                  <option value="">{t('filter.type')}</option>
+                  {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
+                </select>
+                <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
+                  <option value="">{t('filter.brewery')}</option>
+                  {breweries.map(b => <option key={b}>{b}</option>)}
+                </select>
+                <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
+                  <option value="">{t('filter.rice')}</option>
+                  {rices.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
+                  <option value="">{t('filter.rating')}</option>
+                  <option value="4">{t('filter.rating4')}</option>
+                  <option value="5">{t('filter.rating5')}</option>
+                </select>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       <div style={s.scrollArea}>
       <div style={s.main}>
@@ -353,6 +354,15 @@ export default function Display({ session }) {
         <div style={s.backdrop} onClick={() => setDetail(null)}>
           <div style={s.detModal} onClick={e => e.stopPropagation()}>
             <button style={s.detClose} onClick={() => setDetail(null)}>✕</button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/entry/${detail.id}`
+                navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) })
+              }}
+              title={lang === 'ja' ? 'リンクをコピー' : lang === 'zh' ? '複製連結' : 'Copy link'}
+              style={{ position: 'absolute', top: 12, right: 50, width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)', background: copied ? 'var(--accent)' : 'var(--bg)', color: copied ? '#fff' : 'var(--sub)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, transition: 'all .2s' }}>
+              {copied ? '✓' : '🔗'}
+            </button>
 
             <div style={s.detTop}>
               {detail.photo_url
@@ -361,12 +371,17 @@ export default function Display({ session }) {
               <div style={s.detRight}>
                 {MARK_SVG_ABS}
                 {detail.type && <div style={s.detTypeTag}><WikiText text={typeLabel(detail.type)} /></div>}
-                <div style={{ ...s.detName, cursor: 'pointer', marginBottom: showDetailReading ? 2 : 5 }} onClick={handleDetailNameClick}>
+                <div style={{ ...s.detName, cursor: 'pointer', marginBottom: 1 }} onClick={handleDetailNameClick}>
                   <WikiText text={detail.name} />
                 </div>
-                {showDetailReading && (lang === 'ja' ? detailBrand?.furigana : detailBrand?.romaji) && (
-                  <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.07em', marginBottom: 5, fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
+                {showDetailReading && (lang === 'ja' ? detailBrand?.furigana : detailBrand?.romaji) ? (
+                  <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.07em', marginBottom: 6, fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
                     {lang === 'ja' ? detailBrand.furigana : detailBrand.romaji}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 10, color: 'var(--accent)', opacity: 0.7, marginBottom: 6, cursor: 'pointer', letterSpacing: '.04em' }}
+                    onClick={handleDetailNameClick}>
+                    {lang === 'ja' ? '▾ 読み方' : lang === 'zh' ? '▾ 讀音' : '▾ Reading'}
                   </div>
                 )}
                 <Stars rating={detail.rating} size={13} />

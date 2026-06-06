@@ -30,6 +30,18 @@ const s = {
 
 const LANG_LABELS = [{ code: 'ja', label: '日本語' }, { code: 'zh', label: '中文' }, { code: 'en', label: 'English' }]
 
+const RESET_TEXT = {
+  title:   { ja: 'パスワードをリセット', zh: '重置密碼',     en: 'Reset Password' },
+  btn:     { ja: 'リセットメールを送信', zh: '發送重置郵件', en: 'Send Reset Email' },
+  sending: { ja: '送信中…',             zh: '發送中…',      en: 'Sending…' },
+  done:    { ja: 'リセットメールを送りました。\nメールのリンクからパスワードを変更してください。',
+             zh: '重置郵件已發送。\n請點擊郵件中的連結重置密碼。',
+             en: 'Check your email for a password reset link.' },
+  back:    { ja: 'ログインに戻る',       zh: '返回登錄',     en: 'Back to sign in' },
+  forgot:  { ja: 'パスワードをお忘れですか？', zh: '忘記密碼？', en: 'Forgot password?' },
+}
+const rt = (key, lang) => RESET_TEXT[key]?.[lang] || RESET_TEXT[key]?.en || key
+
 export default function Login() {
   const { lang, changeLang, t } = useLang()
   const [mode, setMode] = useState('signin')
@@ -40,12 +52,18 @@ export default function Login() {
   const [err, setErr] = useState('')
   const [done, setDone] = useState(false)
 
-  const switchMode = m => { setMode(m); setErr(''); setInviteCode('') }
+  const switchMode = m => { setMode(m); setErr(''); setInviteCode(''); setDone(false) }
 
   const submit = async e => {
     e.preventDefault(); setErr(''); setLoading(true)
     try {
-      if (mode === 'signin') {
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin + '/login',
+        })
+        if (error) throw error
+        setDone(true)
+      } else if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       } else {
@@ -80,45 +98,81 @@ export default function Login() {
           </select>
         </div>
 
-        {done ? (
-          <p style={{ textAlign: 'center', color: 'var(--sub)', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
-            {t('login.checkEmail')}
-          </p>
-        ) : (
-          <form onSubmit={submit}>
-            {err && <p style={s.err}>{err}</p>}
-            <div style={s.field}>
-              <label style={s.label}>{t('login.email')}</label>
-              <input style={s.input} type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
-            </div>
-            <div style={s.field}>
-              <label style={s.label}>{t('login.password')}</label>
-              <input style={s.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
-            </div>
-            {mode === 'signup' && (
+        {mode === 'reset' && done ? (
+          <>
+            <p style={{ textAlign: 'center', color: 'var(--sub)', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              {rt('done', lang)}
+            </p>
+            <p style={s.toggle}>
+              <span style={s.toggleLink} onClick={() => switchMode('signin')}>{rt('back', lang)}</span>
+            </p>
+          </>
+        ) : mode === 'reset' ? (
+          <>
+            <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 20, textAlign: 'center' }}>
+              {rt('title', lang)}
+            </p>
+            <form onSubmit={submit}>
+              {err && <p style={s.err}>{err}</p>}
               <div style={s.field}>
-                <label style={s.label}>{t('login.invite')}</label>
-                <input style={s.inviteInput} type="text" value={inviteCode}
-                  onChange={e => setInviteCode(e.target.value)}
-                  placeholder="XXXX-0000" required autoComplete="off"
-                  autoCapitalize="characters" spellCheck={false} />
-                <p style={s.hint}>{t('login.inviteHint')}</p>
+                <label style={s.label}>{t('login.email')}</label>
+                <input style={s.input} type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
               </div>
+              <button style={s.btn} type="submit" disabled={loading}>
+                {loading ? rt('sending', lang) : rt('btn', lang)}
+              </button>
+            </form>
+            <p style={s.toggle}>
+              <span style={s.toggleLink} onClick={() => switchMode('signin')}>{rt('back', lang)}</span>
+            </p>
+          </>
+        ) : (
+          <>
+            {done ? (
+              <p style={{ textAlign: 'center', color: 'var(--sub)', fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                {t('login.checkEmail')}
+              </p>
+            ) : (
+              <form onSubmit={submit}>
+                {err && <p style={s.err}>{err}</p>}
+                <div style={s.field}>
+                  <label style={s.label}>{t('login.email')}</label>
+                  <input style={s.input} type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
+                </div>
+                <div style={s.field}>
+                  <label style={s.label}>{t('login.password')}</label>
+                  <input style={s.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
+                </div>
+                {mode === 'signup' && (
+                  <div style={s.field}>
+                    <label style={s.label}>{t('login.invite')}</label>
+                    <input style={s.inviteInput} type="text" value={inviteCode}
+                      onChange={e => setInviteCode(e.target.value)}
+                      placeholder="XXXX-0000" required autoComplete="off"
+                      autoCapitalize="characters" spellCheck={false} />
+                    <p style={s.hint}>{t('login.inviteHint')}</p>
+                  </div>
+                )}
+                <button style={s.btn} type="submit" disabled={loading}>
+                  {loading ? t(mode === 'signin' ? 'login.signingIn' : 'login.checking')
+                           : t(mode === 'signin' ? 'login.signin' : 'login.signup')}
+                </button>
+                {mode === 'signin' && (
+                  <p style={{ textAlign: 'center', marginTop: 12, fontSize: 12 }}>
+                    <span style={s.toggleLink} onClick={() => switchMode('reset')}>{rt('forgot', lang)}</span>
+                  </p>
+                )}
+              </form>
             )}
-            <button style={s.btn} type="submit" disabled={loading}>
-              {loading ? t(mode === 'signin' ? 'login.signingIn' : 'login.checking')
-                       : t(mode === 'signin' ? 'login.signin' : 'login.signup')}
-            </button>
-          </form>
-        )}
-
-        {!done && (
-          <p style={s.toggle}>
-            {t(mode === 'signin' ? 'login.noAccount' : 'login.hasAccount')}{' '}
-            <span style={s.toggleLink} onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}>
-              {t(mode === 'signin' ? 'login.signup' : 'login.signin')}
-            </span>
-          </p>
+            {!done && (
+              <p style={s.toggle}>
+                {t(mode === 'signin' ? 'login.noAccount' : 'login.hasAccount')}{' '}
+                <span style={s.toggleLink} onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}>
+                  {t(mode === 'signin' ? 'login.signup' : 'login.signin')}
+                </span>
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
