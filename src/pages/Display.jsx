@@ -191,7 +191,7 @@ export default function Display({ session }) {
   const [search, setSearch] = useState('')
   const [activeTag, setActiveTag] = useState('')
   const [tagsExp, setTagsExp] = useState(false)
-  const [filters, setFilters] = useState({ type: '', brewery: '', rice: '', rating: '' })
+  const [filters, setFilters] = useState({ type: '', brewery: '', region: '', rice: '', rating: '' })
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [detail, setDetail] = useState(null)
   const [detailAwards, setDetailAwards] = useState([])
@@ -336,6 +336,7 @@ export default function Display({ session }) {
 
   const types = [...new Set(entries.map(e => e.type).filter(Boolean))]
   const breweries = [...new Set(entries.map(e => e.brewery).filter(Boolean))]
+  const regions = [...new Set(entries.map(e => e.region).filter(Boolean))].sort()
   const rices = [...new Set(entries.map(e => e.rice).filter(Boolean))]
 
   const setF = (k, v) => setFilters(p => ({ ...p, [k]: v }))
@@ -344,6 +345,7 @@ export default function Display({ session }) {
     if (activeTag && !e.tags?.includes(activeTag)) return false
     if (filters.type && e.type !== filters.type) return false
     if (filters.brewery && e.brewery !== filters.brewery) return false
+    if (filters.region && e.region !== filters.region) return false
     if (filters.rice && e.rice !== filters.rice) return false
     if (filters.rating && (e.rating || 0) < Number(filters.rating)) return false
     if (search) {
@@ -413,7 +415,7 @@ const StatItem = ({ label, value }) => {
             {session && (
               <>
                 {activeFilterCount > 0 && (
-                  <button onClick={() => { setFilters({ type: '', brewery: '', rice: '', rating: '' }); setActiveTag('') }}
+                  <button onClick={() => { setFilters({ type: '', brewery: '', region: '', rice: '', rating: '' }); setActiveTag('') }}
                     style={{ flexShrink: 0, height: 42, padding: '0 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
                     ×
                   </button>
@@ -453,6 +455,10 @@ const StatItem = ({ label, value }) => {
                 <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
                   <option value="">{t('filter.brewery')}</option>
                   {breweries.map(b => <option key={b}>{b}</option>)}
+                </select>
+                <select style={s.drop} value={filters.region} onChange={e => setF('region', e.target.value)}>
+                  <option value="">{t('filter.region')}</option>
+                  {regions.map(r => <option key={r}>{r}</option>)}
                 </select>
                 <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
                   <option value="">{t('filter.rice')}</option>

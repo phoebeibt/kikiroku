@@ -108,6 +108,7 @@ export const TRANSLATIONS = {
     // Filters
     'filter.type':    '種別',
     'filter.brewery': '酒造',
+    'filter.region':  '産地',
     'filter.rice':    '使用米',
     'filter.rating':  '評価',
     'filter.rating4': '★★★★ 以上',
@@ -221,6 +222,7 @@ export const TRANSLATIONS = {
     'stats.shared':  '已公開',
     'filter.type':    '種類',
     'filter.brewery': '酒造',
+    'filter.region':  '產地',
     'filter.rice':    '酒米',
     'filter.rating':  '評分',
     'filter.rating4': '★★★★ 以上',
@@ -332,6 +334,7 @@ export const TRANSLATIONS = {
     'stats.shared':  'Public',
     'filter.type':    'Type',
     'filter.brewery': 'Brewery',
+    'filter.region':  'Region',
     'filter.rice':    'Rice',
     'filter.rating':  'Rating',
     'filter.rating4': '★★★★+',
