@@ -434,6 +434,29 @@ const StatItem = ({ label, value }) => {
           {/* Collapsible filter panel — logged-in only */}
           {session && filtersOpen && (
             <>
+              <div style={s.dropRow}>
+                <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
+                  <option value="">{t('filter.type')}</option>
+                  {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
+                </select>
+                <select style={s.drop} value={filters.region} onChange={e => setF('region', e.target.value)}>
+                  <option value="">{t('filter.region')}</option>
+                  {regions.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
+                  <option value="">{t('filter.brewery')}</option>
+                  {breweries.map(b => <option key={b}>{b}</option>)}
+                </select>
+                <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
+                  <option value="">{t('filter.rice')}</option>
+                  {rices.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
+                  <option value="">{t('filter.rating')}</option>
+                  <option value="4">{t('filter.rating4')}</option>
+                  <option value="5">{t('filter.rating5')}</option>
+                </select>
+              </div>
               {allTags.length > 0 && (
                 <div style={s.chips}>
                   <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
@@ -447,29 +470,6 @@ const StatItem = ({ label, value }) => {
                   )}
                 </div>
               )}
-              <div style={s.dropRow}>
-                <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
-                  <option value="">{t('filter.type')}</option>
-                  {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
-                </select>
-                <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
-                  <option value="">{t('filter.brewery')}</option>
-                  {breweries.map(b => <option key={b}>{b}</option>)}
-                </select>
-                <select style={s.drop} value={filters.region} onChange={e => setF('region', e.target.value)}>
-                  <option value="">{t('filter.region')}</option>
-                  {regions.map(r => <option key={r}>{r}</option>)}
-                </select>
-                <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
-                  <option value="">{t('filter.rice')}</option>
-                  {rices.map(r => <option key={r}>{r}</option>)}
-                </select>
-                <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
-                  <option value="">{t('filter.rating')}</option>
-                  <option value="4">{t('filter.rating4')}</option>
-                  <option value="5">{t('filter.rating5')}</option>
-                </select>
-              </div>
             </>
           )}
         </div>
