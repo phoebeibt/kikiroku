@@ -411,13 +411,21 @@ const StatItem = ({ label, value }) => {
             {search && <button onClick={() => setSearch('')}
               style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
             {session && (
-              <button onClick={() => setFiltersOpen(x => !x)}
-                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '0 14px', height: 42, borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
-                {t('display.filters')}
-                {activeFilterCount > 0
-                  ? <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{activeFilterCount}</span>
-                  : <span style={{ fontSize: 10, opacity: 0.8 }}>{filtersOpen ? '▲' : '▼'}</span>}
-              </button>
+              <>
+                {activeFilterCount > 0 && (
+                  <button onClick={() => { setFilters({ type: '', brewery: '', rice: '', rating: '' }); setActiveTag('') }}
+                    style={{ flexShrink: 0, height: 42, padding: '0 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+                    ×
+                  </button>
+                )}
+                <button onClick={() => setFiltersOpen(x => !x)}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '0 14px', height: 42, borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+                  {t('display.filters')}
+                  {activeFilterCount > 0
+                    ? <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{activeFilterCount}</span>
+                    : <span style={{ fontSize: 10, opacity: 0.8 }}>{filtersOpen ? '▲' : '▼'}</span>}
+                </button>
+              </>
             )}
           </div>
 
