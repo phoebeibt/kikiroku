@@ -1,21 +1,175 @@
-:root {
-  --bg:           #F4F0E8;  /* 和紙 — page background */
-  --surface:      #EDE8DE;  /* 薄雲 — section/card surfaces */
-  --surface-card: #FFFFFF;  /* pure white for modal cards */
-  --border:       #E5DED4;  /* 境界 */
-  --text:         #1A1614;  /* 墨 */
-  --sub:          #8C7E74;  /* 煙 */
-  --accent:       #7C3A28;  /* 朱木 — primary brand */
-  --accent-mid:   #A05540;  /* 柿渋 — hover */
-  --accent-light: #D9A882;  /* 蜜柑 */
-  --accent-h:     #5C2B1C;
-  --accent-bg:    rgba(124,58,40,.07);
-  --green:        #4A7A35;  /* 杉玉 center */
-  --r:            16px;
-  --font-serif:   'Noto Serif JP', serif;
-  --font-sans:    'Noto Sans JP', sans-serif;
+/* ══════════════════════════════════════════
+   藍硝子 (aizome) — default dark theme
+══════════════════════════════════════════ */
+:root,
+:root[data-theme="aizome"] {
+  /* Base */
+  --bg:           #060e18;
+  --surface:      #0c1e32;
+  --surface-card: #0f2440;
+  --border:       rgba(200,225,255,.16);
+  --text:         #E8EFF8;
+  --sub:          rgba(180,210,245,.52);
+  --placeholder:  rgba(180,210,245,.22);
+
+  /* Brand */
+  --accent:       #B5451B;
+  --accent-mid:   #D4623C;
+  --accent-light: rgba(181,69,27,.25);
+  --accent-h:     #8a2e0f;
+  --accent-bg:    rgba(181,69,27,.1);
+  --green:        #3A8A50;
+
+  /* Cards */
+  --card-bg:       rgba(180,210,245,.06);
+  --card-border:   rgba(200,225,255,.15);
+  --card-no-bg:    linear-gradient(160deg, #0e2244 0%, #060e18 100%);
+  --card-no-text:  rgba(180,210,245,.1);
+  --card-overlay:  linear-gradient(to bottom, transparent 20%, rgba(4,14,30,.4) 50%, rgba(4,14,30,.88) 75%, rgba(3,10,22,.97) 100%);
+  --card-type:     rgba(181,69,27,.85);
+  --card-name:     #E8EFF8;
+  --card-brewery:  rgba(180,210,245,.55);
+  --card-tag:      rgba(180,210,245,.55);
+  --card-meta:     rgba(180,210,245,.35);
+  --photo-ph:      #0d2244;
+  --photo-ph-icon: rgba(180,210,245,.1);
+
+  /* Mark / watermark SVG */
+  --mark-outer:    rgba(180,210,245,.8);
+  --mark-inner:    rgba(181,69,27,.8);
+  --mark-dot:      #B5451B;
+  --mark-dot2:     #B5451B;
+
+  /* Sticky bar */
+  --stickybar-bg:  rgba(6,14,24,.5);
+
+  /* Nav / tab bar */
+  --topbar-bg:         rgba(6,14,24,.82);
+  --topbar-border:     rgba(200,225,255,.12);
+  --tabbar-bg:         rgba(8,18,36,.58);
+  --tabbar-border:     rgba(200,225,255,.18);
+  --tabbar-wrap:       rgba(4,10,20,.5);
+  --tab-active-bg:     rgba(181,69,27,.18);
+  --tab-active-color:  #E8B4A0;
+  --tab-inactive-color: rgba(180,210,245,.4);
+  --dropdown-bg:       #0c1e32;
+
+  --r: 16px;
+  --font-serif: 'Noto Serif JP', serif;
+  --font-sans:  'Noto Sans JP', sans-serif;
 }
 
+/* ══════════════════════════════════════════
+   深緋 (fukahi) — warm light theme
+══════════════════════════════════════════ */
+:root[data-theme="fukahi"] {
+  --bg:           #F4F0E8;
+  --surface:      #EDE8DE;
+  --surface-card: #FFFFFF;
+  --border:       #E5DED4;
+  --text:         #1A1614;
+  --sub:          #8C7E74;
+  --placeholder:  #BFB5AC;
+
+  --accent:       #7C3A28;
+  --accent-mid:   #A05540;
+  --accent-light: #D9A882;
+  --accent-h:     #5C2B1C;
+  --accent-bg:    rgba(124,58,40,.07);
+  --green:        #4A7A35;
+
+  --card-bg:       #F4F0E8;
+  --card-border:   #E5DED4;
+  --card-no-bg:    linear-gradient(160deg, #2d1f18 0%, #1A1614 100%);
+  --card-no-text:  rgba(244,240,232,.15);
+  --card-overlay:  linear-gradient(to bottom, transparent 22%, rgba(42,18,8,.3) 48%, rgba(42,18,8,.82) 72%, rgba(36,14,6,.96) 100%);
+  --card-type:     #D9A882;
+  --card-name:     #F4F0E8;
+  --card-brewery:  rgba(244,240,232,.6);
+  --card-tag:      rgba(244,240,232,.6);
+  --card-meta:     rgba(244,240,232,.4);
+  --photo-ph:      #2d2520;
+  --photo-ph-icon: rgba(255,245,230,.1);
+
+  --mark-outer:    #7C3A28;
+  --mark-inner:    #7C3A28;
+  --mark-dot:      #4A7A35;
+  --mark-dot2:     #4A7A35;
+
+  --stickybar-bg:  rgba(244,240,232,.55);
+
+  /* Nav / tab bar */
+  --topbar-bg:         rgba(244,240,232,.85);
+  --topbar-border:     rgba(180,160,140,.18);
+  --tabbar-bg:         rgba(237,232,222,.6);
+  --tabbar-border:     rgba(150,130,120,.25);
+  --tabbar-wrap:       rgba(237,232,222,.5);
+  --tab-active-bg:     rgba(124,58,40,.1);
+  --tab-active-color:  #7C3A28;
+  --tab-inactive-color: rgba(100,80,70,.4);
+  --dropdown-bg:       #F0EBE2;
+}
+
+/* ══════════════════════════════════════════
+   墨流し (suminagashi) — sumi ink on washi
+   墨#1C1C1E · 朱#C0392B · 金#C9A56E · 白鼠#8C8076
+══════════════════════════════════════════ */
+:root[data-theme="suminagashi"] {
+  /* Base */
+  --bg:           #1C1C1E;
+  --surface:      #252320;
+  --surface-card: #2C2A28;
+  --border:       rgba(200,180,140,.14);
+  --text:         #F7F3EC;
+  --sub:          #8C8076;
+  --placeholder:  #5A544E;
+
+  /* Brand */
+  --accent:       #C0392B;
+  --accent-mid:   #D4554A;
+  --accent-light: rgba(192,57,43,.22);
+  --accent-h:     #962D22;
+  --accent-bg:    rgba(192,57,43,.08);
+  --green:        #C9A56E;
+
+  /* Cards */
+  --card-bg:       rgba(200,180,140,.05);
+  --card-border:   rgba(200,180,140,.12);
+  --card-no-bg:    linear-gradient(160deg, #332e2a 0%, #1c1c1e 100%);
+  --card-no-text:  rgba(247,243,236,.08);
+  --card-overlay:  linear-gradient(to bottom, transparent 20%, rgba(20,18,16,.4) 50%, rgba(20,18,16,.88) 75%, rgba(16,14,12,.97) 100%);
+  --card-type:     rgba(192,57,43,.85);
+  --card-name:     #F7F3EC;
+  --card-brewery:  rgba(247,243,236,.55);
+  --card-tag:      rgba(247,243,236,.55);
+  --card-meta:     rgba(247,243,236,.35);
+  --photo-ph:      #252320;
+  --photo-ph-icon: rgba(247,243,236,.08);
+
+  /* Mark / watermark SVG */
+  --mark-outer:    rgba(247,243,236,.8);
+  --mark-inner:    rgba(192,57,43,.8);
+  --mark-dot:      #C0392B;
+  --mark-dot2:     #C9A56E;
+
+  /* Sticky bar */
+  --stickybar-bg:  rgba(22,20,18,.5);
+
+  /* Nav / tab bar */
+  --topbar-bg:         rgba(28,28,30,.82);
+  --topbar-border:     rgba(200,180,140,.14);
+  --tabbar-bg:         rgba(24,22,20,.58);
+  --tabbar-border:     rgba(200,180,140,.2);
+  --tabbar-wrap:       rgba(20,18,16,.5);
+  --tab-active-bg:     rgba(192,57,43,.16);
+  --tab-active-color:  #E8A898;
+  --tab-inactive-color: rgba(200,180,160,.36);
+  --dropdown-bg:       #252320;
+}
+
+/* ══════════════════════════════════════════
+   Base reset
+══════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
@@ -27,10 +181,13 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
   margin: 0;
   padding: 0;
+  transition: background .3s, color .3s;
+  overscroll-behavior-x: none;
 }
 
 button { cursor: pointer; font-family: inherit; }
 input, textarea, select { font-family: inherit; }
+input::placeholder, textarea::placeholder { color: var(--placeholder); opacity: 1; }
 a { color: inherit; text-decoration: none; }
 
 dialog {
@@ -40,7 +197,34 @@ dialog {
   max-width: 100vw;
   width: 100%;
 }
-dialog::backdrop { background: rgba(26,22,20,.52); }
+dialog::backdrop { background: rgba(3,10,20,.72); }
+
+/* Hex bg — aizome & suminagashi */
+:root[data-theme="suminagashi"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M28 4L52 18v28L28 60 4 46V18z' fill='none' stroke='rgba(200,180,140,0.04)' stroke-width='0.8'/%3E%3C/svg%3E");
+  background-size: 56px 48px;
+  pointer-events: none;
+}
+
+:root[data-theme="aizome"] body::before,
+:root:not([data-theme]) body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M28 4L52 18v28L28 60 4 46V18z' fill='none' stroke='rgba(200,225,255,0.03)' stroke-width='0.8'/%3E%3C/svg%3E");
+  background-size: 56px 48px;
+  pointer-events: none;
+}
+
+select option { background: var(--surface-card); color: var(--text); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse-border { from { border-color: var(--accent); } to { border-color: rgba(124,58,40,.35); } }
+@keyframes pulse-border {
+  from { border-color: var(--accent); }
+  to   { border-color: var(--accent-bg); }
+}

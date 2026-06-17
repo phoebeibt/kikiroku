@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Stars from '../components/Stars'
 import BrandMark from '../components/BrandMark'
@@ -73,8 +73,8 @@ export default function EntryDetail() {
     if (!entry?.brewery) return
     const kw = entry.brewery.replace(/(株式会社|有限会社|合資会社|合名会社|㈱|㈲)/g, '').trim().split(/[\s　]+/)[0]
     if (!kw || kw.length < 2) return
-    supabase.from('sake_awards').select('year,brand_name,is_gold')
-      .ilike('brewery_name', `%${kw}%`).order('year', { ascending: false }).limit(10)
+    supabase.from('sake_awards').select('year,year_code,brand_name,is_gold')
+      .ilike('brewery_name', `%${kw}%`).order('year', { ascending: false }).limit(12)
       .then(({ data }) => setAwards(data || []))
   }, [entry?.brewery])
 
@@ -159,7 +159,12 @@ export default function EntryDetail() {
             {entry.type && <div style={s.typeTag}><WikiText text={typeLabel(entry.type)} /></div>}
             <div style={s.name}><WikiText text={entry.name} /></div>
             <Stars rating={entry.rating} size={13} />
-            {entry.brewery && <div style={s.brewery}>{entry.brewery}</div>}
+            {entry.brewery && (
+              <Link to={`/wiki?tab=breweries&q=${encodeURIComponent(entry.brewery)}`}
+                style={{ ...s.brewery, textDecoration: 'none', cursor: 'pointer' }}>
+                {entry.brewery}
+              </Link>
+            )}
             <div style={s.meta}>{[entry.region, entry.tasted_at].filter(Boolean).join(' · ')}</div>
             {entry.contributor_name && (
               <div style={s.contributor}>
@@ -219,18 +224,21 @@ export default function EntryDetail() {
           {awards.length > 0 && (
             <div style={{ marginTop: 18 }}>
               <div style={{ fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 6 }}>
-                {lang === 'ja' ? '全国新酒鑑評会' : lang === 'zh' ? '全国新酒鉴评会' : 'NRIB Awards'}
+                {lang === 'ja' ? '受賞歴' : lang === 'zh' ? '獲獎記錄' : 'Awards'}
               </div>
               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {awards.map((a, i) => (
-                  <span key={i} title={a.brand_name}
-                    style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, whiteSpace: 'nowrap',
-                      background: a.is_gold ? 'rgba(180,140,0,.10)' : 'var(--bg)',
-                      color: a.is_gold ? '#8A6C00' : 'var(--sub)',
-                      border: `1px solid ${a.is_gold ? 'rgba(180,140,0,.28)' : 'var(--border)'}` }}>
-                    {a.is_gold ? '★' : '○'} {a.year}
-                  </span>
-                ))}
+                {awards.map((a, i) => {
+                  const comp = a.year_code?.startsWith('IWC') ? 'IWC' : (lang === 'ja' ? '鑑評会' : lang === 'zh' ? '鑑評会' : 'NRIB')
+                  return (
+                    <span key={i} title={a.brand_name}
+                      style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, whiteSpace: 'nowrap',
+                        background: a.is_gold ? 'rgba(180,140,0,.10)' : 'var(--bg)',
+                        color: a.is_gold ? '#8A6C00' : 'var(--sub)',
+                        border: `1px solid ${a.is_gold ? 'rgba(180,140,0,.28)' : 'var(--border)'}` }}>
+                      {a.is_gold ? '★' : '○'} {comp} {a.year}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           )}

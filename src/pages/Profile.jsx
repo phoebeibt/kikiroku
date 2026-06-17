@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Stars from '../components/Stars'
+import JapanMap, { JA_TO_CODE } from '../components/JapanMap'
 import { useLang } from '../contexts/LangContext'
+import { THEMES, getTheme, applyTheme } from '../lib/theme'
+import { TASTING_TAGS } from '../lib/i18n'
 
 const s = {
   page: { minHeight: '100svh', background: 'var(--bg)' },
@@ -39,9 +42,10 @@ const LABELS = {
   bottles:     { ja: '本',            zh: '瓶',           en: '' },
   avgRating:   { ja: '平均評価',      zh: '平均評分',     en: 'Avg Rating' },
   shared:      { ja: '公開中',        zh: '已公開',       en: 'Public' },
-  save:        { ja: '保存する',      zh: '保存',         en: 'Save' },
-  saving:      { ja: '保存中…',      zh: '保存中…',      en: 'Saving…' },
-  saved:       { ja: '保存しました',  zh: '已保存',       en: 'Saved!' },
+  save:        { ja: '設定',          zh: '設置',         en: 'Set' },
+  saving:      { ja: '設定中…',      zh: '設置中…',      en: 'Setting…' },
+  saved:       { ja: '設定しました',  zh: '已設置',       en: 'Done!' },
+  theme:       { ja: 'テーマ',        zh: '主題',         en: 'Theme' },
 }
 
 const lbl = (key, lang) => LABELS[key]?.[lang] || LABELS[key]?.en || key
@@ -52,7 +56,12 @@ export default function Profile({ session }) {
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [stats, setStats] = useState({ total: 0, avg: null, shared: 0, topTypes: [], topRegions: [] })
+  const [stats, setStats] = useState({ total: 0, avg: null, shared: 0, topTypes: [], topRegions: [], regionCounts: {}, regionEntries: {}, topAroma: [], topTaste: [], tasteBase: 'all' })
+  const [currentTheme, setCurrentTheme] = useState(getTheme)
+  const [regionView, setRegionView] = useState('map')
+  const [selectedPref, setSelectedPref] = useState(null)
+
+  const handleTheme = id => { applyTheme(id); setCurrentTheme(id) }
 
   useEffect(() => {
     if (!session) { nav('/login'); return }
@@ -60,7 +69,7 @@ export default function Profile({ session }) {
     setDisplayName(meta.display_name || meta.full_name || '')
 
     supabase.from('sake_entries')
-      .select('id, rating, is_public, type, region', { count: 'exact' })
+      .select('id, rating, is_public, type, region, aroma_tags, taste_tags, brand, name, brewery', { count: 'exact' })
       .eq('user_id', session.user.id)
       .then(({ data, count }) => {
         const entries = data || []
@@ -73,10 +82,29 @@ export default function Profile({ session }) {
         const topTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
 
         const regionCounts = {}
-        entries.forEach(e => { if (e.region) regionCounts[e.region] = (regionCounts[e.region] || 0) + 1 })
-        const topRegions = Object.entries(regionCounts).sort((a, b) => b[1] - a[1]).slice(0, 4)
+        const regionEntries = {}
+        entries.forEach(e => {
+          if (e.region) {
+            regionCounts[e.region] = (regionCounts[e.region] || 0) + 1
+            if (!regionEntries[e.region]) regionEntries[e.region] = []
+            regionEntries[e.region].push(e)
+          }
+        })
+        const topRegions = Object.entries(regionCounts).sort((a, b) => b[1] - a[1])
 
-        setStats({ total: count || 0, avg, shared, topTypes, topRegions })
+        const highRated = entries.filter(e => e.rating >= 4)
+        const tasteBase = highRated.length >= 3 ? 'high' : 'all'
+        const pool = tasteBase === 'high' ? highRated : entries
+        const aromaCounts = {}
+        const tasteCounts = {}
+        pool.forEach(e => {
+          ;(e.aroma_tags || []).forEach(t => { aromaCounts[t] = (aromaCounts[t] || 0) + 1 })
+          ;(e.taste_tags || []).forEach(t => { tasteCounts[t] = (tasteCounts[t] || 0) + 1 })
+        })
+        const topAroma = Object.entries(aromaCounts).sort((a, b) => b[1] - a[1]).slice(0, 6)
+        const topTaste = Object.entries(tasteCounts).sort((a, b) => b[1] - a[1]).slice(0, 6)
+
+        setStats({ total: count || 0, avg, shared, topTypes, topRegions, regionCounts, regionEntries, topAroma, topTaste, tasteBase })
       })
   }, [session, nav])
 
@@ -121,7 +149,7 @@ export default function Profile({ session }) {
               onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
             />
             <button style={{ ...s.saveBtn, background: saved ? '#4A7A35' : 'var(--accent)', minWidth: 36 }} onClick={handleSave} disabled={saving || saved}>
-              {saved ? '✅' : saving ? lbl('saving', lang) : lbl('save', lang)}
+              {saved ? '✅' : lbl('save', lang)}
             </button>
           </div>
         </div>
@@ -145,6 +173,71 @@ export default function Profile({ session }) {
           </div>
         </div>
 
+        {/* Flavor profile */}
+        {(stats.topAroma.length > 0 || stats.topTaste.length > 0) && (
+          <div style={s.section}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+              <div style={s.sectionTitle}>
+                {(lang === 'ja' ? '好みの香り・味わい' : lang === 'zh' ? '偏好香氣・口感' : 'Flavor Profile').toUpperCase()}
+              </div>
+              {stats.tasteBase === 'high' && (
+                <div style={{ fontSize: 10, color: 'var(--sub)' }}>
+                  {lang === 'ja' ? '★4以上の酒から' : lang === 'zh' ? '來自 ★4 以上' : 'from ★4+ entries'}
+                </div>
+              )}
+            </div>
+            {stats.topAroma.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 8, letterSpacing: '.04em' }}>
+                  {lang === 'ja' ? '香り' : lang === 'zh' ? '香氣' : 'Aroma'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {stats.topAroma.map(([id, cnt], i) => {
+                    const tag = TASTING_TAGS.aroma.find(t => t.id === id)
+                    if (!tag) return null
+                    const opacity = 1 - i * 0.12
+                    return (
+                      <span key={id} style={{
+                        fontSize: 12, padding: '4px 12px', borderRadius: 20,
+                        background: `rgba(181,69,27,${0.08 + (1 - i / stats.topAroma.length) * 0.1})`,
+                        color: 'var(--text)', border: '1px solid rgba(181,69,27,.2)',
+                        opacity,
+                      }}>
+                        {tag[lang] || tag.en}
+                        <span style={{ fontSize: 10, marginLeft: 5, opacity: .7 }}>{cnt}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {stats.topTaste.length > 0 && (
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--sub)', marginBottom: 8, letterSpacing: '.04em' }}>
+                  {lang === 'ja' ? '味わい' : lang === 'zh' ? '口感' : 'Taste'}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {stats.topTaste.map(([id, cnt], i) => {
+                    const tag = TASTING_TAGS.taste.find(t => t.id === id)
+                    if (!tag) return null
+                    const opacity = 1 - i * 0.12
+                    return (
+                      <span key={id} style={{
+                        fontSize: 12, padding: '4px 12px', borderRadius: 20,
+                        background: 'var(--bg)', color: 'var(--text)',
+                        border: '1px solid var(--border)', opacity,
+                      }}>
+                        {tag[lang] || tag.en}
+                        <span style={{ fontSize: 10, marginLeft: 5, opacity: .5 }}>{cnt}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Type breakdown */}
         {stats.topTypes.length > 0 && (
           <div style={s.section}>
@@ -166,17 +259,106 @@ export default function Profile({ session }) {
         {/* Region breakdown */}
         {stats.topRegions.length > 0 && (
           <div style={s.section}>
-            <div style={s.sectionTitle}>{(lang === 'ja' ? '産地別' : lang === 'zh' ? '產地分佈' : 'By Region').toUpperCase()}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {stats.topRegions.map(([region, count]) => (
-                <div key={region} style={{ background: 'var(--bg)', borderRadius: 10, padding: '10px 14px' }}>
-                  <div style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>{region}</div>
-                  <div style={{ fontSize: 11, color: 'var(--sub)' }}>{count} {lbl('bottles', lang)}</div>
-                </div>
-              ))}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={s.sectionTitle}>{(lang === 'ja' ? '産地別' : lang === 'zh' ? '產地分佈' : 'By Region').toUpperCase()}</div>
+              <div style={{ display: 'flex', gap: 2, background: 'var(--bg)', borderRadius: 8, padding: 2 }}>
+                {[
+                  ['map', <svg key="map" width="13" height="13" viewBox="0 0 13 13"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="7" y="1" width="5" height="5" rx="1"/><rect x="1" y="7" width="5" height="5" rx="1"/><rect x="7" y="7" width="5" height="5" rx="1"/></svg>],
+                  ['list', <svg key="list" width="13" height="13" viewBox="0 0 13 13"><rect x="1" y="2" width="11" height="1.5" rx=".75"/><rect x="1" y="5.75" width="11" height="1.5" rx=".75"/><rect x="1" y="9.5" width="11" height="1.5" rx=".75"/></svg>],
+                ].map(([v, icon]) => (
+                  <button key={v} onClick={() => setRegionView(v)} style={{
+                    background: regionView === v ? 'var(--surface-card)' : 'transparent',
+                    border: regionView === v ? '1px solid var(--border)' : '1px solid transparent',
+                    borderRadius: 6, cursor: 'pointer', padding: '4px 7px',
+                    color: regionView === v ? 'var(--text)' : 'var(--sub)',
+                    transition: 'all .15s', display: 'flex', alignItems: 'center',
+                    fill: 'currentColor',
+                  }}>{icon}</button>
+                ))}
+              </div>
             </div>
+            {regionView === 'map' ? (
+              <>
+                <JapanMap
+                  regionCounts={stats.regionCounts}
+                  selected={selectedPref}
+                  onSelect={code => setSelectedPref(prev => prev === code ? null : code)}
+                />
+                {selectedPref && (() => {
+                  const prefEntries = Object.entries(stats.regionEntries)
+                    .filter(([r]) => JA_TO_CODE[r] === selectedPref)
+                    .flatMap(([, es]) => es)
+                  const prefName = Object.keys(stats.regionEntries).find(r => JA_TO_CODE[r] === selectedPref) || ''
+                  if (!prefEntries.length) return null
+                  return (
+                    <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text)', fontFamily: 'var(--font-serif)' }}>
+                          {prefName}
+                          <span style={{ fontSize: 10, color: 'var(--sub)', marginLeft: 6 }}>{prefEntries.length}本</span>
+                        </div>
+                        <button onClick={() => setSelectedPref(null)} style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 12, padding: 0 }}>✕</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {prefEntries.map(e => (
+                          <div key={e.id} onClick={() => nav('/journal', { state: { openEntryId: e.id } })} style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            background: 'var(--bg)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer',
+                          }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, color: 'var(--text)', fontFamily: 'var(--font-serif)', lineHeight: 1.3 }}>
+                                {[e.brand, e.name].filter(Boolean).join(' ') || '—'}
+                              </div>
+                              {e.brewery && <div style={{ fontSize: 10, color: 'var(--sub)', marginTop: 1 }}>{e.brewery}</div>}
+                            </div>
+                            {e.rating > 0 && <Stars rating={e.rating} size={9} style={{ flexShrink: 0, marginLeft: 8 }} />}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {stats.topRegions.map(([region, count]) => (
+                  <div key={region} style={{ background: 'var(--bg)', borderRadius: 10, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 12, color: 'var(--text)' }}>{region}</div>
+                    <div style={{ fontSize: 11, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{count}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
+
+        {/* Theme section */}
+        <div style={s.section}>
+          <div style={s.sectionTitle}>{lbl('theme', lang).toUpperCase()}</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {THEMES.map(th => (
+              <button
+                key={th.id}
+                onClick={() => handleTheme(th.id)}
+                style={{
+                  flex: 1, padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
+                  border: currentTheme === th.id ? '2px solid var(--accent)' : '2px solid var(--border)',
+                  background: th.preview[0], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  outline: 'none', transition: 'border-color .2s',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {th.preview.map((c, i) => (
+                    <div key={i} style={{ width: 14, height: 14, borderRadius: '50%', background: c, border: '1px solid rgba(255,255,255,.15)' }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: 11, color: th.preview[2], letterSpacing: '.04em', fontFamily: 'var(--font-sans)' }}>
+                  {th[lang] || th.en}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
       </div>
     </div>

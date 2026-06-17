@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
+import { applyTheme, getTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
 import { WikiProvider } from './contexts/WikiContext'
 import Login from './pages/Login'
@@ -9,46 +10,13 @@ import Display from './pages/Display'
 import Wiki from './pages/Wiki'
 import Profile from './pages/Profile'
 import EntryDetail from './pages/EntryDetail'
-
-function FAB({ session }) {
-  const navigate = useNavigate()
-  const location = useLocation()
-  if (!session) return null
-
-  const handleClick = () => {
-    if (location.pathname === '/journal') {
-      // Already on journal — trigger via URL param so Journal detects it
-      navigate('/journal?new=1')
-    } else {
-      navigate('/journal?new=1')
-    }
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      title="Add entry"
-      style={{
-        position: 'fixed', bottom: 24, right: 20, zIndex: 50,
-        width: 52, height: 52, borderRadius: '50%',
-        background: 'var(--accent)', color: '#fff', border: 'none',
-        boxShadow: '0 4px 18px rgba(124,58,40,.35)',
-        cursor: 'pointer', fontSize: 26, lineHeight: 1,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'transform .15s, box-shadow .15s',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(124,58,40,.45)' }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(124,58,40,.35)' }}
-    >
-      +
-    </button>
-  )
-}
+import Terms from './pages/Terms'
 
 export default function App() {
   const [session, setSession] = useState(undefined)
 
   useEffect(() => {
+    applyTheme(getTheme())
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
@@ -66,9 +34,9 @@ export default function App() {
         <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
         <Route path="/entry/:id" element={<EntryDetail session={session} />} />
         <Route path="/" element={<Display session={session} />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <FAB session={session} />
     </WikiProvider>
     </LangProvider>
   )

@@ -1,24 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadPhoto, compressImage } from '../lib/upload'
 import Nav from '../components/Nav'
 import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
-import { BreweryInput, BrandInput, RiceInput, ProductInput } from '../components/Autocomplete'
+import { BreweryInput, BrandInput, RiceInput, NameInput } from '../components/Autocomplete'
 import TastingTagPicker from '../components/TastingTagPicker'
 import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
 import { SAKE_TYPES, TASTING_TAGS, getTagLabel, getFlavorTagLabel } from '../lib/i18n'
+import { WikiText, WikiIcon } from '../components/WikiTooltip'
 
 
-const ScanIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-    <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-  </svg>
-)
+
 const SpinIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
     style={{ animation: 'spin 1s linear infinite' }}>
@@ -26,24 +21,27 @@ const SpinIcon = () => (
   </svg>
 )
 
-const MARK_SVG_ABS = (
-  <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .065, pointerEvents: 'none', zIndex: 0 }}
-    viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(44,44)">
-      <path d="M-15,-37 C-30,-30 -40,-14 -40,4 C-40,22 -32,36 -18,40 C-4,44 14,40 26,28 C36,18 40,2 36,-14 C32,-28 20,-38 4,-40" fill="none" stroke="#7C3A28" strokeWidth="1.1" strokeLinecap="round" />
-      <path d="M-10,-27 C-22,-22 -30,-10 -30,4 C-30,18 -22,28 -10,32 C2,36 16,30 24,20 C30,12 30,-2 24,-14 C18,-24 6,-30 -4,-30" fill="none" stroke="#7C3A28" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M-6,-18 C-14,-14 -20,-6 -20,4 C-20,14 -14,20 -4,22 C6,24 16,18 20,10 C22,4 20,-6 14,-12 C8,-18 0,-20 -4,-20" fill="none" stroke="#7C3A28" strokeWidth="2" strokeLinecap="round" />
-      <circle r="10" fill="#4A7A35" />
-    </g>
-  </svg>
-)
+function MarkSVG() {
+  return (
+    <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .05, pointerEvents: 'none', zIndex: 0 }}
+      viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(44,44)">
+        <path d="M-15,-37 C-30,-30 -40,-14 -40,4 C-40,22 -32,36 -18,40 C-4,44 14,40 26,28 C36,18 40,2 36,-14 C32,-28 20,-38 4,-40" fill="none" style={{ stroke: 'var(--mark-outer)' }} strokeWidth="1.1" strokeLinecap="round" />
+        <path d="M-10,-27 C-22,-22 -30,-10 -30,4 C-30,18 -22,28 -10,32 C2,36 16,30 24,20 C30,12 30,-2 24,-14 C18,-24 6,-30 -4,-30" fill="none" style={{ stroke: 'var(--mark-outer)' }} strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M-6,-18 C-14,-14 -20,-6 -20,4 C-20,14 -14,20 -4,22 C6,24 16,18 20,10 C22,4 20,-6 14,-12 C8,-18 0,-20 -4,-20" fill="none" style={{ stroke: 'var(--mark-inner)' }} strokeWidth="2" strokeLinecap="round" />
+        <circle r="10" style={{ fill: 'var(--mark-dot)' }} />
+      </g>
+    </svg>
+  )
+}
 
 const EMPTY_FORM = {
-  name: '', brewery: '', region: '', type: '',
+  brand: '', name: '', brewery: '', region: '', type: '',
   alcohol: '', rice: '', polishing: '', smv: '', acidity: '', yeast: '',
   rating: 0, notes: '',
   tasted_at: new Date().toISOString().slice(0, 10),
   bottling_date: '',
+  name_reading: '',
   is_public: false, contributor_name: '',
 }
 
@@ -95,7 +93,7 @@ const s = {
   statsRow: { display: 'flex', gap: 16, fontSize: 12, color: 'var(--sub)', marginBottom: 16, flexWrap: 'wrap' },
   statNum: { color: 'var(--text)', fontWeight: 600 },
   chips: { display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 },
-  chip: (active) => ({ padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, background: active ? 'var(--accent)' : 'var(--surface)', color: active ? '#fff' : 'var(--text)', fontFamily: 'var(--font-sans)', boxShadow: active ? 'none' : '0 1px 4px rgba(26,22,20,.06)' }),
+  chip: (active) => ({ padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13, background: active ? 'var(--accent)' : 'var(--surface)', color: active ? '#fff' : 'var(--text)', fontFamily: 'var(--font-sans)', boxShadow: active ? 'none' : '0 1px 4px rgba(0,10,30,.15)' }),
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 },
   addCard: { borderRadius: 14, border: '2px dashed var(--border)', aspectRatio: '3/4', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--surface)', color: 'var(--sub)', gap: 8 },
   card: { borderRadius: 14, overflow: 'hidden', cursor: 'pointer', position: 'relative', aspectRatio: '3/4' },
@@ -104,13 +102,14 @@ const s = {
   cardNo: { position: 'absolute', inset: 0, background: '#2d2520', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'rgba(255,245,230,.15)' },
   cardBody: { position: 'absolute', inset: 0, padding: '10px 11px 12px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', color: '#fff' },
   cardType: { fontSize: 9, letterSpacing: '.08em', color: 'rgba(255,245,230,.7)', marginBottom: 3 },
+  cardReading: { fontSize: 9, letterSpacing: '.06em', color: 'rgba(255,245,230,.55)', marginBottom: 2, fontFamily: 'var(--font-sans)' },
   cardName: { fontFamily: 'var(--font-serif)', fontSize: 14, fontWeight: 600, lineHeight: 1.35, marginBottom: 3 },
   cardBrewery: { fontSize: 11, color: 'rgba(255,245,230,.75)', marginBottom: 5 },
   cardMeta: { fontSize: 9, color: 'rgba(255,245,230,.5)', marginTop: 4 },
   cardTags: { display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 7 },
   cardTag: { fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.1)', color: 'rgba(255,245,230,.85)', border: '1px solid rgba(255,245,230,.12)' },
   publicBadge: { position: 'absolute', top: 8, right: 8, fontSize: 9, padding: '2px 8px', borderRadius: 20, background: 'rgba(74,122,53,.85)', color: '#fff', zIndex: 1, letterSpacing: '.04em' },
-  backdrop: { position: 'fixed', inset: 0, background: 'rgba(26,22,20,.55)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  backdrop: { position: 'fixed', inset: 0, background: 'rgba(3,10,20,.7)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
   detModal: { background: 'var(--surface-card)', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative', padding: '32px 32px 28px' },
   detClose: { position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   detName: { fontFamily: 'var(--font-serif)', fontSize: 24, fontWeight: 600, marginBottom: 10, lineHeight: 1.3 },
@@ -125,9 +124,9 @@ const s = {
   detActions: { display: 'flex', gap: 10, marginTop: 20 },
   editBtn: { flex: 1, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 14, cursor: 'pointer' },
   delBtn: { flex: 1, padding: 12, borderRadius: 12, border: '1px solid #e88', background: 'transparent', color: '#c0392b', fontSize: 14, cursor: 'pointer' },
-  formBackdrop: { position: 'fixed', inset: 0, background: 'rgba(26,22,20,.5)', zIndex: 30, display: 'flex', alignItems: 'flex-end' },
+  formBackdrop: { position: 'fixed', inset: 0, background: 'rgba(3,10,20,.65)', zIndex: 30, display: 'flex', alignItems: 'flex-end' },
   formSheet: { background: 'var(--surface)', borderRadius: '22px 22px 0 0', width: '100%', maxWidth: 640, margin: '0 auto', maxHeight: '94svh', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  formInner: { overflow: 'hidden auto', flex: 1, padding: '0 24px 40px' },
+  formInner: { overflow: 'hidden auto', flex: 1, padding: '0 24px 96px' },
   handle: { width: 38, height: 4, borderRadius: 2, background: 'var(--border)', margin: '12px auto 0', flexShrink: 0 },
   formHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 },
   formTitle: { fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 600 },
@@ -264,9 +263,77 @@ function CropModal({ src, onConfirm, onCancel }) {
   )
 }
 
+function WishlistView({ entries, loading, lang, typeLabel, onForward, onRemove }) {
+  if (loading) return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sub)', fontSize: 14 }}>…</div>
+  if (!entries.length) return (
+    <div style={{ textAlign: 'center', padding: '60px 16px', color: 'var(--sub)' }}>
+      <div style={{ fontSize: 28, marginBottom: 12 }}>🔖</div>
+      <div style={{ fontSize: 14 }}>{lang === 'ja' ? '想喝リストは空です' : lang === 'zh' ? '想喝清單是空的' : 'Your wish list is empty'}</div>
+      <div style={{ fontSize: 12, marginTop: 6, opacity: .7 }}>{lang === 'ja' ? '廣場で気になるお酒をブックマークしよう' : lang === 'zh' ? '在廣場收藏感興趣的酒款' : 'Bookmark sakes in the Plaza'}</div>
+    </div>
+  )
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {entries.map(e => (
+        <div key={e.id} style={{ display: 'flex', gap: 12, background: 'var(--surface-card)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--card-border)' }}>
+          {e.photo_url
+            ? <img src={e.photo_url} style={{ width: 64, height: 80, objectFit: 'cover', flexShrink: 0 }} />
+            : <div style={{ width: 64, height: 80, flexShrink: 0, background: 'var(--photo-ph)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: 'var(--photo-ph-icon)' }}>🍶</div>}
+          <div style={{ flex: 1, padding: '10px 0', minWidth: 0 }}>
+            {e.type && <div style={{ fontSize: 9, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 2 }}>{typeLabel(e.type)}</div>}
+            <div style={{ fontSize: 14, fontFamily: 'var(--font-serif)', color: 'var(--text)', lineHeight: 1.3, marginBottom: 2 }}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
+            {e.brewery && <div style={{ fontSize: 11, color: 'var(--sub)' }}>{e.brewery}</div>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: '10px 12px 10px 0', flexShrink: 0 }}>
+            <button onClick={() => onForward(e)} style={{ padding: '5px 12px', borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
+              {lang === 'ja' ? '記録する' : lang === 'zh' ? '記錄' : 'Log'}
+            </button>
+            <button onClick={() => onRemove(e.id)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+              {lang === 'ja' ? '削除' : lang === 'zh' ? '移除' : 'Remove'}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ForwardConfirmDialog({ entry, lang, onConfirm, onCancel }) {
+  const [skip, setSkip] = React.useState(false)
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3,10,20,.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'var(--surface-card)', borderRadius: 16, padding: '24px 20px', maxWidth: 340, width: '100%' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, marginBottom: 10, color: 'var(--text)' }}>
+          {lang === 'ja' ? '記録しますか？' : lang === 'zh' ? '確認記錄？' : 'Log this sake?'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.6, marginBottom: 18 }}>
+          {lang === 'ja'
+            ? `「${[entry.brand, entry.name].filter(Boolean).join(' ')}」を記録すると、想喝リストから削除されます。`
+            : lang === 'zh'
+            ? `記錄「${[entry.brand, entry.name].filter(Boolean).join(' ')}」後，將從想喝清單中移除。`
+            : `"${[entry.brand, entry.name].filter(Boolean).join(' ')}" will be removed from your wish list after logging.`}
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--sub)', marginBottom: 20, cursor: 'pointer' }}>
+          <input type="checkbox" checked={skip} onChange={e => setSkip(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+          {lang === 'ja' ? '次から表示しない' : lang === 'zh' ? '下次不再提示' : "Don't show again"}
+        </label>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>
+            {lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}
+          </button>
+          <button onClick={() => onConfirm(skip)} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
+            {lang === 'ja' ? '記録する' : lang === 'zh' ? '確認' : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const TODAY = () => new Date().toISOString().slice(0, 10)
 const DRAFT_KEY = 'kikiroku-draft'
-const saveDraft = (form, tags, aroma, taste) => {
-  if (form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste }))
+const saveDraft = (form, tags, aroma, taste, dates) => {
+  if (form.brand.trim() || form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste, dates }))
   else localStorage.removeItem(DRAFT_KEY)
 }
 const loadDraft = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY)) } catch { return null } }
@@ -287,10 +354,8 @@ export default function Journal({ session }) {
   const [aromaTags, setAromaTags] = useState([])
   const [tasteTags, setTasteTags] = useState([])
   const [editId, setEditId] = useState(null)
-  const [photoFile, setPhotoFile] = useState(null)   // compressed, for upload
+  const [photoFile, setPhotoFile] = useState(null)
   const [photoFile2, setPhotoFile2] = useState(null)
-  const [photoRaw, setPhotoRaw] = useState(null)     // original, for OCR
-  const [photoRaw2, setPhotoRaw2] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [photoPreview2, setPhotoPreview2] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -299,8 +364,55 @@ export default function Journal({ session }) {
   const [hasDraft, setHasDraft] = useState(() => !!loadDraft())
   const [awardYears, setAwardYears] = useState([])
 
+  const [formDates, setFormDates] = useState([TODAY()])
   const [cropSrc, setCropSrc] = useState(null)
-  const [ocrLoading, setOcrLoading] = useState(false)
+  const [forwardSource, setForwardSource] = useState(null)
+  const [wishlistMode, setWishlistMode] = useState(false)
+  const [wishedEntries, setWishedEntries] = useState([])
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+  const [forwardConfirmEntry, setForwardConfirmEntry] = useState(null)
+  const FORWARD_SKIP_KEY = 'kikiroku_forward_confirm_skip'
+  const [specsOpen, setSpecsOpen] = useState(false)
+  const [brandMap, setBrandMap] = useState({})
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('kk_view') || 'grid')
+  const [typeFilter, setTypeFilter] = useState('')
+
+  // ── Auto-save draft (debounced 1s) ──────────────────────────
+  const draftTimerRef = useRef()
+  const pendingOpenIdRef = useRef(null)
+  useEffect(() => {
+    if (sheet !== 'form' || editId) return
+    clearTimeout(draftTimerRef.current)
+    draftTimerRef.current = setTimeout(() => {
+      saveDraft(form, formTags, aromaTags, tasteTags, formDates)
+      if (form.brand?.trim() || form.name?.trim()) setHasDraft(true)
+    }, 1000)
+    return () => clearTimeout(draftTimerRef.current)
+  }, [form, formTags, aromaTags, tasteTags, formDates, sheet, editId])
+
+  // ── Swipe-down to save/dismiss ──────────────────────────────
+  const [sheetDragY, setSheetDragY] = useState(0)
+  const [sheetDragging, setSheetDragging] = useState(false)
+  const sheetDragStart = useRef(0)
+  const DRAG_CLOSE_THRESHOLD = 90
+
+  const onSheetDragStart = e => {
+    sheetDragStart.current = e.touches[0].clientY
+    setSheetDragging(true)
+  }
+  const onSheetDragMove = e => {
+    const dy = Math.max(0, e.touches[0].clientY - sheetDragStart.current)
+    setSheetDragY(dy)
+  }
+  const onSheetDragEnd = () => {
+    setSheetDragging(false)
+    if (sheetDragY >= DRAG_CLOSE_THRESHOLD) {
+      setSheetDragY(0)
+      close()
+    } else {
+      setSheetDragY(0)
+    }
+  }
   const [searchLoading, setSearchLoading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
   const [detail, setDetail] = useState(null)
@@ -308,7 +420,16 @@ export default function Journal({ session }) {
   const fileRef2 = useRef()
   const fileRefBoth = useRef()
 
-  useEffect(() => { fetchEntries() }, [])
+  useEffect(() => {
+    fetchEntries()
+    supabase.from('sake_brands').select('name,furigana,romaji').limit(3000)
+      .then(({ data }) => {
+        const m = {}
+        ;(data || []).forEach(b => { if (b.name) m[b.name] = { furigana: b.furigana || '', romaji: b.romaji || '' } })
+        setBrandMap(m)
+      })
+  }, [])
+  useEffect(() => { if (wishlistMode) fetchWishlist() }, [wishlistMode])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -319,13 +440,25 @@ export default function Journal({ session }) {
   }, [location.search])
 
   useEffect(() => {
+    if (location.state?.forward) {
+      const fwd = location.state.forward
+      navigate('/journal', { replace: true, state: {} })
+      openForward(fwd)
+    }
+    if (location.state?.openEntryId) {
+      pendingOpenIdRef.current = location.state.openEntryId
+      navigate('/journal', { replace: true, state: {} })
+    }
+  }, [location.state])
+
+  useEffect(() => {
     const brewery = form.brewery?.trim()
     if (!brewery || brewery.length < 2) { setAwardYears([]); return }
     const keyword = brewery.replace(/(株式会社|有限会社|合資会社|合名会社|㈱|㈲)/g, '').trim().split(/[\s　]+/)[0]
     if (!keyword || keyword.length < 2) { setAwardYears([]); return }
     supabase
       .from('sake_awards')
-      .select('year,brand_name,is_gold')
+      .select('year,year_code,brand_name,is_gold')
       .ilike('brewery_name', `%${keyword}%`)
       .eq('is_gold', true)
       .gte('year', 2019)
@@ -340,15 +473,53 @@ export default function Journal({ session }) {
       .eq('user_id', session.user.id).order('tasted_at', { ascending: false })
     setEntries(data || [])
     setLoading(false)
+    if (pendingOpenIdRef.current) {
+      const entry = (data || []).find(e => e.id === pendingOpenIdRef.current)
+      if (entry) setDetail(entry)
+      pendingOpenIdRef.current = null
+    }
+  }
+
+  const fetchWishlist = async () => {
+    setWishlistLoading(true)
+    const { data: wishes } = await supabase.from('sake_wishes').select('entry_id').eq('user_id', session.user.id)
+    if (!wishes?.length) { setWishedEntries([]); setWishlistLoading(false); return }
+    const ids = wishes.map(w => w.entry_id)
+    const { data } = await supabase.from('sake_entries').select('*').in('id', ids).eq('is_public', true)
+    setWishedEntries(data || [])
+    setWishlistLoading(false)
+  }
+
+  const removeWish = async (entryId) => {
+    setWishedEntries(prev => prev.filter(e => e.id !== entryId))
+    await supabase.from('sake_wishes').delete().eq('user_id', session.user.id).eq('entry_id', entryId)
+  }
+
+  const handleWishForward = (entry) => {
+    const skip = localStorage.getItem(FORWARD_SKIP_KEY) === '1'
+    if (skip) { removeWish(entry.id); doForward(entry) }
+    else setForwardConfirmEntry(entry)
+  }
+
+  const doForward = (entry) => {
+    const fwd = { brand: entry.brand, name: entry.name, brewery: entry.brewery, region: entry.region, type: entry.type, alcohol: entry.alcohol, rice: entry.rice, polishing: entry.polishing, smv: entry.smv, acidity: entry.acidity, yeast: entry.yeast }
+    setWishlistMode(false)
+    openForward(fwd)
   }
 
   const allTags = [...new Set(entries.flatMap(e => e.tags || []))]
   const visibleTags = tagsExp ? allTags : allTags.slice(0, 8)
+  const typeCounts = {}
+  entries.forEach(e => { if (e.type) typeCounts[e.type] = (typeCounts[e.type] || 0) + 1 })
+  const entryTypes = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a])
+  const toggleView = (m) => { setViewMode(m); localStorage.setItem('kk_view', m) }
   const filtered = entries.filter(e => {
     if (activeTag && !e.tags?.includes(activeTag)) return false
+    if (typeFilter && e.type !== typeFilter) return false
     if (search) {
       const q = search.toLowerCase()
-      return (e.name || '').toLowerCase().includes(q) ||
+      return (e.brand || '').toLowerCase().includes(q) ||
+        (e.name || '').toLowerCase().includes(q) ||
         (e.brewery || '').toLowerCase().includes(q) ||
         (e.region || '').toLowerCase().includes(q) ||
         e.tags?.some(tag => tag.toLowerCase().includes(q))
@@ -368,42 +539,67 @@ export default function Journal({ session }) {
     if (draft) {
       setForm(draft.form); setFormTags(draft.tags || [])
       setAromaTags(draft.aroma || []); setTasteTags(draft.taste || [])
+      setFormDates(draft.dates?.length ? draft.dates : [TODAY()])
       setDraftRestored(true)
     } else {
       setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([])
+      setFormDates([TODAY()])
       setDraftRestored(false)
     }
     setEditId(null)
-    setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null)
+    setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
+    setSpecsOpen(false)
     setSheet('form')
   }
+  const openForward = fwd => {
+    setForm({
+      ...EMPTY_FORM,
+      brand: fwd.brand || '', name: fwd.name || '', brewery: fwd.brewery || '', region: fwd.region || '', type: fwd.type || '',
+      alcohol: fwd.alcohol || '', rice: fwd.rice || '', polishing: fwd.polishing || '',
+      smv: fwd.smv || '', acidity: fwd.acidity || '', yeast: fwd.yeast || '',
+      contributor_name: defaultName,
+    })
+    setFormTags([]); setAromaTags([]); setTasteTags([])
+    setFormDates([TODAY()])
+    setEditId(null); setDraftRestored(false)
+    setForwardSource(fwd.name || '')
+    setPhotoFile(null); setPhotoFile2(null)
+    setPhotoPreview(null); setPhotoPreview2(null)
+    setSpecsOpen(!!(fwd.type || fwd.rice || fwd.yeast || fwd.polishing || fwd.alcohol || fwd.smv || fwd.acidity))
+    setSheet('form')
+  }
+
   const openEdit = e => {
     setForm({
-      name: e.name || '', brewery: e.brewery || '', region: e.region || '', type: e.type || '',
+      brand: e.brand || '', name: e.name || '', brewery: e.brewery || '', region: e.region || '', type: e.type || '',
       alcohol: e.alcohol || '', rice: e.rice || '', polishing: e.polishing || '',
       smv: e.smv || '', acidity: e.acidity || '', yeast: e.yeast || '',
       rating: e.rating || 0, notes: e.notes || '',
-      tasted_at: e.tasted_at || new Date().toISOString().slice(0, 10),
+      tasted_at: e.tasted_at || TODAY(),
       bottling_date: e.bottling_date || '',
+      name_reading: e.name_reading || '',
       is_public: e.is_public ?? false, contributor_name: e.contributor_name || '',
     })
     setFormTags(e.tags || [])
     setAromaTags(e.aroma_tags || [])
     setTasteTags(e.taste_tags || [])
+    setFormDates(e.tasted_dates?.length ? [...e.tasted_dates].sort().reverse() : [e.tasted_at || TODAY()])
     setEditId(e.id)
-    setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null)
+    setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
+    setSpecsOpen(!!(e.type || e.rice || e.yeast || e.polishing || e.alcohol || e.smv || e.acidity || e.bottling_date))
     setSheet('form')
   }
   const close = () => {
-    if (sheet === 'form' && !editId) {
-      saveDraft(form, formTags, aromaTags, tasteTags)
+    if (sheet === 'form' && !editId && !forwardSource) {
+      saveDraft(form, formTags, aromaTags, tasteTags, formDates)
       setHasDraft(!!form.name.trim())
     }
+    setForwardSource(null)
     setSheet(null); setDetail(null)
   }
-  const closeClean = () => { setSheet(null); setDetail(null) }
+  const closeClean = () => { setForwardSource(null); setSheet(null); setDetail(null) }
 
   const readExifDate = async (file) => {
     try {
@@ -417,12 +613,11 @@ export default function Journal({ session }) {
   const onPhoto = async e => {
     const file = e.target.files[0]; if (!file) return
     const [blob, date] = await Promise.all([compressImage(file), readExifDate(file)])
-    setPhotoRaw(file); setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
-    if (date) setForm(p => ({ ...p, tasted_at: date }))
+    setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
+    if (date) setFormDates(prev => [...new Set([date, ...prev])].sort().reverse())
   }
   const onPhoto2 = (e) => {
     const f = e.target.files[0]; if (!f) return
-    setPhotoRaw2(f)
     setCropSrc(URL.createObjectURL(f))
     e.target.value = ''
   }
@@ -430,12 +625,9 @@ export default function Journal({ session }) {
     const files = Array.from(e.target.files)
     if (!files.length) return
     const [blob1, date] = await Promise.all([compressImage(files[0]), readExifDate(files[0])])
-    setPhotoRaw(files[0]); setPhotoFile(blob1); setPhotoPreview(URL.createObjectURL(blob1))
-    if (date) setForm(p => ({ ...p, tasted_at: date }))
-    if (files[1]) {
-      setPhotoRaw2(files[1])
-      setCropSrc(URL.createObjectURL(files[1]))
-    }
+    setPhotoFile(blob1); setPhotoPreview(URL.createObjectURL(blob1))
+    if (date) setFormDates(prev => [...new Set([date, ...prev])].sort().reverse())
+    if (files[1]) setCropSrc(URL.createObjectURL(files[1]))
     e.target.value = ''
   }
 
@@ -445,10 +637,10 @@ export default function Journal({ session }) {
     setPhotoFile2(compressed)
     setPhotoPreview2(URL.createObjectURL(compressed))
   }
-  const onCropCancel = () => { setCropSrc(null); setPhotoRaw2(null) }
+  const onCropCancel = () => { setCropSrc(null) }
 
   const save = async () => {
-    if (!form.name.trim()) return
+    if (!form.brand.trim() && !form.name.trim()) return
     setSaving(true)
     try {
       // Always fetch a fresh, validated user to avoid stale session issues
@@ -461,8 +653,12 @@ export default function Journal({ session }) {
       let photo_url2 = prev?.photo_url2 || null
       if (photoFile) photo_url = await uploadPhoto(photoFile, uid)
       if (photoFile2) photo_url2 = await uploadPhoto(photoFile2, uid)
+      const sortedDates = [...formDates].filter(Boolean).sort().reverse()
+      const tasted_at = sortedDates[0] || TODAY()
       const payload = {
-        ...form, rating: form.rating || null,
+        ...form, tasted_at,
+        tasted_dates: sortedDates.length ? sortedDates : null,
+        rating: form.rating || null,
         tags: formTags.length ? formTags : null,
         aroma_tags: aromaTags.length ? aromaTags : null,
         taste_tags: tasteTags.length ? tasteTags : null,
@@ -475,13 +671,14 @@ export default function Journal({ session }) {
         await supabase.from('sake_entries').insert(payload)
         // Contribute new sake to the product database if it doesn't exist yet
         if (form.name.trim()) {
+          const fullName = [form.brand, form.name].filter(Boolean).join(' ').trim()
           const { count } = await supabase
             .from('sake_products')
             .select('id', { count: 'exact', head: true })
-            .ilike('name', form.name.trim())
+            .ilike('name', fullName)
           if (count === 0) {
             await supabase.from('sake_products').insert({
-              name:         form.name.trim(),
+              name:         fullName,
               brewery_name: form.brewery.trim() || null,
               region:       form.region.trim()  || null,
               type:         form.type           || null,
@@ -505,57 +702,6 @@ export default function Journal({ session }) {
 
   const SAKE_TYPE_IDS = ['純米','純米吟醸','純米大吟醸','吟醸','大吟醸','特別純米','本醸造','普通酒','その他']
 
-  const toBase64 = (blob) => new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve({ base64: reader.result.split(',')[1], mimeType: blob.type || 'image/jpeg' })
-    reader.onerror = reject
-    reader.readAsDataURL(blob)
-  })
-
-  const runOcr = async () => {
-    setOcrLoading(true)
-    try {
-      const OCR_MAX = 1.2 * 1024 * 1024
-      const getOcrBlob = async (raw, file, preview) => {
-        if (raw) return compressImage(raw, 1600, OCR_MAX)
-        if (file) return file
-        if (preview) { const r = await fetch(preview); return r.blob() }
-        return null
-      }
-      const blob = await getOcrBlob(photoRaw2, photoFile2, photoPreview2)
-      if (!blob) return
-      const img = await toBase64(blob)
-      const body = { image_base64: img.base64, mime_type: img.mimeType }
-      const { data, error } = await supabase.functions.invoke('ocr-sake', { body })
-      if (error) {
-        const detail = await error.context?.json?.().catch(() => null)
-        throw new Error(detail?.error || error.message)
-      }
-      if (data?.error) throw new Error(data.error)
-      const merged = applyOcrData(form, data)
-      setForm(merged)
-      // Auto-trigger web search to fill remaining gaps
-      runSearch(merged)
-    } catch (e) { alert('識別失敗: ' + (e.message || JSON.stringify(e))) }
-    finally { setOcrLoading(false) }
-  }
-
-  function applyOcrData(prev, data) {
-    return {
-      ...prev,
-      ...(data.name      ? { name: data.name }           : {}),
-      ...(data.brewery   ? { brewery: data.brewery }     : {}),
-      ...(data.region    ? { region: data.region }       : {}),
-      ...(data.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
-      ...(data.rice      ? { rice: data.rice }           : {}),
-      ...(data.yeast     ? { yeast: data.yeast }         : {}),
-      ...(data.polishing != null ? { polishing: String(data.polishing) } : {}),
-      ...(data.alcohol   != null ? { alcohol: String(data.alcohol) }   : {}),
-      ...(data.smv       != null ? { smv: String(data.smv) }           : {}),
-      ...(data.acidity   != null ? { acidity: String(data.acidity) }   : {}),
-      ...(data.bottling_date ? { bottling_date: data.bottling_date } : {}),
-    }
-  }
 
   const runSearch = async (currentForm) => {
     const src = currentForm ?? form
@@ -567,7 +713,9 @@ export default function Journal({ session }) {
       if (data?.error) throw new Error(data.error)
       setForm(prev => ({
         ...prev,
-        ...(data.name      && !prev.name      ? { name: data.name }           : {}),
+        ...(data.brand        && !prev.brand        ? { brand: data.brand }               : {}),
+        ...(data.name         && !prev.name         ? { name: data.name }                 : {}),
+        ...(data.name_reading && !prev.name_reading ? { name_reading: data.name_reading } : {}),
         ...(data.brewery   && !prev.brewery   ? { brewery: data.brewery }     : {}),
         ...(data.region    && !prev.region    ? { region: data.region }       : {}),
         ...(data.type && !prev.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
@@ -578,17 +726,18 @@ export default function Journal({ session }) {
         ...(data.smv       != null && !prev.smv       ? { smv: String(data.smv) }           : {}),
         ...(data.acidity   != null && !prev.acidity   ? { acidity: String(data.acidity) }   : {}),
       }))
+      if (data.type || data.rice || data.yeast || data.polishing != null || data.alcohol != null || data.smv != null || data.acidity != null) {
+        setSpecsOpen(true)
+      }
     } catch (e) { console.warn('search-sake:', e.message) }
     finally { setSearchLoading(false) }
   }
 
-  // On name blur: if brewery not yet filled, scan name for any known brand
-  const inferBreweryFromName = async () => {
-    const nameVal = form.name.trim()
-    if (!nameVal || form.brewery) return
-    // Split on spaces and punctuation, try each token as a brand prefix
+  const inferBreweryFromBrand = async () => {
+    const brandVal = form.brand?.trim()
+    if (!brandVal || form.brewery) return
     const tokens = [...new Set(
-      nameVal.split(/[\s　・\/「」【】（）()\-]+/).filter(s => s.length >= 2)
+      brandVal.split(/[\s　・\/「」【】（）()\-]+/).filter(s => s.length >= 2)
     )]
     for (const token of tokens) {
       const { data } = await supabase
@@ -596,7 +745,7 @@ export default function Journal({ session }) {
         .select('name, sake_breweries(name, sake_areas(name))')
         .ilike('name', `${token}%`)
         .limit(10)
-      const match = data?.find(r => nameVal.includes(r.name))
+      const match = data?.find(r => brandVal.includes(r.name))
       if (match?.sake_breweries?.name) {
         setForm(p => ({
           ...p,
@@ -608,8 +757,8 @@ export default function Journal({ session }) {
     }
   }
 
-  const TableRow = ({ label, value }) => value ? (
-    <tr style={s.detTr}><th style={s.detTh}>{label}</th><td style={s.detTd}>{value}</td></tr>
+  const TableRow = ({ label, value, wiki }) => value ? (
+    <tr style={s.detTr}><th style={s.detTh}>{label}</th><td style={s.detTd}>{wiki ? <WikiText text={value} /> : value}</td></tr>
   ) : null
 
   const typeLabel = (typeId) => {
@@ -624,9 +773,36 @@ export default function Journal({ session }) {
       <Nav session={session} />
       <BrandMarkFull />
       <div style={s.main}>
+        {/* Tab toggle: 記録 | 想喝 */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          <button onClick={() => setWishlistMode(false)} style={{ ...s.chip(!wishlistMode), fontSize: 13 }}>
+            {lang === 'ja' ? '記録' : lang === 'zh' ? '記錄' : 'Journal'}
+          </button>
+          <button onClick={() => setWishlistMode(true)} style={{ ...s.chip(wishlistMode), fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill={wishlistMode ? '#fff' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            {lang === 'ja' ? '想喝リスト' : lang === 'zh' ? '想喝清單' : 'Wish List'}
+            {wishedEntries.length > 0 && !wishlistLoading && <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '0 6px', fontSize: 11 }}>{wishedEntries.length}</span>}
+          </button>
+        </div>
+
+        {wishlistMode ? (
+          <WishlistView
+            entries={wishedEntries} loading={wishlistLoading} lang={lang}
+            typeLabel={typeLabel} onForward={handleWishForward} onRemove={removeWish}
+          />
+        ) : (<>
+
         <div style={s.searchRow}>
           <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} />
           {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18 }}>×</button>}
+          <div style={{ display: 'flex', gap: 2, background: 'var(--surface-card)', borderRadius: 8, padding: 3, border: '1px solid var(--border)', flexShrink: 0 }}>
+            <button onClick={() => toggleView('grid')} title="Grid" style={{ width: 30, height: 26, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: viewMode === 'grid' ? 'rgba(255,245,230,.1)' : 'transparent', color: viewMode === 'grid' ? 'var(--text)' : 'var(--sub)' }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+            </button>
+            <button onClick={() => toggleView('list')} title="List" style={{ width: 30, height: 26, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: viewMode === 'list' ? 'rgba(255,245,230,.1)' : 'transparent', color: viewMode === 'list' ? 'var(--text)' : 'var(--sub)' }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
+            </button>
+          </div>
         </div>
 
         {entries.length > 0 && (
@@ -635,6 +811,19 @@ export default function Journal({ session }) {
             {avgRating && <span>{t('stats.avg')} <span style={s.statNum}>{avgRating}</span> ★</span>}
             {topBrewery && <span>{t('stats.most')} <span style={s.statNum}>{topBrewery}</span></span>}
             {sharedCount > 0 && <span>{t('stats.shared')} <span style={s.statNum}>{sharedCount}</span></span>}
+          </div>
+        )}
+
+        {entryTypes.length > 0 && (
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 2 }}>
+            <button style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-sans)', background: !typeFilter ? 'var(--accent)' : 'var(--surface)', color: !typeFilter ? '#fff' : 'var(--sub)' }} onClick={() => setTypeFilter('')}>
+              {lang === 'ja' ? 'すべて' : lang === 'zh' ? '全部' : 'All'}
+            </button>
+            {entryTypes.map(type => (
+              <button key={type} style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-sans)', background: typeFilter === type ? 'var(--accent)' : 'var(--surface)', color: typeFilter === type ? '#fff' : 'var(--sub)' }} onClick={() => setTypeFilter(typeFilter === type ? '' : type)}>
+                {typeLabel(type)}
+              </button>
+            ))}
           </div>
         )}
 
@@ -650,6 +839,71 @@ export default function Journal({ session }) {
           </div>
         )}
 
+        {viewMode === 'list' ? (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} onClick={openAdd}>
+              <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--border)' }}>+</div>
+              <div style={{ flex: 1, fontSize: 13, color: 'var(--sub)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {hasDraft ? (lang === 'ja' ? '草稿を続ける' : lang === 'zh' ? '繼續草稿' : 'Continue Draft') : t('form.newEntry')}
+                {hasDraft && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />}
+              </div>
+            </div>
+            {!loading && filtered.length === 0 && (search || typeFilter) && (
+              <div style={{ ...s.empty, paddingTop: 40 }}>
+                {search ? t('noResults', { q: search }) : (lang === 'ja' ? '該当なし' : lang === 'zh' ? '無符合結果' : 'No matches')}
+              </div>
+            )}
+            {(() => {
+              let lastMonth = null
+              return filtered.map(e => {
+                const month = e.tasted_at?.slice(0, 7)
+                const isNew = month !== lastMonth
+                if (isNew) lastMonth = month
+                const mLabel = month ? new Date(month + '-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'zh' ? 'zh-TW' : 'ja-JP', { year: 'numeric', month: 'long' }) : ''
+                return (
+                  <React.Fragment key={e.id}>
+                    {isNew && month && (
+                      <div style={{ fontSize: 10, color: 'rgba(255,245,230,.25)', letterSpacing: '.07em', padding: '14px 0 4px', fontWeight: 500 }}>
+                        {mLabel.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} onClick={() => setDetail(e)}>
+                      <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: 'hidden', background: '#2d2520' }}>
+                        {e.photo_url
+                          ? <img src={e.photo_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: 'rgba(255,245,230,.15)', fontFamily: 'var(--font-serif)', writingMode: 'vertical-rl', letterSpacing: '-.04em' }}>
+                              {(e.brand || e.name)?.slice(0, 2)}
+                            </div>}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontFamily: 'var(--font-serif)' }}>
+                            {e.brand || e.name}
+                          </div>
+                          {e.type && <span style={{ flexShrink: 0, fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.06)', color: 'rgba(255,245,230,.45)', border: '1px solid rgba(255,245,230,.1)', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>{typeLabel(e.type)}</span>}
+                        </div>
+                        {e.name && (
+                          <div style={{ fontSize: 11, color: 'var(--sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                            {e.name}
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <StarsLight rating={e.rating} />
+                          {(e.brewery || e.region) && (
+                            <span style={{ fontSize: 10, color: 'rgba(255,245,230,.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {e.rating ? ' · ' : ''}{[e.brewery, e.region].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,245,230,.18)" strokeWidth="2.5" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </div>
+                  </React.Fragment>
+                )
+              })
+            })()}
+          </div>
+        ) : (
         <div style={s.grid}>
           <div style={{ ...s.addCard, position: 'relative' }} onClick={openAdd}>
             {hasDraft && <span style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
@@ -666,10 +920,13 @@ export default function Journal({ session }) {
               <div style={s.cardOverlay} />
               <div style={s.cardBody}>
                 {e.type && <div style={s.cardType}>{typeLabel(e.type)}</div>}
-                <div style={s.cardName}>{e.name}</div>
+                {e.brand && (lang === 'ja' ? brandMap[e.brand]?.furigana : brandMap[e.brand]?.romaji) && (
+                  <div style={s.cardReading}>{lang === 'ja' ? brandMap[e.brand].furigana : brandMap[e.brand].romaji}</div>
+                )}
+                <div style={s.cardName}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
                 {e.brewery && <div style={s.cardBrewery}>{e.brewery}</div>}
                 <StarsLight rating={e.rating} />
-                <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}</div>
+                <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}{e.tasted_dates?.length > 1 && <span style={{ opacity: .7 }}> ×{e.tasted_dates.length}</span>}</div>
                 {e.tags?.length > 0 && (
                   <div style={s.cardTags}>
                     {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{getFlavorTagLabel(tag, lang)}</span>)}
@@ -679,29 +936,66 @@ export default function Journal({ session }) {
             </div>
           ))}
         </div>
+        )}
+        </>)}
       </div>
+
+      {/* Forward confirmation dialog */}
+      {forwardConfirmEntry && (
+        <ForwardConfirmDialog
+          entry={forwardConfirmEntry} lang={lang}
+          onConfirm={(skipNext) => {
+            if (skipNext) localStorage.setItem(FORWARD_SKIP_KEY, '1')
+            removeWish(forwardConfirmEntry.id)
+            doForward(forwardConfirmEntry)
+            setForwardConfirmEntry(null)
+          }}
+          onCancel={() => setForwardConfirmEntry(null)}
+        />
+      )}
 
       {/* Detail modal */}
       {sheet !== 'form' && detail && (
         <div style={s.backdrop} onClick={close}>
           <div style={s.detModal} onClick={e => e.stopPropagation()}>
-            {MARK_SVG_ABS}
+            <MarkSVG />
             <button style={s.detClose} onClick={close}>✕</button>
-            {detail.type && <div style={{ fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 8 }}>{typeLabel(detail.type)}</div>}
-            <div style={s.detName}>{detail.name}</div>
+            {detail.type && <div style={{ fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 4 }}>{typeLabel(detail.type)}</div>}
+            {detail.brand && (lang === 'ja' ? brandMap[detail.brand]?.furigana : brandMap[detail.brand]?.romaji) && (
+              <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.08em', marginBottom: 3 }}>
+                {lang === 'ja' ? brandMap[detail.brand].furigana : brandMap[detail.brand].romaji}
+              </div>
+            )}
+            <div style={s.detName}>{[detail.brand, detail.name].filter(Boolean).join(' ')}</div>
+            {detail.name_reading && <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 6, letterSpacing: '.05em' }}>{detail.name_reading}</div>}
             <Stars rating={detail.rating} size={14} />
             <table style={s.detTable}>
               <tbody>
                 <TableRow label={t('detail.brewery')} value={detail.brewery} />
                 <TableRow label={t('detail.region')} value={detail.region} />
-                <TableRow label={t('detail.rice')} value={detail.rice} />
+                <TableRow label={t('detail.rice')} value={detail.rice} wiki />
                 <TableRow label={t('detail.polishing')} value={detail.polishing} />
                 <TableRow label={t('detail.alcohol')} value={detail.alcohol} />
                 <TableRow label={t('detail.smv')} value={detail.smv} />
                 <TableRow label={t('detail.acidity')} value={detail.acidity} />
-                <TableRow label={t('detail.yeast')} value={detail.yeast} />
+                <TableRow label={t('detail.yeast')} value={detail.yeast} wiki />
                 <TableRow label={t('detail.bottling')} value={detail.bottling_date} />
-                <TableRow label={t('detail.drinking')} value={detail.tasted_at} />
+                {detail.tasted_dates?.length > 1 ? (
+                  <tr style={s.detTr}>
+                    <th style={s.detTh}>{t('detail.drinking')}</th>
+                    <td style={s.detTd}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {detail.tasted_dates.map((d, i) => (
+                          <span key={d}>
+                            {d}{i === 0 && <span style={{ fontSize: 10, color: 'var(--sub)', marginLeft: 5 }}>{lang === 'zh' ? '最近' : lang === 'ja' ? '最近' : 'latest'}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <TableRow label={t('detail.drinking')} value={detail.tasted_at} />
+                )}
               </tbody>
             </table>
 
@@ -765,7 +1059,7 @@ export default function Journal({ session }) {
           <div style={{ background: 'var(--surface-card)', borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8, color: 'var(--text)' }}>{t('confirmDelete')}</div>
-            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 24 }}>{confirmDel.name}</div>
+            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 24 }}>{[confirmDel.brand, confirmDel.name].filter(Boolean).join(' ')}</div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button style={s.editBtn} onClick={() => setConfirmDel(null)}>{lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}</button>
               <button style={s.delBtn} onClick={async () => {
@@ -780,13 +1074,42 @@ export default function Journal({ session }) {
       {/* Form sheet */}
       {sheet === 'form' && (
         <div style={s.formBackdrop} onClick={close}>
-          <div style={s.formSheet} onClick={e => e.stopPropagation()}>
-            <div style={s.handle} />
-            <div style={s.formHead}>
+          <div
+            style={{
+              ...s.formSheet,
+              transform: `translateY(${sheetDragY}px)`,
+              transition: sheetDragging ? 'none' : 'transform .35s cubic-bezier(.32,0,.67,0)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div
+              style={{ ...s.handle, touchAction: 'none', cursor: 'grab',
+                background: sheetDragY >= DRAG_CLOSE_THRESHOLD ? 'var(--accent)' : 'var(--border)',
+                transition: 'background .15s',
+              }}
+              onTouchStart={onSheetDragStart}
+              onTouchMove={onSheetDragMove}
+              onTouchEnd={onSheetDragEnd}
+            />
+            <div
+              style={s.formHead}
+              onTouchStart={onSheetDragStart}
+              onTouchMove={onSheetDragMove}
+              onTouchEnd={onSheetDragEnd}
+            >
               <span style={s.formTitle}>{editId ? t('form.editEntry') : t('form.newEntry')}</span>
               <button style={s.closeBtn} onClick={close}>✕</button>
             </div>
             <div style={s.formInner}>
+
+              {forwardSource && (
+                <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--sub)' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                  <span>{lang === 'ja' ? `「${forwardSource}」をもとに記録中` : lang === 'zh' ? `基於「${forwardSource}」記錄` : `Based on "${forwardSource}"`}</span>
+                </div>
+              )}
 
               {draftRestored && (
                 <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
@@ -835,12 +1158,6 @@ export default function Journal({ session }) {
                         : <div style={s.photoLbl}>{t('form.tapToAdd')}</div>}
                     </div>
                     <input ref={fileRef2} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto2} />
-                    {(photoFile2 || photoPreview2) && (
-                      <button type="button" disabled={ocrLoading || searchLoading} onClick={() => runOcr()}
-                        style={{ width: '100%', marginTop: 6, padding: '7px 0', borderRadius: 8, border: '1px solid var(--accent)', background: (ocrLoading || searchLoading) ? 'var(--accent-bg)' : 'transparent', color: 'var(--accent)', fontSize: 12, cursor: (ocrLoading || searchLoading) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                        {ocrLoading ? <><SpinIcon />{t('ocr.scanning')}</> : searchLoading ? <><SpinIcon />{t('ocr.searching')}</> : <><ScanIcon />{t('ocr.scan')}</>}
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -849,32 +1166,41 @@ export default function Journal({ session }) {
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.basic')}</div>
                 <div style={s.field}>
+                  <label style={s.label}>{t('form.brand')}<WikiIcon termId="meigara" /></label>
+                  <BrandInput style={{ ...s.input, maxWidth: 200 }} value={form.brand} onChange={v => f('brand', v)}
+                    onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
+                    onBlur={inferBreweryFromBrand}
+                    placeholder={t('form.brandPH')} />
+                </div>
+                <div style={s.field}>
                   <label style={s.label}>{t('form.name')}</label>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <ProductInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
+                    <NameInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
+                      brand={form.brand}
+                      onBrandFill={v => f('brand', v)}
                       onProductFill={p => setForm(prev => ({
                         ...prev,
-                        brewery:  prev.brewery  || p.brewery  || '',
-                        region:   prev.region   || p.region   || '',
-                        type:     prev.type     || p.type     || '',
-                        rice:     prev.rice     || p.rice     || '',
-                        yeast:    prev.yeast    || p.yeast    || '',
-                        polishing:prev.polishing|| p.polishing|| '',
-                        alcohol:  prev.alcohol  || p.alcohol  || '',
-                        smv:      prev.smv      || p.smv      || '',
-                        acidity:  prev.acidity  || p.acidity  || '',
+                        brewery:   prev.brewery   || p.brewery   || '',
+                        region:    prev.region    || p.region    || '',
+                        type:      prev.type      || p.type      || '',
+                        rice:      prev.rice      || p.rice      || '',
+                        yeast:     prev.yeast     || p.yeast     || '',
+                        polishing: prev.polishing || p.polishing || '',
+                        alcohol:   prev.alcohol   || p.alcohol   || '',
+                        smv:       prev.smv       || p.smv       || '',
+                        acidity:   prev.acidity   || p.acidity   || '',
                       }))}
                       onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                      onBlur={inferBreweryFromName}
                       placeholder={t('form.namePH')} />
                     <button type="button"
-                      disabled={searchLoading || (!form.name && !form.brewery)}
+                      disabled={searchLoading || (!form.brand && !form.name && !form.brewery)}
                       onClick={() => runSearch(form)}
                       title={t('ocr.searching')}
-                      style={{ flexShrink: 0, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: searchLoading ? 'var(--accent-bg)' : 'var(--surface)', color: searchLoading ? 'var(--accent)' : 'var(--sub)', fontSize: 12, cursor: (searchLoading || (!form.name && !form.brewery)) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                      style={{ flexShrink: 0, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: searchLoading ? 'var(--accent-bg)' : 'var(--surface)', color: searchLoading ? 'var(--accent)' : 'var(--sub)', fontSize: 12, cursor: (searchLoading || (!form.brand && !form.name && !form.brewery)) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
                       {searchLoading ? <SpinIcon /> : '🔍'}{t('form.webSearch')}
                     </button>
                   </div>
+                  {form.name_reading && <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 3, letterSpacing: '.04em' }}>{form.name_reading}</div>}
                 </div>
                 <div style={s.row2}>
                   <div style={s.field}>
@@ -889,10 +1215,37 @@ export default function Journal({ session }) {
                 </div>
                 <div style={s.field}>
                   <label style={s.label}>{t('form.date')}</label>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <input style={{ ...s.input, flex: 1, minWidth: 0 }} type="date" value={form.tasted_at} onChange={e => f('tasted_at', e.target.value)} />
+                  {formDates.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                      {i === 0 && formDates.length > 1 && (
+                        <span style={{ fontSize: 9, color: 'var(--accent)', letterSpacing: '.04em', flexShrink: 0 }}>
+                          {lang === 'zh' ? '最近' : lang === 'ja' ? '最近' : 'Latest'}
+                        </span>
+                      )}
+                      <input
+                        style={{ ...s.input, flex: 1, minWidth: 0, colorScheme: 'light' }}
+                        type="date" value={d}
+                        onChange={e => {
+                          const val = e.target.value
+                          setFormDates(prev => [...prev.slice(0, i), val, ...prev.slice(i + 1)].filter(Boolean).sort().reverse())
+                        }}
+                      />
+                      {formDates.length > 1 && (
+                        <button type="button" onClick={() => setFormDates(prev => prev.filter((_, idx) => idx !== i))}
+                          style={{ flexShrink: 0, width: 32, height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sans)' }}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                     <button type="button"
-                      onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setPhotoFile(null); setPhotoFile2(null); setPhotoRaw(null); setPhotoRaw2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
+                      onClick={() => setFormDates(prev => [...new Set([...prev, TODAY()])].sort().reverse())}
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: '1px dashed var(--border)', background: 'none', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
+                      {lang === 'zh' ? '＋ 新增飲用日' : lang === 'ja' ? '＋ 飲用日を追加' : '+ Add date'}
+                    </button>
+                    <button type="button"
+                      onClick={() => { setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name }); setFormTags([]); setAromaTags([]); setTasteTags([]); setFormDates([TODAY()]); setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
                       style={{ flexShrink: 0, padding: '0 13px', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>
                       {lang === 'ja' ? 'リセット' : lang === 'zh' ? '重置' : 'Reset'}
                     </button>
@@ -900,11 +1253,16 @@ export default function Journal({ session }) {
                 </div>
                 {awardYears.length > 0 && (
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 4 }}>
-                    {awardYears.map((a, i) => (
-                      <span key={i} title={a.brand_name} style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, background: 'rgba(180,140,0,.10)', color: '#8A6C00', border: '1px solid rgba(180,140,0,.25)', whiteSpace: 'nowrap' }}>
-                        ★ 金賞 {a.year}
-                      </span>
-                    ))}
+                    {awardYears.map((a, i) => {
+                      const isSC = a.year_code?.startsWith('SC_')
+                      const isIWC = a.year_code?.startsWith('IWC_')
+                      const prefix = isSC ? 'SC' : isIWC ? 'IWC' : '鑑'
+                      return (
+                        <span key={i} title={a.brand_name} style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, background: 'rgba(180,140,0,.10)', color: '#8A6C00', border: '1px solid rgba(180,140,0,.25)', whiteSpace: 'nowrap' }}>
+                          ★ {prefix} {a.year}
+                        </span>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -944,33 +1302,52 @@ export default function Journal({ session }) {
               </div>
 
               {/* Specs — search auto-fills here */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.specs')}</div>
-                <div style={s.row2}>
-                  <div style={s.field}>
-                    <label style={s.label}>{t('form.type')}</label>
-                    <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
-                      <option value="">{t('form.typeSelect')}</option>
-                      {SAKE_TYPES.map(tp => (
-                        <option key={tp.id} value={tp.id}>
-                          {lang === 'ja' ? tp.id : `${tp.id} · ${tp[lang] || tp.en}`}
-                        </option>
-                      ))}
-                    </select>
+              {(() => {
+                const hasSpecs = !!(form.type || form.rice || form.yeast || form.polishing || form.alcohol || form.smv || form.acidity || form.bottling_date)
+                return (
+                  <div style={s.sec}>
+                    <button type="button" onClick={() => setSpecsOpen(o => !o)}
+                      style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: specsOpen ? 12 : 0, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                      <span style={{ flex: 1, fontSize: 11, color: 'var(--sub)', letterSpacing: '.08em', textAlign: 'left' }}>{t('form.specs')}</span>
+                      {hasSpecs && !specsOpen && (
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', flexShrink: 0 }} />
+                      )}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--sub)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ flexShrink: 0, transition: 'transform .2s', transform: specsOpen ? 'rotate(180deg)' : 'none' }}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                    {specsOpen && (
+                      <>
+                        <div style={s.row2}>
+                          <div style={s.field}>
+                            <label style={s.label}>{t('form.type')}</label>
+                            <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
+                              <option value="">{t('form.typeSelect')}</option>
+                              {SAKE_TYPES.map(tp => (
+                                <option key={tp.id} value={tp.id}>
+                                  {lang === 'ja' ? tp.id : `${tp.id} · ${tp[lang] || tp.en}`}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div style={s.field}><label style={s.label}>{t('form.bottling')}</label><input style={s.input} type="text" maxLength="7" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} placeholder="yyyy-mm" /></div>
+                        </div>
+                        <div style={s.row2}>
+                          <div style={s.field}><label style={s.label}>{t('form.rice')}</label><RiceInput style={s.input} value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} /></div>
+                          <div style={s.field}><label style={s.label}>{t('form.yeast')}</label><input style={s.input} value={form.yeast} onChange={e => f('yeast', e.target.value)} /></div>
+                        </div>
+                        <div style={s.row4}>
+                          <div style={s.field}><label style={s.label}>{t('form.polishing')}</label><input style={s.input} value={form.polishing} onChange={e => f('polishing', e.target.value)} placeholder="60%" /></div>
+                          <div style={s.field}><label style={s.label}>{t('form.alcohol')}</label><input style={s.input} value={form.alcohol} onChange={e => f('alcohol', e.target.value)} placeholder="15%" /></div>
+                          <div style={s.field}><label style={s.label}>{t('form.smv')}</label><input style={s.input} value={form.smv} onChange={e => f('smv', e.target.value)} placeholder="+1" /></div>
+                          <div style={s.field}><label style={s.label}>{t('form.acidity')}</label><input style={s.input} value={form.acidity} onChange={e => f('acidity', e.target.value)} placeholder="1.5" /></div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div style={s.field}><label style={s.label}>{t('form.bottling')}</label><input style={{ ...s.input, colorScheme: 'light' }} type="month" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} /></div>
-                </div>
-                <div style={s.row2}>
-                  <div style={s.field}><label style={s.label}>{t('form.rice')}</label><RiceInput style={s.input} value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.yeast')}</label><input style={s.input} value={form.yeast} onChange={e => f('yeast', e.target.value)} /></div>
-                </div>
-                <div style={s.row4}>
-                  <div style={s.field}><label style={s.label}>{t('form.polishing')}</label><input style={s.input} value={form.polishing} onChange={e => f('polishing', e.target.value)} placeholder="60%" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.alcohol')}</label><input style={s.input} value={form.alcohol} onChange={e => f('alcohol', e.target.value)} placeholder="15%" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.smv')}</label><input style={s.input} value={form.smv} onChange={e => f('smv', e.target.value)} placeholder="+1" /></div>
-                  <div style={s.field}><label style={s.label}>{t('form.acidity')}</label><input style={s.input} value={form.acidity} onChange={e => f('acidity', e.target.value)} placeholder="1.5" /></div>
-                </div>
-              </div>
+                )
+              })()}
 
               {/* Share */}
               <div style={s.sec}>

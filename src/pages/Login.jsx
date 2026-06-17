@@ -13,7 +13,7 @@ const s = {
   langRow: { display: 'flex', justifyContent: 'center', marginBottom: 24 },
   langSelect: {
     padding: '6px 32px 6px 14px', borderRadius: 20, border: '1px solid var(--border)',
-    background: `var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238C7E74'/%3E%3C/svg%3E") no-repeat right 12px center`,
+    background: `var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(180,210,245,0.45)'/%3E%3C/svg%3E") no-repeat right 12px center`,
     color: 'var(--sub)', fontSize: 13, outline: 'none', appearance: 'none', cursor: 'pointer',
     fontFamily: 'var(--font-sans)',
   },
@@ -157,6 +157,16 @@ export default function Login() {
                   {loading ? t(mode === 'signin' ? 'login.signingIn' : 'login.checking')
                            : t(mode === 'signin' ? 'login.signin' : 'login.signup')}
                 </button>
+                {mode === 'signup' && (
+                  <p style={{ fontSize: 11, color: 'var(--sub)', textAlign: 'center', marginTop: 10, lineHeight: 1.6 }}>
+                    {lang === 'ja' ? '登録により' : lang === 'zh' ? '註冊即表示您同意' : 'By signing up, you agree to our'}{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer"
+                      style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                      {lang === 'ja' ? '利用規約' : lang === 'zh' ? '服務條款' : 'Terms of Service'}
+                    </a>
+                    {lang === 'ja' ? 'に同意したものとみなされます。' : lang === 'zh' ? '。' : '.'}
+                  </p>
+                )}
                 {mode === 'signin' && (
                   <p style={{ textAlign: 'center', marginTop: 12, fontSize: 12 }}>
                     <span style={s.toggleLink} onClick={() => switchMode('reset')}>{rt('forgot', lang)}</span>
