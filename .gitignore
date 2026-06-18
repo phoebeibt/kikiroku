@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local backups & temp
+src_backup_*/
+supabase/.temp/
+
+# Large raw data files (processed results kept separately)
+scripts/iwc-*-raw.json
+scripts/iwc-multi-raw.json

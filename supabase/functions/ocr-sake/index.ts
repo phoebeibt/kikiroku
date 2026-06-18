@@ -84,17 +84,32 @@ serve(async (req) => {
 以下のJSON形式のみで返してください（説明文・マークダウン・コードブロックは一切不要）:
 {"name":null,"brewery":null,"region":null,"type":null,"rice":null,"yeast":null,"polishing":null,"alcohol":null,"smv":null,"acidity":null,"bottling_date":null}`
 
-    const resp = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [...imageParts, { text: prompt }] }],
-          generationConfig: { temperature: 0 },
-        }),
+    const geminiBody = JSON.stringify({
+      contents: [{ parts: [...imageParts, { text: prompt }] }],
+      generationConfig: { temperature: 0 },
+    })
+
+    let resp: Response | null = null
+    let lastErr: Error | null = null
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        resp = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+            body: geminiBody,
+            signal: AbortSignal.timeout(40_000),
+          }
+        )
+        break
+      } catch (e) {
+        lastErr = e as Error
+        if (attempt < 1) await new Promise(r => setTimeout(r, 1500))
       }
-    )
+    }
+    if (!resp) throw new Error(`Gemini request failed: ${lastErr?.message ?? 'unknown'}`)
+
 
     const geminiText = await resp.text()
     let gemini: Record<string, unknown>

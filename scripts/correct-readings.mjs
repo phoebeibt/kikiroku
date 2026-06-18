@@ -71,6 +71,8 @@ const CORRECTIONS = [
   ['繁桝',            'しげます',             'shigemasu'],
   ['西の関',          'にしのせき',           'nishinoseki'],
   ['千代の光',        'ちよのひかり',         'chiyonohikari'],
+  ['豊能梅',          'とよのうめ',           'toyonoume'],       // 高知県・高木酒造
+  ['信州 亀齢',       'しんしゅうきれい',     'shinshukirei'],    // 長野県・岩波酒造
 ]
 
 async function main() {
