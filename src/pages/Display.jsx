@@ -5,7 +5,7 @@ import Nav from '../components/Nav'
 import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
 import { useLang } from '../contexts/LangContext'
-import { getTagLabel, getFlavorTagLabel, SAKE_TYPES } from '../lib/i18n'
+import { useTagResolver } from '../contexts/TagsContext'
 import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
 
@@ -168,7 +168,7 @@ function SakeCard({ e, lang, typeLabel, onOpen, wished, onWish, awarded, mode = 
         {e.aroma_tags?.length > 0 && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
             {e.aroma_tags.slice(0, 3).map(id => (
-              <span key={id} style={s.listAromaTag}>{getTagLabel(id, 'aroma', lang)}</span>
+              <span key={id} style={s.listAromaTag}>{tagLabel(id, 'aroma')}</span>
             ))}
           </div>
         )}
@@ -212,14 +212,8 @@ export default function Display({ session }) {
   const loadingMoreRef = useRef(false)
   const PAGE_SIZE = 30
 
-  const typeLabel = type => {
-    if (!type) return ''
-    const found = SAKE_TYPES.find(s => s.id === type)
-    if (!found) return type
-    if (lang === 'zh') return found.zh
-    if (lang === 'en') return found.en
-    return found.id
-  }
+  const tagLabel = useTagResolver()
+  const typeLabel = type => type ? tagLabel(type, 'type') : ''
 
   const fetchPage = async (pageNum) => {
     if (loadingMoreRef.current) return
@@ -461,7 +455,7 @@ const StatItem = ({ label, value }) => {
                 <div style={s.chips}>
                   <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
                   {visibleTags.map(tag => (
-                    <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
+                    <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tagLabel(tag, 'flavor')}</button>
                   ))}
                   {allTags.length > 6 && (
                     <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
@@ -559,9 +553,9 @@ const StatItem = ({ label, value }) => {
                   const { generateShareCard, canvasToBlob } = await import('../lib/shareCard.js')
                   const entryWithLabels = {
                     ...detail,
-                    aroma_tags_labels: detail.aroma_tags?.map(id => getTagLabel(id, 'aroma', lang)),
-                    taste_tags_labels: detail.taste_tags?.map(id => getTagLabel(id, 'taste', lang)),
-                    tags_labels: detail.tags?.map(id => getFlavorTagLabel(id, lang)),
+                    aroma_tags_labels: detail.aroma_tags?.map(id => tagLabel(id, 'aroma')),
+                    taste_tags_labels: detail.taste_tags?.map(id => tagLabel(id, 'taste')),
+                    tags_labels: detail.tags?.map(id => tagLabel(id, 'flavor')),
                   }
                   const canvas = await generateShareCard(entryWithLabels, lang, getTheme())
                   const blob = await canvasToBlob(canvas)
@@ -701,7 +695,7 @@ const StatItem = ({ label, value }) => {
                   <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.aroma')}</div>
                   <div style={s.detTagsRow}>
                     {detail.aroma_tags.map(id => (
-                      <span key={id} style={s.detTag}>{getTagLabel(id, 'aroma', lang)}</span>
+                      <span key={id} style={s.detTag}>{tagLabel(id, 'aroma')}</span>
                     ))}
                   </div>
                 </div>
@@ -711,7 +705,7 @@ const StatItem = ({ label, value }) => {
                   <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.taste')}</div>
                   <div style={s.detTagsRow}>
                     {detail.taste_tags.map(id => (
-                      <span key={id} style={{ ...s.detTag, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{getTagLabel(id, 'taste', lang)}</span>
+                      <span key={id} style={{ ...s.detTag, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{tagLabel(id, 'taste')}</span>
                     ))}
                   </div>
                 </div>

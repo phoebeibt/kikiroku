@@ -9,7 +9,7 @@ import { BreweryInput, BrandInput, RiceInput, NameInput } from '../components/Au
 import TastingTagPicker from '../components/TastingTagPicker'
 import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
-import { SAKE_TYPES, TASTING_TAGS, getTagLabel, getFlavorTagLabel } from '../lib/i18n'
+import { useTags, useTagResolver } from '../contexts/TagsContext'
 import { WikiText, WikiIcon } from '../components/WikiTooltip'
 
 
@@ -761,12 +761,9 @@ export default function Journal({ session }) {
     <tr style={s.detTr}><th style={s.detTh}>{label}</th><td style={s.detTd}>{wiki ? <WikiText text={value} /> : value}</td></tr>
   ) : null
 
-  const typeLabel = (typeId) => {
-    if (!typeId) return null
-    const found = SAKE_TYPES.find(t => t.id === typeId)
-    if (!found) return typeId
-    return lang === 'ja' ? typeId : (found[lang] || typeId)
-  }
+  const tagLabel = useTagResolver()
+  const sakeTypes = useTags('type')
+  const typeLabel = (typeId) => typeId ? tagLabel(typeId, 'type') : null
 
   return (
     <div style={s.page}>
@@ -831,7 +828,7 @@ export default function Journal({ session }) {
           <div style={s.chips}>
             <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
             {visibleTags.map(tag => (
-              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{getFlavorTagLabel(tag, lang)}</button>
+              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tagLabel(tag, 'flavor')}</button>
             ))}
             {allTags.length > 8 && (
               <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>{tagsExp ? t('less') : t('more')}</button>
@@ -929,7 +926,7 @@ export default function Journal({ session }) {
                 <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}{e.tasted_dates?.length > 1 && <span style={{ opacity: .7 }}> ×{e.tasted_dates.length}</span>}</div>
                 {e.tags?.length > 0 && (
                   <div style={s.cardTags}>
-                    {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{getFlavorTagLabel(tag, lang)}</span>)}
+                    {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{tagLabel(tag, 'flavor')}</span>)}
                   </div>
                 )}
               </div>
@@ -1003,7 +1000,7 @@ export default function Journal({ session }) {
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 11, color: 'var(--sub)', marginBottom: 6 }}>{t('detail.aroma')}</div>
                 <div style={s.detTastingRow}>
-                  {detail.aroma_tags.map(id => <span key={id} style={s.detTastingTag}>{getTagLabel(id, 'aroma', lang)}</span>)}
+                  {detail.aroma_tags.map(id => <span key={id} style={s.detTastingTag}>{tagLabel(id, 'aroma')}</span>)}
                 </div>
               </div>
             )}
@@ -1011,7 +1008,7 @@ export default function Journal({ session }) {
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 11, color: 'var(--sub)', marginBottom: 6 }}>{t('detail.taste')}</div>
                 <div style={s.detTastingRow}>
-                  {detail.taste_tags.map(id => <span key={id} style={s.detTastingTag}>{getTagLabel(id, 'taste', lang)}</span>)}
+                  {detail.taste_tags.map(id => <span key={id} style={s.detTastingTag}>{tagLabel(id, 'taste')}</span>)}
                 </div>
               </div>
             )}
@@ -1022,7 +1019,7 @@ export default function Journal({ session }) {
               </div>
             )}
             {detail.tags?.length > 0 && (
-              <div style={s.detTagsRow}>{detail.tags.map(tag => <span key={tag} style={s.detTag}>{getFlavorTagLabel(tag, lang)}</span>)}</div>
+              <div style={s.detTagsRow}>{detail.tags.map(tag => <span key={tag} style={s.detTag}>{tagLabel(tag, 'flavor')}</span>)}</div>
             )}
             {detail.is_public && (
               <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1324,9 +1321,9 @@ export default function Journal({ session }) {
                             <label style={s.label}>{t('form.type')}</label>
                             <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
                               <option value="">{t('form.typeSelect')}</option>
-                              {SAKE_TYPES.map(tp => (
+                              {sakeTypes.map(tp => (
                                 <option key={tp.id} value={tp.id}>
-                                  {lang === 'ja' ? tp.id : `${tp.id} · ${tp[lang] || tp.en}`}
+                                  {lang === 'ja' ? tp.ja : `${tp.ja} · ${tp[lang] || tp.en}`}
                                 </option>
                               ))}
                             </select>

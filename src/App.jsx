@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { applyTheme, getTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
+import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
 import Login from './pages/Login'
 import Journal from './pages/Journal'
@@ -26,6 +27,7 @@ export default function App() {
 
   return (
     <LangProvider>
+    <TagsProvider>
     <WikiProvider>
       <Routes>
         <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
@@ -38,6 +40,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </WikiProvider>
+    </TagsProvider>
     </LangProvider>
   )
 }

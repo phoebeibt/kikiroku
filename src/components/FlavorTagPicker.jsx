@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { FLAVOR_TAGS, getFlavorTagLabel } from '../lib/i18n'
+import { useTags } from '../contexts/TagsContext'
 
 export default function FlavorTagPicker({ selected = [], onChange, lang, t }) {
+  const flavorTags = useTags('flavor')
   const [input, setInput] = useState('')
 
   const toggle = id =>
@@ -14,15 +15,15 @@ export default function FlavorTagPicker({ selected = [], onChange, lang, t }) {
   }
 
   // Predefined IDs currently selected
-  const selectedIds = new Set(selected.filter(s => FLAVOR_TAGS.some(t => t.id === s)))
+  const selectedIds = new Set(selected.filter(s => flavorTags.some(t => t.id === s)))
   // Custom raw strings currently selected
-  const customTags = selected.filter(s => !FLAVOR_TAGS.some(t => t.id === s))
+  const customTags = selected.filter(s => !flavorTags.some(t => t.id === s))
 
   return (
     <div>
       {/* Predefined chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>
-        {FLAVOR_TAGS.map(tag => {
+        {flavorTags.map(tag => {
           const on = selectedIds.has(tag.id)
           return (
             <button key={tag.id} type="button" onClick={() => toggle(tag.id)}

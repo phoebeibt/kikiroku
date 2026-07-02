@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import Stars from '../components/Stars'
 import BrandMark from '../components/BrandMark'
 import { useLang } from '../contexts/LangContext'
-import { SAKE_TYPES, getTagLabel, getFlavorTagLabel } from '../lib/i18n'
+import { useTagResolver } from '../contexts/TagsContext'
 import { WikiText } from '../components/WikiTooltip'
 
 const WaveDivider = () => (
@@ -78,11 +78,8 @@ export default function EntryDetail() {
       .then(({ data }) => setAwards(data || []))
   }, [entry?.brewery])
 
-  const typeLabel = (typeId) => {
-    if (!typeId) return null
-    const found = SAKE_TYPES.find(t => t.id === typeId)
-    return found ? (lang === 'ja' ? typeId : (found[lang] || typeId)) : typeId
-  }
+  const tagLabel = useTagResolver()
+  const typeLabel = (typeId) => typeId ? tagLabel(typeId, 'type') : null
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
@@ -196,7 +193,7 @@ export default function EntryDetail() {
             <div style={{ marginTop: 14 }}>
               <div style={s.notesLabel}>{t('detail.aroma')}</div>
               <div style={s.tagsRow}>
-                {entry.aroma_tags.map(id => <span key={id} style={s.tag}>{getTagLabel(id, 'aroma', lang)}</span>)}
+                {entry.aroma_tags.map(id => <span key={id} style={s.tag}>{tagLabel(id, 'aroma')}</span>)}
               </div>
             </div>
           )}
@@ -204,7 +201,7 @@ export default function EntryDetail() {
             <div style={{ marginTop: 12 }}>
               <div style={s.notesLabel}>{t('detail.taste')}</div>
               <div style={s.tagsRow}>
-                {entry.taste_tags.map(id => <span key={id} style={s.tasteTag}>{getTagLabel(id, 'taste', lang)}</span>)}
+                {entry.taste_tags.map(id => <span key={id} style={s.tasteTag}>{tagLabel(id, 'taste')}</span>)}
               </div>
             </div>
           )}
@@ -217,7 +214,7 @@ export default function EntryDetail() {
           )}
           {entry.tags?.length > 0 && (
             <div style={{ ...s.tagsRow, marginTop: 14 }}>
-              {entry.tags.map(tg => <span key={tg} style={s.tag}>{getFlavorTagLabel(tg, lang)}</span>)}
+              {entry.tags.map(tg => <span key={tg} style={s.tag}>{tagLabel(tg, 'flavor')}</span>)}
             </div>
           )}
 

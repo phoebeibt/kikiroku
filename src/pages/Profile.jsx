@@ -6,7 +6,7 @@ import Stars from '../components/Stars'
 import JapanMap, { JA_TO_CODE } from '../components/JapanMap'
 import { useLang } from '../contexts/LangContext'
 import { THEMES, getTheme, applyTheme } from '../lib/theme'
-import { TASTING_TAGS } from '../lib/i18n'
+import { useTagResolver } from '../contexts/TagsContext'
 
 const s = {
   page: { minHeight: '100svh', background: 'var(--bg)' },
@@ -52,6 +52,7 @@ const lbl = (key, lang) => LABELS[key]?.[lang] || LABELS[key]?.en || key
 
 export default function Profile({ session }) {
   const { lang } = useLang()
+  const tagLabel = useTagResolver()
   const nav = useNavigate()
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -193,8 +194,6 @@ export default function Profile({ session }) {
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {stats.topAroma.map(([id, cnt], i) => {
-                    const tag = TASTING_TAGS.aroma.find(t => t.id === id)
-                    if (!tag) return null
                     const opacity = 1 - i * 0.12
                     return (
                       <span key={id} style={{
@@ -203,7 +202,7 @@ export default function Profile({ session }) {
                         color: 'var(--text)', border: '1px solid rgba(181,69,27,.2)',
                         opacity,
                       }}>
-                        {tag[lang] || tag.en}
+                        {tagLabel(id, 'aroma')}
                         <span style={{ fontSize: 10, marginLeft: 5, opacity: .7 }}>{cnt}</span>
                       </span>
                     )
@@ -218,8 +217,6 @@ export default function Profile({ session }) {
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {stats.topTaste.map(([id, cnt], i) => {
-                    const tag = TASTING_TAGS.taste.find(t => t.id === id)
-                    if (!tag) return null
                     const opacity = 1 - i * 0.12
                     return (
                       <span key={id} style={{
@@ -227,7 +224,7 @@ export default function Profile({ session }) {
                         background: 'var(--bg)', color: 'var(--text)',
                         border: '1px solid var(--border)', opacity,
                       }}>
-                        {tag[lang] || tag.en}
+                        {tagLabel(id, 'taste')}
                         <span style={{ fontSize: 10, marginLeft: 5, opacity: .5 }}>{cnt}</span>
                       </span>
                     )

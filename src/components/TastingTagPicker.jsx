@@ -1,7 +1,7 @@
-import { TASTING_TAGS } from '../lib/i18n'
+import { useTags } from '../contexts/TagsContext'
 
 export default function TastingTagPicker({ category, selected = [], onChange, lang }) {
-  const tags = TASTING_TAGS[category] || []
+  const tags = useTags(category)
   const toggle = id =>
     onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
 
