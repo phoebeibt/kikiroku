@@ -282,16 +282,26 @@ function BreweryRow({ brewery, lang, iwcSummary = [] }) {
 
   const toggle = async () => {
     if (!open && brands === null) {
-      const searchKw = brewKw.length >= 2 ? brewKw : brewery.name
-      const [brandsRes, awardsRes] = await Promise.all([
+      // Awards: FK lookup first (indexed, precise). Fallback to name search
+      // for breweries whose award rows weren't linked during Phase 1 backfill.
+      const [brandsRes, primaryAwards] = await Promise.all([
         supabase.from('sake_brands').select('id,name,furigana,romaji')
           .eq('brewery_id', brewery.id).order('name'),
         supabase.from('sake_awards').select('year,brand_name,is_gold')
-          .ilike('brewery_name', `%${searchKw}%`)
+          .eq('brewery_id', brewery.id)
           .order('year', { ascending: false }).limit(200),
       ])
+      let awardsData = primaryAwards.data || []
+      if (awardsData.length === 0) {
+        const searchKw = brewKw.length >= 2 ? brewKw : brewery.name
+        const { data } = await supabase.from('sake_awards')
+          .select('year,brand_name,is_gold')
+          .ilike('brewery_name', `%${searchKw}%`)
+          .order('year', { ascending: false }).limit(200)
+        awardsData = data || []
+      }
       setBrands(brandsRes.data || [])
-      setAwards(awardsRes.data || [])
+      setAwards(awardsData)
     }
     setOpen(o => !o)
   }

@@ -30,3 +30,4 @@ supabase/.temp/
 # Large raw data files (processed results kept separately)
 scripts/iwc-*-raw.json
 scripts/iwc-multi-raw.json
+backups/
