@@ -31,3 +31,6 @@ supabase/.temp/
 scripts/iwc-*-raw.json
 scripts/iwc-multi-raw.json
 backups/
+
+# Personal notes / analysis docs (root-level *.txt)
+/kikiroku-*.txt
