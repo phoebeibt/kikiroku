@@ -750,6 +750,25 @@ export const WIKI_TERMS = [
 ]
 
 // Build a flat lookup for fast keyword detection
+// Look up a raw text value (e.g., "山田錦") in WIKI_TERMS and return the
+// localized title for the given language. Falls back to the original text
+// if no matching term is found. Matches against ja/zh/en alias arrays.
+export function localizedTerm(text, lang) {
+  if (!text || lang === 'ja') return text
+  const effLang = lang === 'zh-tw' ? 'zh' : lang
+  for (const term of WIKI_TERMS) {
+    const allAliases = [
+      ...(term.terms.ja || []),
+      ...(term.terms.zh || []),
+      ...(term.terms.en || []),
+    ]
+    if (allAliases.includes(text)) {
+      return term.title?.[effLang] || text
+    }
+  }
+  return text
+}
+
 // zh-tw uses the zh terms array (which already contains both 繁/简 variants)
 export function buildTermIndex(lang) {
   const effectiveLang = lang === 'zh-tw' ? 'zh' : lang

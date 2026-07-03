@@ -8,6 +8,7 @@ import { useLang } from '../contexts/LangContext'
 import { useTagResolver } from '../contexts/TagsContext'
 import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
+import { localizedTerm } from '../lib/wiki'
 
 
 // Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
@@ -832,8 +833,8 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
               <div style={s.specHeader}>{lang === 'ja' ? '酒質' : lang === 'zh' ? '酒質' : 'Characteristics'}</div>
               <div style={s.specGrid}>
                 <SpecFigureItem label={t('detail.polishing')} value={detail.polishing} suffix="%" />
-                <SpecFigureItem label={t('detail.rice')} value={detail.rice} wiki />
-                <SpecFigureItem label={t('detail.yeast')} value={detail.yeast} wiki />
+                <SpecFigureItem label={t('detail.rice')} value={localizedTerm(detail.rice, lang)} wiki />
+                <SpecFigureItem label={t('detail.yeast')} value={localizedTerm(detail.yeast, lang)} wiki />
                 <SpecFigureItem label={t('detail.alcohol')} value={detail.alcohol} suffix="%" />
                 <SpecFigureItem label={t('detail.smv')} value={detail.smv} />
                 <SpecFigureItem label={t('detail.acidity')} value={detail.acidity} />
