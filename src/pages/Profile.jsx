@@ -242,7 +242,7 @@ export default function Profile({ session }) {
             {stats.topTypes.map(([type, count]) => (
               <div key={type} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>
-                  <span>{type}</span>
+                  <span>{(tagLabel(type, 'type') || type).replace(/[(（][぀-ゟ゠-ヿ\s]+[)）]/g, '').trim()}</span>
                   <span style={{ color: 'var(--sub)' }}>{count} {lbl('bottles', lang)}</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
