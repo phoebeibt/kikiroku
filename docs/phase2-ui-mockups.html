@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>方案 Y 组合版 · Kikiroku</title>
+<style>
+:root {
+  --bg: #060e18;
+  --surface: #0c1e32;
+  --surface-card: #0f2440;
+  --border: rgba(200,225,255,.12);
+  --border-soft: rgba(200,225,255,.06);
+  --text: #E8EFF8;
+  --sub: rgba(180,210,245,.6);
+  --sub-mid: rgba(180,210,245,.35);
+  --accent: #B5451B;
+  --accent-soft: rgba(181,69,27,.7);
+  --card-bg: rgba(180,210,245,.03);
+  --green: #3A8A50;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 40px 32px 80px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Hiragino Sans", "Yu Gothic", "PingFang TC", sans-serif;
+  line-height: 1.6;
+}
+h1 { font-size: 24px; font-weight: 400; margin: 0 0 6px; letter-spacing: .04em; font-family: "Yu Mincho", "PingFang TC", serif; }
+.subtitle { color: var(--sub); font-size: 13px; margin-bottom: 32px; }
+.container { max-width: 1200px; margin: 0 auto; }
+h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 40px 0 6px;
+  color: var(--accent);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.principle {
+  background: rgba(181,69,27,.06);
+  border-left: 2px solid var(--accent);
+  padding: 14px 20px;
+  margin-bottom: 40px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.principle strong { color: var(--accent); }
+.principle .code { background: var(--card-bg); padding: 2px 6px; border-radius: 3px; color: var(--accent); font-size: 11px; }
+
+/* Dot rating */
+.dot {
+  display: inline-block;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot.filled { background: var(--green); box-shadow: 0 0 0 2px rgba(181,69,27,.2); }
+.dot.empty { border: 1.5px solid rgba(180,210,245,.25); }
+
+/* ================ Hybrid tile ================ */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1000px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 700px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .grid-3 { grid-template-columns: 1fr; } }
+
+.tile {
+  background: var(--card-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: background .18s, border-color .18s;
+  position: relative;
+}
+.tile:hover { background: rgba(180,210,245,.05); border-color: rgba(181,69,27,.3); }
+.tile:hover .wish-btn { opacity: 1; }
+
+/* Wish 想喝按钮 — top-right, subtle until hover */
+.wish-btn {
+  position: absolute;
+  top: 10px; right: 12px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: .35;
+  transition: opacity .15s, background .15s, color .15s;
+  z-index: 2;
+}
+.wish-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); opacity: 1 !important; }
+.wish-btn.active {
+  opacity: 1;
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.wish-btn svg { width: 12px; height: 12px; }
+
+/* Award 受賞徽章 — inline near rating */
+.award-badge {
+  display: inline-block;
+  font-family: "Yu Mincho", serif;
+  font-size: 10px;
+  color: #b48c00;
+  background: rgba(180,140,0,.10);
+  border: 1px solid rgba(180,140,0,.35);
+  padding: 1px 7px;
+  border-radius: 2px;
+  letter-spacing: .04em;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* 銘柄 + 类别合并一行 · 用颜色区分 */
+.tile .brand-type-row {
+  font-family: "Yu Mincho", serif;
+  font-size: 13px;
+  color: var(--sub);
+  letter-spacing: .05em;
+  font-weight: 400;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.tile .brand-type-row .brand-name {
+  color: var(--accent);
+  font-weight: 500;
+}
+.tile .brand-type-row .divider {
+  color: rgba(180,210,245,.25);
+  font-size: 11px;
+}
+.tile .product {
+  font-family: "Yu Mincho", "PingFang TC", serif;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--text);
+  letter-spacing: .03em;
+  font-weight: 400;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* 固定 2 行高度：短名不塌、长名截断 → 所有 tile 上方对齐 */
+  min-height: 2.5em;
+}
+.tile .brand {
+  font-family: "Yu Mincho", serif;
+  font-size: 13px;
+  color: var(--sub);
+  letter-spacing: .05em;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid rgba(181,69,27,.25);
+}
+.tile .brand strong { color: var(--text); font-weight: 400; margin-right: 6px; }
+
+/* aroma 在分隔线下方 */
+.tile .aroma {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--sub);
+  letter-spacing: .04em;
+  line-height: 1.5;
+}
+.tile .aroma .kw { color: rgba(180,210,245,.75); margin-right: 10px; }
+.tile .aroma-empty { color: var(--sub-mid); font-style: italic; font-size: 11px; }
+.tile .rating {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tile .rating .dot { width: 9px; height: 9px; }
+
+.stats-note {
+  color: var(--sub);
+  font-size: 12px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--border);
+}
+.stats-note strong { color: var(--text); }
+
+.next-step {
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+  margin: 48px 0 20px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--sub);
+}
+.next-step strong { color: var(--accent); font-weight: 500; }
+.next-step code { background: var(--card-bg); padding: 2px 6px; border-radius: 2px; color: var(--text); font-size: 11px; }
+
+/* ================ Detail Modal · same visual language ================ */
+.flow-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 48px 0 24px;
+  color: var(--sub);
+  font-size: 13px;
+  letter-spacing: .1em;
+}
+.flow-arrow .arrow-line { flex: 1; height: 1px; background: var(--border); max-width: 200px; }
+
+.modal-wrap {
+  max-width: 680px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 36px 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  position: relative;
+}
+.modal-wrap .modal-actions {
+  position: absolute;
+  top: 20px; right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+}
+.modal-wrap .action-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.modal-wrap .action-btn:hover { color: var(--text); border-color: var(--sub); }
+.modal-wrap .action-btn.wish.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.modal-wrap .action-btn.share:hover {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.modal-wrap .action-btn svg { width: 14px; height: 14px; }
+.modal-wrap .close-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.modal-wrap .close-btn:hover { color: var(--text); border-color: var(--sub); }
+.modal-wrap .modal-top {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(181,69,27,.25);
+}
+.modal-wrap .modal-photo {
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(160deg, #133458, #061424);
+}
+.bottle-mock { position: absolute; inset: 0; overflow: hidden; }
+.bottle-mock::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 10%;
+  transform: translateX(-50%);
+  width: 55%; height: 82%;
+  background: linear-gradient(180deg, #1a2a3f 0%, #0a1524 60%, #050b16 100%);
+  border-radius: 6px 6px 12px 12px;
+}
+.bottle-mock::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 42%;
+  transform: translateX(-50%);
+  width: 42%; height: 28%;
+  background: linear-gradient(180deg, #c0a060, #806040);
+  border-radius: 2px;
+}
+.modal-wrap .modal-info { display: flex; flex-direction: column; }
+
+/* 銘柄 + 类型合并一行 */
+.modal-wrap .brand-type-row {
+  font-family: "Yu Mincho", "PingFang TC", serif;
+  font-size: 15px;
+  color: var(--sub);
+  letter-spacing: .05em;
+  font-weight: 400;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.modal-wrap .brand-type-row .brand-name {
+  color: var(--text);
+  font-weight: 400;
+}
+.modal-wrap .brand-type-row .divider {
+  color: rgba(180,210,245,.3);
+  font-size: 13px;
+}
+.modal-wrap .type {
+  font-family: "Yu Mincho", "PingFang TC", serif;
+  font-size: 15px;
+  color: var(--sub);
+  letter-spacing: .05em;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.modal-wrap .product {
+  font-family: "Yu Mincho", "PingFang TC", serif;
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--text);
+  letter-spacing: .04em;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+.modal-wrap .brand {
+  font-family: "Yu Mincho", serif;
+  font-size: 15px;
+  color: var(--sub);
+  letter-spacing: .05em;
+  margin-bottom: 2px;
+}
+.modal-wrap .brand strong { color: var(--text); font-weight: 400; margin-right: 8px; }
+.modal-wrap .rating {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 16px;
+}
+.modal-wrap .rating .dot { width: 12px; height: 12px; }
+.modal-wrap .awards-summary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.modal-wrap .award-summary-chip {
+  font-family: "Yu Mincho", serif;
+  font-size: 11px;
+  color: #b48c00;
+  background: rgba(180,140,0,.10);
+  border: 1px solid rgba(180,140,0,.35);
+  padding: 2px 8px;
+  border-radius: 2px;
+  letter-spacing: .04em;
+}
+
+/* 受賞記錄 detail section — 与 tag-line 一致的排版语言 */
+.modal-wrap .award-block {
+  margin: 22px 0 4px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+.modal-wrap .award-header {
+  font-family: "Yu Mincho", serif;
+  font-size: 12px;
+  color: var(--sub);
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+.modal-wrap .award-line {
+  font-family: "Yu Mincho", serif;
+  font-size: 13px;
+  line-height: 1.9;
+  letter-spacing: .04em;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.modal-wrap .award-line .award-category {
+  color: var(--sub);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.modal-wrap .award-line .medal {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  letter-spacing: .04em;
+}
+.modal-wrap .award-line .medal.gold { color: #b48c00; background: rgba(180,140,0,.14); }
+.modal-wrap .award-line .medal.silver { color: #9aa0a6; background: rgba(180,190,200,.10); }
+.modal-wrap .award-line .years {
+  color: var(--text);
+}
+.modal-wrap .award-line .year {
+  display: inline-block;
+  margin-right: 12px;
+}
+
+/* iOS 26 style pill CTA */
+.modal-wrap .cta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 28px;
+}
+.modal-wrap .cta-primary {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-family: -apple-system, "SF Pro", "Hiragino Sans", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: -.01em;
+  transition: background .15s, transform .1s;
+}
+.modal-wrap .cta-primary:hover { background: #8e3612; }
+.modal-wrap .cta-primary:active { transform: scale(.98); }
+.modal-wrap .cta-secondary {
+  padding: 14px 20px;
+  border: none;
+  background: rgba(180,210,245,.08);
+  color: var(--text);
+  font-family: -apple-system, "SF Pro", "Hiragino Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  letter-spacing: -.01em;
+  border-radius: 14px;
+  transition: background .15s;
+}
+.modal-wrap .cta-secondary:hover { background: rgba(180,210,245,.12); }
+
+/* Related entries section */
+.modal-wrap .related {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-soft);
+}
+.modal-wrap .related-label {
+  font-family: "Yu Mincho", serif;
+  font-size: 12px;
+  color: var(--sub);
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+}
+.modal-wrap .related-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+.modal-wrap .related-item {
+  min-width: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.modal-wrap .related-item:hover { border-color: var(--accent); }
+.modal-wrap .related-name {
+  font-family: "Yu Mincho", serif;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+.modal-wrap .related-meta {
+  font-size: 10px;
+  color: var(--sub);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-wrap .related-mini-dots { display: flex; gap: 2px; }
+.modal-wrap .related-mini-dots .dot { width: 5px; height: 5px; box-shadow: none; }
+
+/* Note */
+.modal-wrap .note {
+  font-family: "Yu Mincho", "PingFang TC", serif;
+  font-size: 14px;
+  color: var(--text);
+  font-style: italic;
+  padding: 12px 16px 12px 20px;
+  border-left: 2px solid var(--accent);
+  background: rgba(181,69,27,.04);
+  border-radius: 2px;
+  margin: 4px 0 20px;
+  line-height: 1.7;
+  letter-spacing: .02em;
+}
+
+/* ============ Editorial spec (Nikka / Suntory / 米其林酒单 style) ============ */
+.modal-wrap .spec-editorial {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 40px;
+  row-gap: 28px;
+  padding: 24px 8px 8px;
+  margin-bottom: 8px;
+}
+.modal-wrap .spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.modal-wrap .spec-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 20px;
+  height: 1px;
+  background: var(--accent);
+  opacity: .7;
+}
+.modal-wrap .spec-item .spec-name {
+  font-family: -apple-system, "SF Pro", "Hiragino Sans", sans-serif;
+  font-size: 11px;
+  color: rgba(180,210,245,.55);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-weight: 400;
+  padding-top: 8px;
+}
+.modal-wrap .spec-item .spec-figure {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 32px;
+  color: var(--text);
+  font-weight: 300;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.modal-wrap .spec-item .spec-figure .suffix {
+  font-size: 14px;
+  color: rgba(180,210,245,.4);
+  font-weight: 400;
+  letter-spacing: .04em;
+}
+.modal-wrap .spec-item .spec-figure.text {
+  font-size: 22px;
+  letter-spacing: .04em;
+}
+
+/* ============ iOS 26 Liquid Glass style list ============ */
+
+/* Section header: uppercase small caps, distinct spacing */
+.modal-wrap .list-section-header {
+  font-family: -apple-system, "SF Pro Display", "Hiragino Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(180,210,245,.5);
+  letter-spacing: .01em;
+  padding: 0 20px 6px;
+  margin-top: 32px;
+  text-transform: none;
+}
+.modal-wrap .list-section-header:first-of-type { margin-top: 8px; }
+
+/* Group container: iOS 26 Liquid Glass — 20px radius, subtle glass tint */
+.modal-wrap .list-group {
+  background: rgba(180,210,245,.06);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 0.5px solid rgba(200,225,255,.05);
+}
+
+/* Row: iOS Settings 48px height, 20px horizontal padding, hairline inset */
+.modal-wrap .list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  min-height: 48px;
+  position: relative;
+  gap: 16px;
+}
+/* Hairline inset from left (iOS pattern) */
+.modal-wrap .list-row:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 20px; right: 0; bottom: 0;
+  height: 0.5px;
+  background: rgba(200,225,255,.10);
+}
+
+.modal-wrap .list-row .row-label {
+  font-family: -apple-system, "SF Pro", "Hiragino Sans", sans-serif;
+  font-size: 17px;
+  color: var(--text);
+  font-weight: 400;
+  letter-spacing: -.024em;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+.modal-wrap .list-row .row-value {
+  font-family: "SF Pro", -apple-system, sans-serif;
+  font-size: 17px;
+  color: rgba(180,210,245,.55);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.024em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.modal-wrap .list-row .row-value.empty { color: rgba(180,210,245,.3); }
+
+/* Row variant: 2-line row (label top, value/list bottom) — for tag lists */
+.modal-wrap .list-row.stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.modal-wrap .list-row.stack .row-label {
+  font-size: 15px;
+  color: rgba(180,210,245,.55);
+  font-weight: 400;
+}
+.modal-wrap .list-row.stack .tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.modal-wrap .list-row.stack .tag-chip {
+  font-family: -apple-system, "SF Pro", "Hiragino Sans", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(180,210,245,.10);
+  padding: 5px 12px;
+  border-radius: 10px;
+  letter-spacing: -.016em;
+}
+.modal-wrap .list-row.stack .tag-chip.aroma {
+  color: var(--text);
+  background: rgba(180,210,245,.10);
+}
+
+/* Award medal — iOS-style rounded chip */
+.medal-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: -apple-system, "SF Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 590;
+  padding: 3px 9px;
+  border-radius: 6px;
+  margin-left: 8px;
+  letter-spacing: -.01em;
+  line-height: 1;
+}
+.medal-chip.gold { color: #ffd76b; background: rgba(220,175,50,.20); }
+.medal-chip.silver { color: #dbe1ea; background: rgba(190,200,215,.15); }
+
+.year-badges {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;
+}
+.year-badge {
+  font-family: "SF Pro", -apple-system, sans-serif;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: rgba(180,210,245,.10);
+  padding: 3px 9px;
+  border-radius: 8px;
+  letter-spacing: -.01em;
+  font-weight: 500;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>方案 Y 组合版（修正）· Kikiroku</h1>
+<div class="subtitle">版 2 排版（type+product 组成标题块，共用底部 accent 分隔线）+ 版 1 字号字体（type <span style="color:var(--accent)">14px</span> · product <span style="color:var(--accent)">21px</span>）</div>
+
+<div class="principle">
+  <strong>修正后的具体字号 + 层级</strong>：<br>
+  · Type <span class="code">14px serif accent</span>（比之前 13px 略大）<br>
+  · Product <span class="code">21px serif hero</span>（比之前 22px 略小）<br>
+  · Type + Product <strong>一体化标题块</strong>——共用 2px accent 底部分隔线<br>
+  · Brand <span class="code">13px serif sub</span> 在分隔线下方<br>
+  · Aroma <span class="code">12px</span> 无分隔线（版 2 排版特点）<br>
+  · Rating dots 底部
+</div>
+
+<!-- ================ Sample tiles with varied product name lengths ================ -->
+<h2>浏览态</h2>
+<div class="grid-3">
+  <div class="tile">
+    <button class="wish-btn active" title="想喝しました">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <div class="brand-type-row">
+      <span class="brand-name">獺祭</span>
+      <span class="divider">·</span>
+      <span>純米大吟醸</span>
+    </div>
+    <div class="product">磨き二割三分</div>
+    <div class="brand"><strong>旭酒造</strong>· 山口県</div>
+    <div class="aroma">
+      <span class="kw">花のような</span>
+      <span class="kw">吟醸香</span>
+    </div>
+    <div class="rating">
+      <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span>
+      <span class="award-badge">★ IWC</span>
+    </div>
+  </div>
+
+  <div class="tile">
+    <button class="wish-btn" title="想喝">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <div class="brand-type-row">
+      <span class="brand-name">仙介</span>
+      <span class="divider">·</span>
+      <span>特別純米</span>
+    </div>
+    <div class="product">SHIRO KOJI</div>
+    <div class="brand"><strong>泉酒造</strong>· 兵庫県</div>
+    <div class="aroma">
+      <span class="kw">甘い香り</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">赤武</span>
+      <span class="divider">·</span>
+      <span>純米吟醸</span>
+    </div>
+    <div class="product">翡翠</div>
+    <div class="brand"><strong>赤武酒造</strong>· 岩手県</div>
+    <div class="aroma">
+      <span class="aroma-empty">香り未記録</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">萩の鶴</span>
+      <span class="divider">·</span>
+      <span>純米吟醸</span>
+    </div>
+    <div class="product">別仕込 真夏の猫</div>
+    <div class="brand"><strong>萩野酒造</strong>· 宮城県</div>
+    <div class="aroma">
+      <span class="kw">メロン</span>
+      <span class="kw">洋梨</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">新政</span>
+      <span class="divider">·</span>
+      <span>貴醸酒</span>
+    </div>
+    <div class="product">陽乃鳥</div>
+    <div class="brand"><strong>新政酒造</strong>· 秋田県</div>
+    <div class="aroma">
+      <span class="kw">乳酸系</span>
+      <span class="kw">甘い香り</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">新政</span>
+      <span class="divider">·</span>
+      <span>生酛</span>
+    </div>
+    <div class="product">No.6 X-type</div>
+    <div class="brand"><strong>新政酒造</strong>· 秋田県</div>
+    <div class="aroma">
+      <span class="kw">乳酸系</span>
+      <span class="kw">吟醸香</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">獺祭</span>
+      <span class="divider">·</span>
+      <span>純米大吟醸</span>
+    </div>
+    <div class="product">遠心分離</div>
+    <div class="brand"><strong>旭酒造</strong>· 山口県</div>
+    <div class="aroma">
+      <span class="kw">花のような</span>
+      <span class="kw">吟醸香</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">ロ万</span>
+      <span class="divider">·</span>
+      <span>純米吟醸</span>
+    </div>
+    <div class="product">花見ロ万 純米吟醸 低アルコール</div>
+    <div class="brand"><strong>花泉酒造</strong>· 福島県</div>
+    <div class="aroma">
+      <span class="kw">爽やか</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span></div>
+  </div>
+
+  <div class="tile">
+    <div class="brand-type-row">
+      <span class="brand-name">十四代</span>
+      <span class="divider">·</span>
+      <span>純米</span>
+    </div>
+    <div class="product">中取り純米</div>
+    <div class="brand"><strong>高木酒造</strong>· 山形県</div>
+    <div class="aroma">
+      <span class="kw">上品</span>
+    </div>
+    <div class="rating"><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span></div>
+  </div>
+</div>
+
+<div class="stats-note">
+  <strong>展示了 9 张 tile</strong>，含<strong>短名（翡翠 · 遠心分離）</strong>、<strong>中长名（別仕込 真夏の猫）</strong>、<strong>超长名（花見ロ万 純米吟醸 低アルコール）</strong>、<strong>无 aroma tag 场景</strong>——所有情况 tile 视觉都稳定
+</div>
+
+<div class="flow-arrow">
+  <div class="arrow-line"></div>
+  click tile ▶ 详情态 modal
+  <div class="arrow-line"></div>
+</div>
+
+<h2>详情态 · Modal</h2>
+<div class="modal-wrap">
+  <div class="modal-actions">
+    <button class="action-btn wish active" title="想喝">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </button>
+    <button class="action-btn share" title="シェア">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+    <button class="close-btn">×</button>
+  </div>
+  <div class="modal-top">
+    <div class="modal-photo"><div class="bottle-mock"></div></div>
+    <div class="modal-info">
+      <div class="brand-type-row">
+        <span class="brand-name">獺祭</span>
+        <span class="divider">·</span>
+        <span>純米大吟醸</span>
+      </div>
+      <div class="product">磨き二割三分</div>
+      <div class="brand">旭酒造株式会社 · 山口県</div>
+      <div class="rating">
+        <span class="dot filled"></span>
+        <span class="dot filled"></span>
+        <span class="dot filled"></span>
+        <span class="dot filled"></span>
+        <span class="dot filled"></span>
+      </div>
+      <div class="awards-summary">
+        <span class="award-summary-chip">★ IWC 金 ×3</span>
+        <span class="award-summary-chip">★ NRIB 金 ×2</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">"花のような芳醇な香り、口当たりは絹のよう。余韻に微かな苦みが残り上品にまとまる。今夜は八幡浜のマダイと合わせて。"</div>
+
+  <div class="list-section-header">酒質</div>
+  <div class="spec-editorial">
+    <div class="spec-item">
+      <div class="spec-name">精米歩合</div>
+      <div class="spec-figure">23<span class="suffix">%</span></div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-name">酒米</div>
+      <div class="spec-figure text">山田錦</div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-name">酵母</div>
+      <div class="spec-figure">9<span class="suffix">号</span></div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-name">アルコール</div>
+      <div class="spec-figure">15.0<span class="suffix">%</span></div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-name">日本酒度</div>
+      <div class="spec-figure">+3.0</div>
+    </div>
+    <div class="spec-item">
+      <div class="spec-name">酸度</div>
+      <div class="spec-figure">1.4</div>
+    </div>
+  </div>
+
+  <div class="list-section-header">香味特徵</div>
+  <div class="list-group">
+    <div class="list-row stack">
+      <span class="row-label">香り</span>
+      <div class="tag-chips">
+        <span class="tag-chip aroma">花のような</span>
+        <span class="tag-chip aroma">フルーティー</span>
+        <span class="tag-chip aroma">吟醸香</span>
+      </div>
+    </div>
+    <div class="list-row stack">
+      <span class="row-label">味わい</span>
+      <div class="tag-chips">
+        <span class="tag-chip">上品</span>
+        <span class="tag-chip">余韻が長い</span>
+        <span class="tag-chip">シルキー</span>
+      </div>
+    </div>
+    <div class="list-row stack">
+      <span class="row-label">製法</span>
+      <div class="tag-chips">
+        <span class="tag-chip">遠心分離</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="list-section-header">受賞記錄</div>
+  <div class="list-group">
+    <div class="list-row">
+      <span class="row-label">IWC <span class="medal-chip gold">金賞</span></span>
+      <span class="row-value"><div class="year-badges"><span class="year-badge">2024</span><span class="year-badge">2023</span><span class="year-badge">2021</span></div></span>
+    </div>
+    <div class="list-row">
+      <span class="row-label">IWC <span class="medal-chip silver">銀賞</span></span>
+      <span class="row-value"><div class="year-badges"><span class="year-badge">2022</span><span class="year-badge">2020</span></div></span>
+    </div>
+    <div class="list-row">
+      <span class="row-label">全国新酒鑑評会 <span class="medal-chip gold">金賞</span></span>
+      <span class="row-value"><div class="year-badges"><span class="year-badge">R06</span><span class="year-badge">R04</span></div></span>
+    </div>
+    <div class="list-row">
+      <span class="row-label">全国新酒鑑評会 <span class="medal-chip silver">入賞</span></span>
+      <span class="row-value"><div class="year-badges"><span class="year-badge">R05</span><span class="year-badge">R03</span></div></span>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <button class="cta-primary">この酒を記録する</button>
+    <button class="cta-secondary">閉じる</button>
+  </div>
+
+  <div class="related">
+    <div class="related-label">獺祭の他の酒款</div>
+    <div class="related-list">
+      <div class="related-item">
+        <div class="related-name">遠心分離</div>
+        <div class="related-meta">
+          <span>2025-09</span>
+          <div class="related-mini-dots">
+            <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span>
+          </div>
+        </div>
+      </div>
+      <div class="related-item">
+        <div class="related-name">純米大吟醸50</div>
+        <div class="related-meta">
+          <span>2025-08</span>
+          <div class="related-mini-dots">
+            <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span>
+          </div>
+        </div>
+      </div>
+      <div class="related-item">
+        <div class="related-name">スパーク 45</div>
+        <div class="related-meta">
+          <span>2025-03</span>
+          <div class="related-mini-dots">
+            <span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot filled"></span><span class="dot empty"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="next-step">
+  <strong>看看这个组合</strong> 是不是你想要的？<br><br>
+  · 满意就<strong>开始备份 + 落地</strong>（我会先备份 Display.jsx / Journal.jsx 的 grid 相关代码到 <code>src/pages/_backup/</code>，再实施改造）<br>
+  · 想再微调？告诉我具体字号 / 字距 / 颜色 / 分隔线粗细<br>
+  · 详情态的 modal 排版风格也要用同样字号语言（type 13-14px、product 24-28px、brand 15px），后续统一改
+</div>
+
+</div>
+
+</body>
+</html>

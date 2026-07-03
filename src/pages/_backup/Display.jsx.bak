@@ -10,10 +10,6 @@ import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
 
 
-// Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
-// Used in browse tile and detail modal — clean displayed labels
-const cleanLabel = (s) => (s || '').replace(/[(（][぀-ゟ゠-ヿ\s]+[)）]/g, '').trim()
-
 const WaveDivider = () => (
   <svg style={{ display: 'block', width: '100%', height: 12, margin: '0' }}
     viewBox="0 0 400 20" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -56,101 +52,20 @@ const s = {
     color: 'var(--text)', fontSize: 13, outline: 'none', appearance: 'none', cursor: 'pointer',
   },
   // Layout containers
-  gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 },
+  gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 },
   listContainer: { display: 'flex', flexDirection: 'column', gap: 10 },
-  // New editorial tile — text-first, no photo, no aspect-ratio
-  gridTile: {
-    background: 'rgba(180,210,245,.03)',
-    border: '1px solid rgba(200,225,255,.06)',
-    borderRadius: 4,
-    padding: '14px 16px',
-    cursor: 'pointer',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'background .18s, border-color .18s',
-  },
-  wishBtn: (wished) => ({
-    position: 'absolute',
-    top: 10, right: 12,
-    width: 24, height: 24,
-    borderRadius: '50%',
-    border: wished ? 'none' : '1px solid var(--border)',
-    background: wished ? 'var(--accent)' : 'transparent',
-    color: wished ? '#fff' : 'var(--sub)',
-    cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    opacity: wished ? 1 : .5,
-    transition: 'opacity .15s, background .15s, color .15s',
-    zIndex: 2,
-    padding: 0,
-  }),
-  gridBrandTypeRow: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 13,
-    color: 'var(--sub)',
-    letterSpacing: '.05em',
-    fontWeight: 400,
-    marginBottom: 2,
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: 6,
-    paddingRight: 32,  // avoid overlap with wish button
-    flexWrap: 'wrap',
-  },
-  gridBrandName: { color: 'var(--accent)', fontWeight: 500 },
-  gridDivider: { color: 'rgba(180,210,245,.25)', fontSize: 11 },
-  gridProduct: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 20,
-    lineHeight: 1.25,
-    color: 'var(--text)',
-    letterSpacing: '.03em',
-    fontWeight: 400,
-    marginBottom: 2,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    minHeight: '2.5em',
-  },
-  gridBrewery: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 13,
-    color: 'var(--sub)',
-    letterSpacing: '.05em',
-    paddingBottom: 8,
-    borderBottom: '1.5px solid rgba(181,69,27,.25)',
-  },
-  gridBreweryName: { color: 'var(--text)', fontWeight: 400, marginRight: 6 },
-  gridAromaRow: {
-    marginTop: 8,
-    fontSize: 12,
-    color: 'var(--sub)',
-    letterSpacing: '.04em',
-    lineHeight: 1.5,
-  },
-  gridAromaKw: {
-    color: 'rgba(180,210,245,.75)',
-    marginRight: 10,
-  },
-  gridRatingRow: {
-    marginTop: 8,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-  },
-  gridAwardBadge: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 10,
-    color: '#b48c00',
-    background: 'rgba(180,140,0,.10)',
-    border: '1px solid rgba(180,140,0,.35)',
-    padding: '1px 7px',
-    borderRadius: 2,
-    letterSpacing: '.04em',
-    marginLeft: 8,
-  },
+  // Original grid card — vertical
+  gridCard: { background: 'var(--surface-card)', border: '1px solid var(--card-border)', borderRadius: 14, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,.1), inset 0 1px 0 rgba(220,240,255,.06)', transition: 'transform .15s', overflow: 'hidden' },
+  gridFrame: { position: 'relative', overflow: 'hidden', aspectRatio: '3/4' },
+  gridImg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
+  gridOverlay: { position: 'absolute', inset: 0, background: 'var(--card-overlay)', pointerEvents: 'none' },
+  gridNoPhoto: { position: 'absolute', inset: 0, background: 'var(--card-no-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  gridKanji: { fontFamily: 'var(--font-serif)', fontSize: 44, color: 'var(--card-no-text)', writingMode: 'vertical-rl', letterSpacing: '-.04em', userSelect: 'none' },
+  gridBody: { padding: '8px 10px 10px' },
+  gridType: { fontSize: 8, letterSpacing: '.08em', color: 'var(--card-type)', marginBottom: 2 },
+  gridName: { fontFamily: 'var(--font-serif)', fontSize: 13, fontWeight: 400, lineHeight: 1.3, color: 'var(--text)', marginBottom: 2 },
+  gridBrewery: { fontSize: 10, color: 'var(--sub)' },
+  gridAward: { fontSize: 9, color: '#8A6C00', background: 'rgba(180,140,0,.10)', border: '1px solid rgba(180,140,0,.28)', borderRadius: 6, padding: '1px 6px', display: 'inline-block', marginTop: 4 },
   // List card — horizontal with aroma tags
   listCard: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--surface-card)', border: '1px solid var(--card-border)', borderRadius: 14, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,.1), inset 0 1px 0 rgba(220,240,255,.06)', transition: 'transform .15s', overflow: 'hidden', padding: '10px 12px 10px 10px' },
   listThumb: { width: 80, height: 100, flexShrink: 0, borderRadius: 8, overflow: 'hidden', position: 'relative' },
@@ -164,73 +79,30 @@ const s = {
   listMeta: { display: 'flex', alignItems: 'center', gap: 6 },
   listAward: { fontSize: 9, color: '#8A6C00', background: 'rgba(180,140,0,.10)', border: '1px solid rgba(180,140,0,.28)', borderRadius: 6, padding: '1px 6px', whiteSpace: 'nowrap' },
   listAromaTag: { fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(181,69,27,.08)', color: 'var(--accent)', border: '1px solid rgba(181,69,27,.15)', whiteSpace: 'nowrap' },
-  // Detail modal
+  // Detail
   backdrop: { position: 'fixed', inset: 0, background: 'rgba(26,22,20,.6)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
-  detModal: { background: 'var(--surface-card)', borderRadius: 18, width: '100%', maxWidth: 660, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative' },
+  detModal: { background: 'var(--surface-card)', borderRadius: 20, width: '100%', maxWidth: 660, maxHeight: '90svh', overflow: 'hidden auto', position: 'relative' },
   detClose: { position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  detTop: { display: 'flex', gap: 20, alignItems: 'flex-start', padding: '20px 20px 4px' },
-  detPhoto: { width: 140, height: 186, objectFit: 'cover', flexShrink: 0, borderRadius: 10 },
-  detPhotoPlaceholder: { width: 140, height: 186, background: 'var(--photo-ph)', flexShrink: 0, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: 'var(--photo-ph-icon)' },
-  detRight: { flex: 1, paddingRight: 40, minWidth: 0, position: 'relative', overflow: 'hidden' },
-  // 銘柄 + 类型合并一行
-  detBrandTypeRow: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 14,
-    color: 'var(--sub)',
-    letterSpacing: '.05em',
-    fontWeight: 400,
-    marginBottom: 6,
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  detBrandName: { color: 'var(--text)', fontWeight: 400 },
-  detDivider: { color: 'rgba(180,210,245,.3)', fontSize: 12 },
-  detProduct: {
-    fontFamily: 'var(--font-serif)',
-    fontSize: 22,
-    lineHeight: 1.25,
-    color: 'var(--text)',
-    letterSpacing: '.03em',
-    fontWeight: 400,
-    marginBottom: 6,
-  },
-  detReading: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 4 },
-  detBrewery: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--sub)', letterSpacing: '.05em', marginTop: 6 },
-  detBreweryName: { color: 'var(--text)', fontWeight: 400 },
-  detMeta: { fontSize: 11, color: 'var(--sub)', marginTop: 4 },
+  detTop: { display: 'flex', gap: 0, alignItems: 'flex-start', padding: '12px 12px 6px' },
+  detPhoto: { width: 120, height: 150, objectFit: 'cover', flexShrink: 0, borderRadius: 10 },
+  detPhotoPlaceholder: { width: 120, height: 150, background: 'var(--photo-ph)', flexShrink: 0, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, color: 'var(--photo-ph-icon)' },
+  detRight: { flex: 1, padding: '2px 48px 0 12px', minWidth: 0, position: 'relative', overflow: 'hidden' },
+  detTypeTag: { fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 3 },
+  detName: { fontFamily: 'var(--font-serif)', fontSize: 17, fontWeight: 400, lineHeight: 1.3, marginBottom: 5, letterSpacing: '.03em' },
+  detBrewery: { fontSize: 12, color: 'var(--sub)', marginTop: 3 },
+  detMeta: { fontSize: 11, color: 'var(--sub)', marginTop: 2 },
   detContributor: { fontSize: 11, color: 'var(--sub)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 },
-  // Editorial spec block
-  specSection: { padding: '16px 20px 8px' },
-  specHeader: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 16, paddingLeft: 4 },
-  specGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', columnGap: 24, rowGap: 22, padding: '0 4px' },
-  specItem: { display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', paddingTop: 6 },
-  specItemMark: { position: 'absolute', top: -2, left: 0, width: 20, height: 1, background: 'var(--accent)', opacity: .6 },
-  specName: { fontFamily: 'var(--font-sans)', fontSize: 10, color: 'var(--sub)', letterSpacing: '.16em', textTransform: 'uppercase' },
-  specFig: { fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 300, color: 'var(--text)', letterSpacing: '.02em', lineHeight: 1 },
-  specFigText: { fontFamily: 'var(--font-serif)', fontSize: 19, fontWeight: 300, color: 'var(--text)', letterSpacing: '.04em', lineHeight: 1.2 },
-  specSuffix: { fontSize: 13, color: 'rgba(180,210,245,.4)', fontWeight: 400, marginLeft: 2 },
-  // Tag section
-  tagSection: { padding: '4px 20px 8px' },
-  tagBlock: { marginTop: 14 },
-  tagLabel: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 8 },
-  tagsRow: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  tagChip: { fontSize: 12, padding: '4px 11px', borderRadius: 12, background: 'rgba(180,210,245,.08)', color: 'var(--text)', letterSpacing: '.02em', fontFamily: 'var(--font-sans)' },
-  // Awards
-  awardSection: { padding: '8px 20px 8px' },
-  awardHeader: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 12 },
-  awardRow: { display: 'flex', alignItems: 'baseline', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(200,225,255,.06)' },
-  awardCategory: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--sub)', display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0, minWidth: 150 },
-  awardMedal: (gold) => ({
-    display: 'inline-block', fontSize: 10, padding: '2px 7px', borderRadius: 6, letterSpacing: '.02em', fontWeight: 500, marginLeft: 4,
-    color: gold ? '#e0b954' : '#c8ced9',
-    background: gold ? 'rgba(220,175,50,.16)' : 'rgba(190,200,215,.10)',
-  }),
-  awardYears: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  awardYearBadge: { fontFamily: 'var(--font-sans)', fontSize: 12, padding: '2px 7px', borderRadius: 6, background: 'rgba(180,210,245,.08)', color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '.02em' },
-  // Notes prose block
-  notesProse: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--text)', fontStyle: 'italic', padding: '10px 14px 10px 18px', borderLeft: '2px solid var(--accent)', background: 'rgba(181,69,27,.05)', borderRadius: 3, margin: '12px 20px', lineHeight: 1.7, letterSpacing: '.02em' },
+  statsBar: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', margin: '0 12px' },
+  statItem: { padding: '6px 10px', borderRight: '1px solid var(--border)', overflow: 'hidden' },
+  statLabel: { fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  statValue: { fontSize: 14, fontFamily: 'var(--font-serif)', fontWeight: 400, color: 'var(--text)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.3 },
+  detLower: { padding: '4px 16px 16px', position: 'relative', overflow: 'hidden' },
+  detGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginBottom: 4 },
+  detCell: { padding: '7px 0', borderBottom: '1px solid var(--border)', paddingRight: 12 },
+  detCellLabel: { fontSize: 9, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 2 },
+  detCellValue: { fontSize: 12, color: 'var(--text)' },
+  detTagsRow: { display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 10 },
+  detTag: { fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--accent-bg)', color: 'var(--accent)' },
   empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
   stickyBar: {
     position: 'sticky', top: 52, zIndex: 30,
@@ -243,7 +115,7 @@ const s = {
   stickyInner: { maxWidth: 1100, margin: '0 auto' },
 }
 
-function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarded, mode = 'grid' }) {
+function SakeCard({ e, lang, typeLabel, onOpen, wished, onWish, awarded, mode = 'grid' }) {
   const wishIcon = (
     <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -251,43 +123,27 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
   )
 
   if (mode === 'grid') {
-    const hasBrand = !!e.brand
-    const hasType = !!e.type
     return (
-      <div style={s.gridTile} onClick={() => onOpen(e)}>
-        {onWish && (
-          <button onClick={ev => onWish(e.id, ev)} style={s.wishBtn(wished)} title={wished ? '想喝リストから外す' : '想喝'}>
-            {wishIcon}
-          </button>
-        )}
-        {(hasBrand || hasType) && (
-          <div style={s.gridBrandTypeRow}>
-            {hasBrand && <span style={s.gridBrandName}>{e.brand}</span>}
-            {hasBrand && hasType && <span style={s.gridDivider}>·</span>}
-            {hasType && <span>{cleanLabel(typeLabel(e.type))}</span>}
-          </div>
-        )}
-        <div style={s.gridProduct}>{e.name || e.brand || '—'}</div>
-        {(e.brewery || e.region) && (
-          <div style={s.gridBrewery}>
-            {e.brewery && <span style={s.gridBreweryName}>{e.brewery}</span>}
-            {e.brewery && e.region && <span>· {e.region}</span>}
-            {!e.brewery && e.region && <span>{e.region}</span>}
-          </div>
-        )}
-        {e.aroma_tags?.length > 0 && tagLabel && (
-          <div style={s.gridAromaRow}>
-            {e.aroma_tags.slice(0, 3).map(id => (
-              <span key={id} style={s.gridAromaKw}>{tagLabel(id, 'aroma')}</span>
-            ))}
-          </div>
-        )}
-        {(e.rating > 0 || awarded) && (
-          <div style={s.gridRatingRow}>
-            {e.rating > 0 && <Stars rating={e.rating} size={10} />}
-            {awarded && <span style={s.gridAwardBadge}>★ 受賞</span>}
-          </div>
-        )}
+      <div style={s.gridCard} onClick={() => onOpen(e)}>
+        <div style={s.gridFrame}>
+          {e.photo_url ? (
+            <><img style={s.gridImg} src={e.photo_url} alt={e.name} /><div style={s.gridOverlay} /></>
+          ) : (
+            <div style={s.gridNoPhoto}><div style={s.gridKanji}>{(e.brand || e.name)?.slice(0, 2) || '酒'}</div></div>
+          )}
+          {onWish && (
+            <button onClick={ev => onWish(e.id, ev)}
+              style={{ position: 'absolute', top: 6, right: 6, width: 32, height: 32, borderRadius: '50%', border: wished ? 'none' : '1px solid rgba(255,255,255,.3)', background: wished ? 'var(--accent)' : 'rgba(0,0,0,.4)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2, backdropFilter: 'blur(4px)' }}>
+              {wishIcon}
+            </button>
+          )}
+        </div>
+        <div style={s.gridBody}>
+          {e.type && <div style={s.gridType}>{typeLabel(e.type)}</div>}
+          <div style={s.gridName}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
+          {(e.brewery || e.region) && <div style={s.gridBrewery}>{[e.brewery, e.region].filter(Boolean).join(' · ')}</div>}
+          {awarded && <div style={s.gridAward}>★ 受賞</div>}
+        </div>
       </div>
     )
   }
@@ -514,34 +370,27 @@ export default function Display({ session }) {
     }
   }
 
-// Editorial spec item — 数字或文本值，用 serif light 大字
-const SpecFigureItem = ({ label, value, suffix, wiki }) => {
+const StatItem = ({ label, value }) => {
     const str = value != null && value !== '' ? String(value) : null
-    if (!str) return (
-      <div style={s.specItem}>
-        <div style={s.specItemMark} />
-        <div style={s.specName}>{label}</div>
-        <div style={{ ...s.specFig, color: 'var(--border)', fontSize: 16 }}>—</div>
-      </div>
-    )
-    // Detect if value is numeric (with optional +/- and decimal)
-    const isNumeric = /^[+\-]?\d+(\.\d+)?$/.test(str.replace(/[%°]/g, ''))
-    // Extract numeric part and unit if inline (e.g., "15%" → "15" + "%")
-    const inlineUnitMatch = !suffix && str.match(/^([+\-]?\d+(?:\.\d+)?)(%|号|°C?)$/)
-    const numPart = inlineUnitMatch ? inlineUnitMatch[1] : str
-    const unit = suffix || inlineUnitMatch?.[2] || ''
-    const useNumStyle = isNumeric || inlineUnitMatch
+    const fontSize = str && str.length > 8 ? 11 : str && str.length > 5 ? 12 : 15
     return (
-      <div style={s.specItem}>
-        <div style={s.specItemMark} />
-        <div style={s.specName}>{label}</div>
-        <div style={useNumStyle ? s.specFig : s.specFigText}>
-          {wiki ? <WikiText text={numPart} /> : numPart}
-          {unit && <span style={s.specSuffix}>{unit}</span>}
-        </div>
+      <div style={s.statItem}>
+        <div style={s.statLabel}>{label}</div>
+        {str
+          ? <div style={{ ...s.statValue, fontSize }} title={str}>{str}</div>
+          : <div style={{ ...s.statValue, fontSize: 12, color: 'var(--border)' }}>N/A</div>}
       </div>
     )
   }
+
+  const Cell = ({ label, value, wiki }) => (
+    <div style={s.detCell}>
+      <div style={s.detCellLabel}>{label}</div>
+      {value != null && value !== ''
+        ? <div style={s.detCellValue}>{wiki ? <WikiText text={value} /> : value}</div>
+        : <div style={{ ...s.detCellValue, color: 'var(--border)' }}>N/A</div>}
+    </div>
+  )
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (activeTag ? 1 : 0)
 
@@ -657,7 +506,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             <div style={{ position: 'relative' }}>
               <div style={layoutMode === 'grid' ? s.gridContainer : s.listContainer}>
                 {visible.map(e => (
-                  <SakeCard key={e.id} e={e} lang={lang} typeLabel={typeLabel} tagLabel={tagLabel} onOpen={setDetail}
+                  <SakeCard key={e.id} e={e} lang={lang} typeLabel={typeLabel} onOpen={setDetail}
                     wished={myWishes.has(e.id)} onWish={session ? toggleWish : null}
                     awarded={awardedBreweries.has(e.brewery)} mode={layoutMode} />
                 ))}
@@ -740,38 +589,37 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                 : <div style={s.detPhotoPlaceholder}>🍶</div>}
               <div style={s.detRight}>
                 <MarkSVGAbs />
-                {/* 銘柄 · 类型（同一行）*/}
-                {(detail.brand || detail.type) && (
-                  <div style={s.detBrandTypeRow}>
-                    {detail.brand && <span style={s.detBrandName}>{detail.brand}</span>}
-                    {detail.brand && detail.type && <span style={s.detDivider}>·</span>}
-                    {detail.type && <span><WikiText text={cleanLabel(typeLabel(detail.type))} /></span>}
-                  </div>
-                )}
-                {/* Product hero */}
-                {(detail.name || (!detail.brand)) && (
-                  <div style={s.detProduct}>
-                    <WikiText text={detail.name || detail.brand || ''} />
-                  </div>
-                )}
-                {detailBrand && (lang === 'ja' ? detailBrand.furigana : detailBrand.romaji) && (
-                  <div style={s.detReading}>
-                    {lang === 'ja' ? detailBrand.furigana : detailBrand.romaji}
-                  </div>
-                )}
-                {detail.name_reading && (
-                  <div style={s.detReading}>{detail.name_reading}</div>
-                )}
-                {/* 酒造 · 都道府県 */}
-                {(detail.brewery || detail.region) && (
-                  <div style={s.detBrewery}>
-                    {detail.brewery && <span style={s.detBreweryName}>{detail.brewery}</span>}
-                    {detail.brewery && detail.region && <span> · {detail.region}</span>}
-                    {!detail.brewery && detail.region && <span>{detail.region}</span>}
-                  </div>
-                )}
-                <div style={{ marginTop: 10 }}><Stars rating={detail.rating} size={13} /></div>
-                {detail.tasted_at && <div style={s.detMeta}>{detail.tasted_at}</div>}
+                {detail.type && <div style={s.detTypeTag}><WikiText text={typeLabel(detail.type)} /></div>}
+                {detail.brand
+                  ? <>
+                      {detailBrand && (lang === 'ja' ? detailBrand.furigana : detailBrand.romaji) && (
+                        <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.07em', marginBottom: 3, fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
+                          {lang === 'ja' ? detailBrand.furigana : detailBrand.romaji}
+                        </div>
+                      )}
+                      <div style={{ ...s.detName, marginBottom: 4 }}>
+                        {detail.brand}
+                      </div>
+                      {detail.name && (
+                        <div style={{ marginBottom: 5 }}>
+                          <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.35, marginBottom: detail.name_reading ? 2 : 0 }}>
+                            <WikiText text={detail.name} />
+                          </div>
+                          {detail.name_reading && (
+                            <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
+                              {detail.name_reading}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  : <div style={{ ...s.detName, marginBottom: 5 }}>
+                      <WikiText text={detail.name || ''} />
+                    </div>
+                }
+                <Stars rating={detail.rating} size={13} />
+                {detail.brewery && <div style={s.detBrewery}>{detail.brewery}</div>}
+                <div style={s.detMeta}>{[detail.region, detail.tasted_at].filter(Boolean).join(' · ')}</div>
                 {detail.contributor_name && (
                   <div style={s.detContributor}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4A7A35', display: 'inline-block', flexShrink: 0 }} />
@@ -826,110 +674,77 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
               </div>
             )}
 
-            {/* Editorial spec section (酒質) */}
-            <div style={s.specSection}>
-              <div style={s.specHeader}>{lang === 'ja' ? '酒質' : lang === 'zh' ? '酒質' : 'Characteristics'}</div>
-              <div style={s.specGrid}>
-                <SpecFigureItem label={t('detail.polishing')} value={detail.polishing} suffix="%" />
-                <SpecFigureItem label={t('detail.rice')} value={detail.rice} wiki />
-                <SpecFigureItem label={t('detail.yeast')} value={detail.yeast} wiki />
-                <SpecFigureItem label={t('detail.alcohol')} value={detail.alcohol} suffix="%" />
-                <SpecFigureItem label={t('detail.smv')} value={detail.smv} />
-                <SpecFigureItem label={t('detail.acidity')} value={detail.acidity} />
-              </div>
+            <div style={{ padding: '0 12px' }}><WaveDivider /></div>
+            <div style={s.statsBar}>
+              <StatItem label={t('detail.polishing')} value={detail.polishing} />
+              <StatItem label={t('detail.alcohol')} value={detail.alcohol} />
+              <StatItem label={t('detail.smv')} value={detail.smv} />
+              <StatItem label={t('detail.acidity')} value={detail.acidity} />
             </div>
+            <div style={{ padding: '0 12px' }}><WaveDivider /></div>
 
-            {/* Notes prose */}
-            {detail.notes && (
-              <div style={s.notesProse}><WikiText text={detail.notes} /></div>
-            )}
-
-            {/* Tag section */}
-            {(detail.aroma_tags?.length > 0 || detail.taste_tags?.length > 0 || detail.tags?.length > 0) && (
-              <div style={s.tagSection}>
-                <div style={s.specHeader}>{lang === 'ja' ? '香味特徵' : lang === 'zh' ? '香味特徵' : 'Tasting Notes'}</div>
-                {detail.aroma_tags?.length > 0 && (
-                  <div style={s.tagBlock}>
-                    <div style={s.tagLabel}>{t('detail.aroma')}</div>
-                    <div style={s.tagsRow}>
-                      {detail.aroma_tags.map(id => (
-                        <span key={id} style={s.tagChip}>{tagLabel(id, 'aroma')}</span>
-                      ))}
-                    </div>
+            <div style={s.detLower}>
+              <div style={s.detGrid2}>
+                <Cell label={t('detail.rice')} value={detail.rice} wiki />
+                <Cell label={t('detail.yeast')} value={detail.yeast} wiki />
+                <Cell label={t('detail.bottling')} value={detail.bottling_date} />
+                <Cell label={t('detail.drinking')} value={detail.tasted_at} />
+              </div>
+              {detail.aroma_tags?.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.aroma')}</div>
+                  <div style={s.detTagsRow}>
+                    {detail.aroma_tags.map(id => (
+                      <span key={id} style={s.detTag}>{tagLabel(id, 'aroma')}</span>
+                    ))}
                   </div>
-                )}
-                {detail.taste_tags?.length > 0 && (
-                  <div style={s.tagBlock}>
-                    <div style={s.tagLabel}>{t('detail.taste')}</div>
-                    <div style={s.tagsRow}>
-                      {detail.taste_tags.map(id => (
-                        <span key={id} style={s.tagChip}>{tagLabel(id, 'taste')}</span>
-                      ))}
-                    </div>
+                </div>
+              )}
+              {detail.taste_tags?.length > 0 && (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.05em', marginBottom: 6 }}>{t('detail.taste')}</div>
+                  <div style={s.detTagsRow}>
+                    {detail.taste_tags.map(id => (
+                      <span key={id} style={{ ...s.detTag, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)' }}>{tagLabel(id, 'taste')}</span>
+                    ))}
                   </div>
-                )}
-                {detail.tags?.length > 0 && (
-                  <div style={s.tagBlock}>
-                    <div style={s.tagLabel}>{lang === 'ja' ? 'その他' : lang === 'zh' ? '其他' : 'Other'}</div>
-                    <div style={s.tagsRow}>
-                      {detail.tags.map(tg => (
-                        <span key={tg} style={s.tagChip}>{tagLabel(tg, 'flavor')}</span>
-                      ))}
-                    </div>
+                </div>
+              )}
+              {(detail.aroma || detail.taste || detail.notes) && (
+                <div style={{ marginTop: 12, fontSize: 14, color: 'var(--sub)', lineHeight: 1.7 }}>
+                  {detail.aroma && <p><strong>{t('detail.aroma')}：</strong><WikiText text={detail.aroma} /></p>}
+                  {detail.taste && <p><strong>{t('detail.taste')}：</strong><WikiText text={detail.taste} /></p>}
+                  {detail.notes && <p><WikiText text={detail.notes} /></p>}
+                </div>
+              )}
+              {detail.tags?.length > 0 && (
+                <div style={s.detTagsRow}>
+                  {detail.tags.map(tg => <span key={tg} style={s.detTag}>{getFlavorTagLabel(tg, lang)}</span>)}
+                </div>
+              )}
+              {detailAwards.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 6 }}>
+                    {lang === 'ja' ? '受賞歴' : lang === 'zh' ? '得獎記錄' : 'Awards'}
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Bottling date / drinking date — minor meta */}
-            {(detail.bottling_date) && (
-              <div style={{ padding: '6px 20px', fontSize: 11, color: 'var(--sub)', letterSpacing: '.05em' }}>
-                {t('detail.bottling')}: {detail.bottling_date}
-              </div>
-            )}
-
-            {/* Awards section — grouped by category */}
-            {detailAwards.length > 0 && (
-              <div style={s.awardSection}>
-                <div style={s.awardHeader}>{lang === 'ja' ? '受賞記錄' : lang === 'zh' ? '得獎記錄' : 'Awards'}</div>
-                {(() => {
-                  // Group awards by prefix + is_gold
-                  const groups = {}
-                  detailAwards.forEach(a => {
-                    const isSC = a.year_code?.startsWith('SC_')
-                    const isIWC = a.year_code?.startsWith('IWC_')
-                    const cat = isSC ? 'SC' : isIWC ? 'IWC' : (lang === 'ja' ? '全国新酒鑑評会' : lang === 'zh' ? '全國新酒鑑評會' : 'NRIB')
-                    const medal = a.is_gold ? 'gold' : 'silver'
-                    const key = `${cat}-${medal}`
-                    if (!groups[key]) groups[key] = { cat, gold: a.is_gold, years: [] }
-                    if (!groups[key].years.includes(a.year_code || a.year)) {
-                      groups[key].years.push(a.year_code || a.year)
-                    }
-                  })
-                  return Object.entries(groups).map(([key, g]) => (
-                    <div key={key} style={s.awardRow}>
-                      <div style={s.awardCategory}>
-                        <span>{g.cat}</span>
-                        <span style={s.awardMedal(g.gold)}>{g.gold ? (lang === 'en' ? 'Gold' : '金賞') : (lang === 'en' ? 'Silver' : '銀賞')}</span>
-                      </div>
-                      <div style={s.awardYears}>
-                        {g.years.map((y, i) => <span key={i} style={s.awardYearBadge}>{y}</span>)}
-                      </div>
-                    </div>
-                  ))
-                })()}
-              </div>
-            )}
-
-            {/* Other prose (aroma/taste text) */}
-            {(detail.aroma || detail.taste) && (
-              <div style={{ padding: '8px 20px', fontSize: 13, color: 'var(--sub)', lineHeight: 1.7 }}>
-                {detail.aroma && <p><strong style={{ color: 'var(--text)' }}>{t('detail.aroma')}：</strong><WikiText text={detail.aroma} /></p>}
-                {detail.taste && <p><strong style={{ color: 'var(--text)' }}>{t('detail.taste')}：</strong><WikiText text={detail.taste} /></p>}
-              </div>
-            )}
-
-            <div style={{ padding: '8px 20px 20px' }}>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {detailAwards.map((a, i) => {
+                      const isSC = a.year_code?.startsWith('SC_')
+                      const isIWC = a.year_code?.startsWith('IWC_')
+                      const prefix = isSC ? 'SC' : isIWC ? 'IWC' : '鑑'
+                      return (
+                        <span key={i} title={a.brand_name}
+                          style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, whiteSpace: 'nowrap',
+                            background: a.is_gold ? 'rgba(180,140,0,.10)' : 'var(--bg)',
+                            color: a.is_gold ? '#8A6C00' : 'var(--sub)',
+                            border: `1px solid ${a.is_gold ? 'rgba(180,140,0,.28)' : 'var(--border)'}` }}>
+                          {a.is_gold ? '★' : '○'} {prefix} {a.year}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               {(relatedLoading || relatedEntries.length > 0) && (
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
