@@ -60,8 +60,8 @@ const s = {
   listContainer: { display: 'flex', flexDirection: 'column', gap: 10 },
   // New editorial tile — text-first, no photo, no aspect-ratio
   gridTile: {
-    background: 'rgba(180,210,245,.03)',
-    border: '1px solid rgba(200,225,255,.06)',
+    background: 'var(--card-bg)',
+    border: '1px solid var(--card-border)',
     borderRadius: 4,
     padding: '14px 16px',
     cursor: 'pointer',
@@ -99,7 +99,7 @@ const s = {
     flexWrap: 'wrap',
   },
   gridBrandName: { color: 'var(--accent)', fontWeight: 500 },
-  gridDivider: { color: 'rgba(180,210,245,.25)', fontSize: 11 },
+  gridDivider: { color: 'var(--placeholder)', fontSize: 11 },
   gridProduct: {
     fontFamily: 'var(--font-serif)',
     fontSize: 20,
@@ -120,7 +120,7 @@ const s = {
     color: 'var(--sub)',
     letterSpacing: '.05em',
     paddingBottom: 8,
-    borderBottom: '1.5px solid rgba(181,69,27,.25)',
+    borderBottom: '1.5px solid var(--accent-light)',
   },
   gridBreweryName: { color: 'var(--text)', fontWeight: 400, marginRight: 6 },
   gridAromaRow: {
@@ -131,7 +131,8 @@ const s = {
     lineHeight: 1.5,
   },
   gridAromaKw: {
-    color: 'rgba(180,210,245,.75)',
+    color: 'var(--text)',
+    opacity: .75,
     marginRight: 10,
   },
   gridRatingRow: {
@@ -186,7 +187,7 @@ const s = {
     flexWrap: 'wrap',
   },
   detBrandName: { color: 'var(--text)', fontWeight: 400 },
-  detDivider: { color: 'rgba(180,210,245,.3)', fontSize: 12 },
+  detDivider: { color: 'var(--placeholder)', fontSize: 12 },
   detProduct: {
     fontFamily: 'var(--font-serif)',
     fontSize: 22,
@@ -210,17 +211,17 @@ const s = {
   specName: { fontFamily: 'var(--font-sans)', fontSize: 10, color: 'var(--sub)', letterSpacing: '.16em', textTransform: 'uppercase' },
   specFig: { fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 300, color: 'var(--text)', letterSpacing: '.02em', lineHeight: 1 },
   specFigText: { fontFamily: 'var(--font-serif)', fontSize: 19, fontWeight: 300, color: 'var(--text)', letterSpacing: '.04em', lineHeight: 1.2 },
-  specSuffix: { fontSize: 13, color: 'rgba(180,210,245,.4)', fontWeight: 400, marginLeft: 2 },
+  specSuffix: { fontSize: 13, color: 'var(--placeholder)', fontWeight: 400, marginLeft: 2 },
   // Tag section
   tagSection: { padding: '4px 20px 8px' },
   tagBlock: { marginTop: 14 },
   tagLabel: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 8 },
   tagsRow: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  tagChip: { fontSize: 12, padding: '4px 11px', borderRadius: 12, background: 'rgba(180,210,245,.08)', color: 'var(--text)', letterSpacing: '.02em', fontFamily: 'var(--font-sans)' },
+  tagChip: { fontSize: 12, padding: '4px 11px', borderRadius: 12, background: 'var(--card-bg)', color: 'var(--text)', letterSpacing: '.02em', fontFamily: 'var(--font-sans)', border: '1px solid var(--card-border)' },
   // Awards
   awardSection: { padding: '8px 20px 8px' },
   awardHeader: { fontSize: 11, color: 'var(--sub)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 12 },
-  awardRow: { display: 'flex', alignItems: 'baseline', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(200,225,255,.06)' },
+  awardRow: { display: 'flex', alignItems: 'baseline', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--border)' },
   awardCategory: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--sub)', display: 'flex', alignItems: 'baseline', gap: 6, flexShrink: 0, minWidth: 150 },
   awardMedal: (gold) => ({
     display: 'inline-block', fontSize: 10, padding: '2px 7px', borderRadius: 6, letterSpacing: '.02em', fontWeight: 500, marginLeft: 4,
@@ -228,9 +229,9 @@ const s = {
     background: gold ? 'rgba(220,175,50,.16)' : 'rgba(190,200,215,.10)',
   }),
   awardYears: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  awardYearBadge: { fontFamily: 'var(--font-sans)', fontSize: 12, padding: '2px 7px', borderRadius: 6, background: 'rgba(180,210,245,.08)', color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '.02em' },
+  awardYearBadge: { fontFamily: 'var(--font-sans)', fontSize: 12, padding: '2px 7px', borderRadius: 6, background: 'var(--card-bg)', color: 'var(--text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '.02em', border: '1px solid var(--card-border)' },
   // Notes prose block
-  notesProse: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--text)', fontStyle: 'italic', padding: '10px 14px 10px 18px', borderLeft: '2px solid var(--accent)', background: 'rgba(181,69,27,.05)', borderRadius: 3, margin: '12px 20px', lineHeight: 1.7, letterSpacing: '.02em' },
+  notesProse: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--text)', fontStyle: 'italic', padding: '10px 14px 10px 18px', borderLeft: '2px solid var(--accent)', background: 'var(--accent-bg)', borderRadius: 3, margin: '12px 20px', lineHeight: 1.7, letterSpacing: '.02em' },
   empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
   stickyBar: {
     position: 'sticky', top: 52, zIndex: 30,
