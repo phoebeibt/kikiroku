@@ -9,6 +9,7 @@ import { useTagResolver } from '../contexts/TagsContext'
 import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
 import { localizedTerm } from '../lib/wiki'
+import { displayName } from '../lib/localize'
 
 
 // Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
@@ -403,12 +404,12 @@ export default function Display({ session }) {
     const lookup = detail?.brand || detail?.name
     if (!lookup) return
     const name = lookup.trim()
-    supabase.from('sake_brands').select('furigana,romaji').eq('name', name).limit(1)
+    supabase.from('sake_brands').select('name,name_zh,name_en,furigana,romaji').eq('name', name).limit(1)
       .then(({ data }) => {
         if (data?.length) { setDetailBrand(data[0]); return }
         const first = name.split(/[\s　・]/)[0]
         if (first.length >= 2) {
-          supabase.from('sake_brands').select('furigana,romaji').ilike('name', `${first}%`).limit(1)
+          supabase.from('sake_brands').select('name,name_zh,name_en,furigana,romaji').ilike('name', `${first}%`).limit(1)
             .then(({ data: d2 }) => setDetailBrand(d2?.[0] || false))
         } else {
           setDetailBrand(false)
@@ -743,13 +744,16 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
               <div style={s.detRight}>
                 <MarkSVGAbs />
                 {/* 銘柄 · 类型（同一行）*/}
-                {(detail.brand || detail.type) && (
-                  <div style={s.detBrandTypeRow}>
-                    {detail.brand && <span style={s.detBrandName}>{detail.brand}</span>}
-                    {detail.brand && detail.type && <span style={s.detDivider}>·</span>}
-                    {detail.type && <span><WikiText text={cleanLabel(typeLabel(detail.type))} /></span>}
-                  </div>
-                )}
+                {(detail.brand || detail.type) && (() => {
+                  const brandKanji = detailBrand ? displayName(detailBrand, lang).kanji : detail.brand
+                  return (
+                    <div style={s.detBrandTypeRow}>
+                      {detail.brand && <span style={s.detBrandName}>{brandKanji}</span>}
+                      {detail.brand && detail.type && <span style={s.detDivider}>·</span>}
+                      {detail.type && <span><WikiText text={cleanLabel(typeLabel(detail.type))} /></span>}
+                    </div>
+                  )
+                })()}
                 {/* Product hero */}
                 {(detail.name || (!detail.brand)) && (
                   <div style={s.detProduct}>

@@ -48,19 +48,24 @@ function ProductDropdown({ items, onSelect, inputRef }) {
   )
 }
 
-// Generic autocomplete hook
-function useAutocomplete(table, column, query, enabled = true) {
+// Generic autocomplete hook.
+// searchColumns: extra columns to also match against (e.g., name_zh, name_en,
+// furigana, romaji). Results always return the display `column` value.
+function useAutocomplete(table, column, query, enabled = true, searchColumns = []) {
   const [results, setResults] = useState([])
   useEffect(() => {
     if (!enabled || !query || query.length < 1) { setResults([]); return }
     const t = setTimeout(async () => {
       const jp = toJP(query)
-      const filter = jp !== query
-        ? `${column}.ilike.%${query}%,${column}.ilike.%${jp}%`
-        : `${column}.ilike.%${query}%`
+      const cols = [column, ...searchColumns]
+      const filterParts = cols.flatMap(c =>
+        jp !== query
+          ? [`${c}.ilike.%${query}%`, `${c}.ilike.%${jp}%`]
+          : [`${c}.ilike.%${query}%`]
+      )
       const { data } = await supabase
         .from(table).select(column)
-        .or(filter)
+        .or(filterParts.join(','))
         .limit(8)
       setResults((data || []).map(r => r[column]))
     }, 120)
@@ -112,7 +117,7 @@ function DropdownList({ items, onSelect, inputRef }) {
 export function BreweryInput({ value, onChange, onRegionFill, style, placeholder }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef()
-  const results = useAutocomplete('sake_breweries', 'name', value, open)
+  const results = useAutocomplete('sake_breweries', 'name', value, open, ['name_zh', 'name_en', 'furigana', 'romaji'])
 
   const select = async (name) => {
     if (!name) { setOpen(false); return }
@@ -142,7 +147,7 @@ export function BreweryInput({ value, onChange, onRegionFill, style, placeholder
 export function BrandInput({ value, onChange, onBreweryFill, onRegionFill, onBlur, style, placeholder }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef()
-  const results = useAutocomplete('sake_brands', 'name', value, open)
+  const results = useAutocomplete('sake_brands', 'name', value, open, ['name_zh', 'name_en', 'furigana', 'romaji'])
 
   const fillBrewery = async (brandName) => {
     if (!onBreweryFill || !brandName) return
