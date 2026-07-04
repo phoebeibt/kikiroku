@@ -332,8 +332,8 @@ function ForwardConfirmDialog({ entry, lang, onConfirm, onCancel }) {
 
 const TODAY = () => new Date().toISOString().slice(0, 10)
 const DRAFT_KEY = 'kikiroku-draft'
-const saveDraft = (form, tags, aroma, taste, dates) => {
-  if (form.brand.trim() || form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste, dates }))
+const saveDraft = (form, tags, aroma, taste, dates, method) => {
+  if (form.brand.trim() || form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste, dates, method }))
   else localStorage.removeItem(DRAFT_KEY)
 }
 const loadDraft = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY)) } catch { return null } }
@@ -351,6 +351,7 @@ export default function Journal({ session }) {
   const [sheet, setSheet] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formTags, setFormTags] = useState([])
+  const [methodTags, setMethodTags] = useState([])
   const [aromaTags, setAromaTags] = useState([])
   const [tasteTags, setTasteTags] = useState([])
   const [editId, setEditId] = useState(null)
@@ -384,11 +385,11 @@ export default function Journal({ session }) {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
     draftTimerRef.current = setTimeout(() => {
-      saveDraft(form, formTags, aromaTags, tasteTags, formDates)
+      saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
       if (form.brand?.trim() || form.name?.trim()) setHasDraft(true)
     }, 1000)
     return () => clearTimeout(draftTimerRef.current)
-  }, [form, formTags, aromaTags, tasteTags, formDates, sheet, editId])
+  }, [form, formTags, aromaTags, tasteTags, formDates, methodTags, sheet, editId])
 
   // ── Swipe-down to save/dismiss ──────────────────────────────
   const [sheetDragY, setSheetDragY] = useState(0)
@@ -539,10 +540,11 @@ export default function Journal({ session }) {
     if (draft) {
       setForm(draft.form); setFormTags(draft.tags || [])
       setAromaTags(draft.aroma || []); setTasteTags(draft.taste || [])
+      setMethodTags(draft.method || [])
       setFormDates(draft.dates?.length ? draft.dates : [TODAY()])
       setDraftRestored(true)
     } else {
-      setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([])
+      setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
       setFormDates([TODAY()])
       setDraftRestored(false)
     }
@@ -560,7 +562,7 @@ export default function Journal({ session }) {
       smv: fwd.smv || '', acidity: fwd.acidity || '', yeast: fwd.yeast || '',
       contributor_name: defaultName,
     })
-    setFormTags([]); setAromaTags([]); setTasteTags([])
+    setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
     setFormDates([TODAY()])
     setEditId(null); setDraftRestored(false)
     setForwardSource(fwd.name || '')
@@ -584,6 +586,7 @@ export default function Journal({ session }) {
     setFormTags(e.tags || [])
     setAromaTags(e.aroma_tags || [])
     setTasteTags(e.taste_tags || [])
+    setMethodTags(e.method_tags || [])
     setFormDates(e.tasted_dates?.length ? [...e.tasted_dates].sort().reverse() : [e.tasted_at || TODAY()])
     setEditId(e.id)
     setPhotoFile(null); setPhotoFile2(null)
@@ -593,7 +596,7 @@ export default function Journal({ session }) {
   }
   const close = () => {
     if (sheet === 'form' && !editId && !forwardSource) {
-      saveDraft(form, formTags, aromaTags, tasteTags, formDates)
+      saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
       setHasDraft(!!form.name.trim())
     }
     setForwardSource(null)
@@ -662,6 +665,7 @@ export default function Journal({ session }) {
         tags: formTags.length ? formTags : null,
         aroma_tags: aromaTags.length ? aromaTags : null,
         taste_tags: tasteTags.length ? tasteTags : null,
+        method_tags: methodTags.length ? methodTags : null,
         photo_url, photo_url2, user_id: uid,
         contributor_name: form.is_public ? (form.contributor_name.trim() || defaultName) : null,
       }
@@ -1111,7 +1115,7 @@ export default function Journal({ session }) {
               {draftRestored && (
                 <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
                   <span style={{ color: 'var(--accent)' }}>{lang === 'ja' ? '草稿を復元しました' : lang === 'zh' ? '已恢復草稿' : 'Draft restored'}</span>
-                  <button onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
+                  <button onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
                     style={{ background: 'none', border: 'none', color: 'var(--sub)', fontSize: 12, cursor: 'pointer' }}>
                     {lang === 'ja' ? '破棄' : lang === 'zh' ? '放棄草稿' : 'Discard'}
                   </button>
@@ -1242,7 +1246,7 @@ export default function Journal({ session }) {
                       {lang === 'zh' ? '＋ 新增飲用日' : lang === 'ja' ? '＋ 飲用日を追加' : '+ Add date'}
                     </button>
                     <button type="button"
-                      onClick={() => { setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name }); setFormTags([]); setAromaTags([]); setTasteTags([]); setFormDates([TODAY()]); setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
+                      onClick={() => { setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); setFormDates([TODAY()]); setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
                       style={{ flexShrink: 0, padding: '0 13px', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>
                       {lang === 'ja' ? 'リセット' : lang === 'zh' ? '重置' : 'Reset'}
                     </button>
@@ -1296,6 +1300,12 @@ export default function Journal({ session }) {
               <div style={s.sec}>
                 <div style={s.secLabel}>{t('form.flavorTags')}</div>
                 <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+              </div>
+
+              {/* Method tags */}
+              <div style={s.sec}>
+                <div style={s.secLabel}>{t('form.methodTags')}</div>
+                <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} />
               </div>
 
               {/* Specs — search auto-fills here */}

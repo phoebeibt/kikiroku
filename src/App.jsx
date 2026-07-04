@@ -1,17 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { applyTheme, getTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
 import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
+// Eager: initial landing (Display) + Login (tiny)
 import Login from './pages/Login'
-import Journal from './pages/Journal'
 import Display from './pages/Display'
-import Wiki from './pages/Wiki'
-import Profile from './pages/Profile'
-import EntryDetail from './pages/EntryDetail'
-import Terms from './pages/Terms'
+// Lazy: heavy or rarely-hit routes
+const Journal = lazy(() => import('./pages/Journal'))
+const Wiki = lazy(() => import('./pages/Wiki'))
+const Profile = lazy(() => import('./pages/Profile'))
+const EntryDetail = lazy(() => import('./pages/EntryDetail'))
+const Terms = lazy(() => import('./pages/Terms'))
+
+// Neutral loading fallback — avoids flash of theme-inconsistent background.
+const RouteFallback = () => (
+  <div style={{ minHeight: '100svh', background: 'var(--bg)' }} />
+)
 
 export default function App() {
   const [session, setSession] = useState(undefined)
@@ -29,16 +36,18 @@ export default function App() {
     <LangProvider>
     <TagsProvider>
     <WikiProvider>
-      <Routes>
-        <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
-        <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
-        <Route path="/wiki" element={<Wiki session={session} />} />
-        <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
-        <Route path="/entry/:id" element={<EntryDetail session={session} />} />
-        <Route path="/" element={<Display session={session} />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
+          <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
+          <Route path="/wiki" element={<Wiki session={session} />} />
+          <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
+          <Route path="/entry/:id" element={<EntryDetail session={session} />} />
+          <Route path="/" element={<Display session={session} />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </WikiProvider>
     </TagsProvider>
     </LangProvider>
