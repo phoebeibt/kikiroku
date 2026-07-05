@@ -50,8 +50,9 @@ const s = {
   notFound: { textAlign: 'center', color: 'var(--sub)', paddingTop: 80, fontSize: 14 },
 }
 
-export default function EntryDetail() {
+export default function EntryDetail({ session }) {
   const { id } = useParams()
+  const isGuest = !session
   const nav = useNavigate()
   const { lang, t } = useLang()
   const [entry, setEntry] = useState(null)
@@ -149,21 +150,21 @@ export default function EntryDetail() {
 
       <div style={s.main}>
         <div style={s.top}>
-          {entry.photo_url
+          {!isGuest && entry.photo_url
             ? <img style={s.photo} src={entry.photo_url} alt={entry.name} />
             : <div style={s.photoPlaceholder}>🍶</div>}
           <div style={s.right}>
             {entry.type && <div style={s.typeTag}><WikiText text={typeLabel(entry.type)} /></div>}
             <div style={s.name}><WikiText text={entry.name} /></div>
-            <Stars rating={entry.rating} size={13} />
+            {!isGuest && <Stars rating={entry.rating} size={13} />}
             {entry.brewery && (
               <Link to={`/wiki?tab=breweries&q=${encodeURIComponent(entry.brewery)}`}
                 style={{ ...s.brewery, textDecoration: 'none', cursor: 'pointer' }}>
                 {entry.brewery}
               </Link>
             )}
-            <div style={s.meta}>{[entry.region, entry.tasted_at].filter(Boolean).join(' · ')}</div>
-            {entry.contributor_name && (
+            <div style={s.meta}>{[entry.region, !isGuest && entry.tasted_at].filter(Boolean).join(' · ')}</div>
+            {!isGuest && entry.contributor_name && (
               <div style={s.contributor}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4A7A35', display: 'inline-block' }} />
                 {entry.contributor_name}
@@ -186,10 +187,10 @@ export default function EntryDetail() {
             <Cell label={t('detail.rice')} value={entry.rice} />
             <Cell label={t('detail.yeast')} value={entry.yeast} />
             <Cell label={t('detail.bottling')} value={entry.bottling_date} />
-            <Cell label={t('detail.drinking')} value={entry.tasted_at} />
+            {!isGuest && <Cell label={t('detail.drinking')} value={entry.tasted_at} />}
           </div>
 
-          {entry.aroma_tags?.length > 0 && (
+          {!isGuest && entry.aroma_tags?.length > 0 && (
             <div style={{ marginTop: 14 }}>
               <div style={s.notesLabel}>{t('detail.aroma')}</div>
               <div style={s.tagsRow}>
@@ -197,7 +198,7 @@ export default function EntryDetail() {
               </div>
             </div>
           )}
-          {entry.taste_tags?.length > 0 && (
+          {!isGuest && entry.taste_tags?.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div style={s.notesLabel}>{t('detail.taste')}</div>
               <div style={s.tagsRow}>
@@ -205,14 +206,14 @@ export default function EntryDetail() {
               </div>
             </div>
           )}
-          {(entry.aroma || entry.taste || entry.notes) && (
+          {!isGuest && (entry.aroma || entry.taste || entry.notes) && (
             <div style={s.notes}>
               {entry.aroma && <p><strong>{t('detail.aroma')}：</strong><WikiText text={entry.aroma} /></p>}
               {entry.taste && <p><strong>{t('detail.taste')}：</strong><WikiText text={entry.taste} /></p>}
               {entry.notes && <p><WikiText text={entry.notes} /></p>}
             </div>
           )}
-          {entry.tags?.length > 0 && (
+          {!isGuest && entry.tags?.length > 0 && (
             <div style={{ ...s.tagsRow, marginTop: 14 }}>
               {entry.tags.map(tg => <span key={tg} style={s.tag}>{tagLabel(tg, 'flavor')}</span>)}
             </div>

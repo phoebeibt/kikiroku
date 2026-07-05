@@ -246,7 +246,7 @@ const s = {
   stickyInner: { maxWidth: 1100, margin: '0 auto' },
 }
 
-function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarded, mode = 'grid' }) {
+function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarded, mode = 'grid', isGuest = false }) {
   const wishIcon = (
     <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -278,16 +278,16 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
             {!e.brewery && e.region && <span>{e.region}</span>}
           </div>
         )}
-        {e.aroma_tags?.length > 0 && tagLabel && (
+        {!isGuest && e.aroma_tags?.length > 0 && tagLabel && (
           <div style={s.gridAromaRow}>
             {e.aroma_tags.slice(0, 3).map(id => (
               <span key={id} style={s.gridAromaKw}>{tagLabel(id, 'aroma')}</span>
             ))}
           </div>
         )}
-        {(e.rating > 0 || awarded) && (
+        {((!isGuest && e.rating > 0) || awarded) && (
           <div style={s.gridRatingRow}>
-            {e.rating > 0 && <Stars rating={e.rating} size={10} />}
+            {!isGuest && e.rating > 0 && <Stars rating={e.rating} size={10} />}
             {awarded && <span style={s.gridAwardBadge}>★ 受賞</span>}
           </div>
         )}
@@ -299,7 +299,7 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
   return (
     <div style={s.listCard} onClick={() => onOpen(e)}>
       <div style={s.listThumb}>
-        {e.photo_url
+        {!isGuest && e.photo_url
           ? <img style={s.listThumbImg} src={e.photo_url} alt={e.name} />
           : <div style={s.listThumbNo}><span style={s.listKanji}>{(e.brand || e.name)?.slice(0, 2) || '酒'}</span></div>
         }
@@ -309,10 +309,10 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
         <div style={s.listName}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
         {(e.brewery || e.region) && <div style={s.listBrewery}>{[e.brewery, e.region].filter(Boolean).join(' · ')}</div>}
         <div style={s.listMeta}>
-          {e.rating > 0 && <Stars rating={e.rating} size={10} />}
+          {!isGuest && e.rating > 0 && <Stars rating={e.rating} size={10} />}
           {awarded && <span style={s.listAward}>★ 受賞</span>}
         </div>
-        {e.aroma_tags?.length > 0 && (
+        {!isGuest && e.aroma_tags?.length > 0 && (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
             {e.aroma_tags.slice(0, 3).map(id => (
               <span key={id} style={s.listAromaTag}>{tagLabel(id, 'aroma')}</span>
@@ -652,33 +652,17 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
         {!loading && filtered.length === 0 && <p style={s.empty}>{search ? t('noResults', { q: search }) : t('noEntries')}</p>}
 
         {(() => {
-          const GUEST_LIMIT = 10
           const isGuest = !session
-          const visible = isGuest ? filtered.slice(0, GUEST_LIMIT) : filtered
-          const locked = isGuest && filtered.length > GUEST_LIMIT
           return (
             <div style={{ position: 'relative' }}>
               <div style={layoutMode === 'grid' ? s.gridContainer : s.listContainer}>
-                {visible.map(e => (
+                {filtered.map(e => (
                   <SakeCard key={e.id} e={e} lang={lang} typeLabel={typeLabel} tagLabel={tagLabel} onOpen={setDetail}
                     wished={myWishes.has(e.id)} onWish={session ? toggleWish : null}
-                    awarded={awardedBreweries.has(e.brewery)} mode={layoutMode} />
+                    awarded={awardedBreweries.has(e.brewery)} mode={layoutMode} isGuest={isGuest} />
                 ))}
               </div>
-              {locked && (
-                <div style={{ position: 'relative', marginTop: -120, zIndex: 2 }}>
-                  <div style={{ height: 140, background: 'linear-gradient(to bottom, transparent, var(--bg) 80%)' }} />
-                  <div style={{ background: 'var(--bg)', textAlign: 'center', padding: '4px 0 32px' }}>
-                    <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 14 }}>
-                      {t('guest.moreHidden', { n: filtered.length - GUEST_LIMIT })}
-                    </div>
-                    <a href="/login" style={{ display: 'inline-block', padding: '10px 28px', borderRadius: 20, background: 'var(--accent)', color: '#fff', fontSize: 14, textDecoration: 'none', fontFamily: 'var(--font-sans)' }}>
-                      {t('guest.loginToSeeAll')}
-                    </a>
-                  </div>
-                </div>
-              )}
-              {!isGuest && hasMore && (
+              {hasMore && (
                 <div ref={sentinelRef} style={{ height: 1 }} />
               )}
               {loadingMore && (
@@ -699,7 +683,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
       {detail && (
         <div style={s.backdrop} onClick={() => setDetail(null)}>
           <div style={s.detModal} onClick={e => e.stopPropagation()}>
-          <button
+          {session && <button
               onClick={async () => {
                 if (shareLoading) return
                 setShareLoading(true)
@@ -735,10 +719,10 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                     <line x1="12" y1="2" x2="12" y2="14"/>
                     <path d="M7 10.5H5a1 1 0 0 0-1 1V20a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8.5a1 1 0 0 0-1-1h-2"/>
                   </svg>}
-            </button>
+            </button>}
 
             <div style={s.detTop}>
-              {detail.photo_url
+              {session && detail.photo_url
                 ? <img style={s.detPhoto} src={detail.photo_url} alt={detail.name} />
                 : <div style={s.detPhotoPlaceholder}>🍶</div>}
               <div style={s.detRight}>
@@ -776,9 +760,9 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                     {!detail.brewery && detail.region && <span>{detail.region}</span>}
                   </div>
                 )}
-                <div style={{ marginTop: 10 }}><Stars rating={detail.rating} size={13} /></div>
-                {detail.tasted_at && <div style={s.detMeta}>{detail.tasted_at}</div>}
-                {detail.contributor_name && (
+                {session && <div style={{ marginTop: 10 }}><Stars rating={detail.rating} size={13} /></div>}
+                {session && detail.tasted_at && <div style={s.detMeta}>{detail.tasted_at}</div>}
+                {session && detail.contributor_name && (
                   <div style={s.detContributor}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4A7A35', display: 'inline-block', flexShrink: 0 }} />
                     {detail.contributor_name}
@@ -846,12 +830,12 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             </div>
 
             {/* Notes prose */}
-            {detail.notes && (
+            {session && detail.notes && (
               <div style={s.notesProse}><WikiText text={detail.notes} /></div>
             )}
 
             {/* Tag section */}
-            {(detail.aroma_tags?.length > 0 || detail.taste_tags?.length > 0 || detail.tags?.length > 0) && (
+            {session && (detail.aroma_tags?.length > 0 || detail.taste_tags?.length > 0 || detail.tags?.length > 0) && (
               <div style={s.tagSection}>
                 <div style={s.specHeader}>{lang === 'ja' ? '香味特徵' : lang === 'zh' ? '香味特徵' : 'Tasting Notes'}</div>
                 {detail.aroma_tags?.length > 0 && (
@@ -936,7 +920,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             )}
 
             <div style={{ padding: '8px 20px 20px' }}>
-              {(relatedLoading || relatedEntries.length > 0) && (
+              {session && (relatedLoading || relatedEntries.length > 0) && (
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontSize: 9, color: 'var(--sub)', letterSpacing: '.06em', marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
                     {lang === 'ja' ? '他の記録' : lang === 'zh' ? '其他記錄' : 'Other Logs'}
