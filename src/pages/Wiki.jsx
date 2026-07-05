@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import Nav from '../components/Nav'
 import { WikiText } from '../components/WikiTooltip'
@@ -123,6 +123,15 @@ function ArticleCard({ article, lang, isEditor, onSaved }) {
   const [saving, setSaving] = useState(false)
   const location = useLocation()
   const isAnchor = location.hash === `#${article.id}`
+  const cardRef = useRef(null)
+
+  useEffect(() => {
+    if (!isAnchor) return
+    setExpanded(true)
+    requestAnimationFrame(() => {
+      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }, [isAnchor])
 
   const title = article.title[lang] || article.title.ja
   const alts = [...(article.terms.ja || []), ...(lang !== 'zh' ? (article.terms.zh || []) : []), ...(lang !== 'en' ? (article.terms.en || []) : [])]
@@ -153,7 +162,7 @@ function ArticleCard({ article, lang, isEditor, onSaved }) {
   }
 
   return (
-    <div id={article.id} style={{ ...s.card, outline: isAnchor ? '2px solid var(--accent)' : 'none' }}>
+    <div ref={cardRef} id={article.id} style={{ ...s.card, outline: isAnchor ? '2px solid var(--accent)' : 'none', scrollMarginTop: 20 }}>
       {isEditor && !editing && (
         <button style={s.editBtn} onClick={() => setEditing(true)}>編集</button>
       )}
@@ -512,7 +521,50 @@ const GROUP_LABELS = {
 }
 const groupLabel = (id, lang) => GROUP_LABELS[id]?.[lang] || id
 
+// Glossary sub-categories (ordered)
+const GLOSSARY_CATEGORIES = [
+  { id: 'type',       label: { ja: '分類・タイプ',   zh: '分類・類型',    en: 'Types & Classifications' } },
+  { id: 'method',     label: { ja: '製法',           zh: '製法',          en: 'Methods' } },
+  { id: 'ingredient', label: { ja: '原料・素材',     zh: '原料・素材',    en: 'Ingredients' } },
+  { id: 'flavor',     label: { ja: '味わい・数値',   zh: '味道・數值',    en: 'Flavor & Metrics' } },
+  { id: 'people',     label: { ja: '人・銘柄',       zh: '人・銘柄',      en: 'People & Names' } },
+]
+
 // ── Flat item list (rice / yeast) ───────────────────────────────────────────────
+function FlatItemCard({ item, lang }) {
+  const location = useLocation()
+  const isAnchor = location.hash === `#${item.id}`
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!isAnchor) return
+    requestAnimationFrame(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }, [isAnchor])
+
+  const title = item.title[lang] || item.title.ja
+  const alts = [...(item.terms?.ja || []), ...(item.terms?.zh || []), ...(item.terms?.en || [])]
+    .filter(w => w !== title).slice(0, 3)
+  const summary = item.summary?.[lang] || item.summary?.ja || ''
+  const body = item.body?.[lang] || item.body?.ja || ''
+  const text = summary || body
+
+  return (
+    <div ref={ref} id={item.id} style={{
+      background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 12,
+      padding: '14px 16px', outline: isAnchor ? '2px solid var(--accent)' : 'none',
+      scrollMarginTop: 20,
+    }}>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--text)', marginBottom: alts.length ? 3 : (text ? 6 : 0) }}>{title}</div>
+      {alts.length > 0 && (
+        <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.04em', marginBottom: text ? 6 : 0 }}>{alts.join(' · ')}</div>
+      )}
+      {text && <div style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.65 }}>{text}</div>}
+    </div>
+  )
+}
+
 function FlatDirectory({ items, lang }) {
   // Group by group field
   const groups = []
@@ -534,23 +586,9 @@ function FlatDirectory({ items, lang }) {
               </div>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-              {groupItems.map(item => {
-                const title = item.title[lang] || item.title.ja
-                const alts = [...(item.terms?.ja || []), ...(item.terms?.zh || []), ...(item.terms?.en || [])]
-                  .filter(w => w !== title).slice(0, 3)
-                const summary = item.summary?.[lang] || item.summary?.ja || ''
-                const body = item.body?.[lang] || item.body?.ja || ''
-                const text = summary || body
-                return (
-                  <div key={item.id} style={{ background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
-                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--text)', marginBottom: alts.length ? 3 : (text ? 6 : 0) }}>{title}</div>
-                    {alts.length > 0 && (
-                      <div style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.04em', marginBottom: text ? 6 : 0 }}>{alts.join(' · ')}</div>
-                    )}
-                    {text && <div style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.65 }}>{text}</div>}
-                  </div>
-                )
-              })}
+              {groupItems.map(item => (
+                <FlatItemCard key={item.id} item={item} lang={lang} />
+              ))}
             </div>
           </div>
         )
@@ -581,6 +619,11 @@ export default function Wiki({ session }) {
     const t = searchParams.get('tab')
     return TAB_META[t] ? t : 'glossary'
   })
+  // Sync tab when URL params change (e.g., Wiki popup deep-link to another tab)
+  useEffect(() => {
+    const t = searchParams.get('tab')
+    if (TAB_META[t] && t !== tab) setTab(t)
+  }, [searchParams])
   const breweryQ = searchParams.get('q') || ''
   const isEditor = session?.user?.user_metadata?.is_editor === true
 
@@ -600,6 +643,15 @@ export default function Wiki({ session }) {
   const riceItems = articles.filter(a => a.group?.endsWith('-rice'))
   const yeastItems = articles.filter(a => a.group?.endsWith('-yeast'))
   const glossaryItems = filtered.filter(a => !a.group?.endsWith('-rice') && !a.group?.endsWith('-yeast'))
+  const glossaryByCat = GLOSSARY_CATEGORIES.map(cat => ({
+    ...cat,
+    items: glossaryItems.filter(a => a.group === cat.id),
+  })).filter(cat => cat.items.length > 0)
+
+  const scrollToCat = (catId) => {
+    const el = document.getElementById(`gloss-cat-${catId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const meta = TAB_META[tab] || TAB_META.glossary
 
@@ -625,9 +677,40 @@ export default function Wiki({ session }) {
           <>
             <input style={s.search} value={q} onChange={e => setQ(e.target.value)}
               placeholder={lang === 'en' ? 'Search terms…' : lang === 'zh' ? '搜索術語…' : '用語を検索…'} />
-            <div style={s.grid}>
-              {glossaryItems.map(article => (
-                <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />
+            {!q && glossaryByCat.length > 1 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18, marginTop: -8 }}>
+                {glossaryByCat.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => scrollToCat(cat.id)}
+                    style={{
+                      fontSize: 12, padding: '4px 12px', borderRadius: 16,
+                      border: '1px solid var(--border)', background: 'var(--surface-card)',
+                      color: 'var(--sub)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                    }}>
+                    {cat.label[lang] || cat.label.ja}
+                    <span style={{ marginLeft: 6, opacity: 0.6 }}>{cat.items.length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {q && (
+              <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 14, marginTop: -10 }}>
+                {lang === 'ja' ? `${glossaryItems.length} 件` : lang === 'zh' ? `共 ${glossaryItems.length} 條` : `${glossaryItems.length} results`}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {glossaryByCat.map(cat => (
+                <div key={cat.id} id={`gloss-cat-${cat.id}`} style={{ scrollMarginTop: 20 }}>
+                  <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', marginBottom: 10, fontWeight: 500 }}>
+                    {(cat.label[lang] || cat.label.ja).toUpperCase()}
+                  </div>
+                  <div style={s.grid}>
+                    {cat.items.map(article => (
+                      <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </>

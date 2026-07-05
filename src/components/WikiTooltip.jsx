@@ -15,6 +15,12 @@ function WikiPopup({ term, anchorRect, onClose }) {
   const summary = article?.summary?.[lang] || article?.summary?.ja || ''
   const body = article?.body?.[lang] || article?.body?.ja || ''
 
+  const group = article?.group || ''
+  const targetTab = group.endsWith('-rice') ? 'rice'
+    : group.endsWith('-yeast') ? 'yeast'
+    : 'glossary'
+  const readMoreLabel = { ja: '詳しく →', zh: '詳細 →', en: 'Read more →' }[lang] || 'Read more →'
+
   // Start near anchor (invisible), fine-tune after layout to avoid top-left flash
   const [pos, setPos] = useState({ top: anchorRect.bottom + 8, left: anchorRect.left, visible: false })
   useLayoutEffect(() => {
@@ -57,6 +63,14 @@ function WikiPopup({ term, anchorRect, onClose }) {
       {body && (
         <div style={{ fontSize: 12, color: 'var(--sub)', lineHeight: 1.65 }}>{body.length > 160 ? body.slice(0, 160) + '…' : body}</div>
       )}
+      <div style={{ marginTop: 10, textAlign: 'right' }}>
+        <Link
+          to={`/wiki?tab=${targetTab}#${term.id}`}
+          onClick={onClose}
+          style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none', fontFamily: 'var(--font-sans)' }}>
+          {readMoreLabel}
+        </Link>
+      </div>
     </div>,
     document.body
   )

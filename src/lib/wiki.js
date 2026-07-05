@@ -2,6 +2,7 @@
 export const WIKI_TERMS = [
   {
     id: 'junmai',
+    group: 'type',
     terms: { ja: ['純米'], zh: ['純米', '纯米'], en: ['junmai'] },
     title: { ja: '純米', zh: '純米', en: 'Junmai' },
     body: {
@@ -12,6 +13,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'ginjo',
+    group: 'type',
     terms: { ja: ['吟醸'], zh: ['吟釀', '吟酿'], en: ['ginjo'] },
     title: { ja: '吟醸', zh: '吟釀', en: 'Ginjo' },
     body: {
@@ -22,6 +24,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'daiginjo',
+    group: 'type',
     terms: { ja: ['大吟醸'], zh: ['大吟釀', '大吟酿'], en: ['daiginjo'] },
     title: { ja: '大吟醸', zh: '大吟釀', en: 'Daiginjo' },
     body: {
@@ -32,6 +35,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'honjozo',
+    group: 'type',
     terms: { ja: ['本醸造'], zh: ['本釀造', '本酿造'], en: ['honjozo'] },
     title: { ja: '本醸造', zh: '本釀造', en: 'Honjozo' },
     body: {
@@ -42,6 +46,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'tokubetsu-junmai',
+    group: 'type',
     terms: { ja: ['特別純米'], zh: ['特別純米', '特别纯米'], en: ['tokubetsu junmai'] },
     title: { ja: '特別純米', zh: '特別純米', en: 'Tokubetsu Junmai' },
     body: {
@@ -52,6 +57,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'futsushu',
+    group: 'type',
     terms: { ja: ['普通酒'], zh: ['普通酒'], en: ['futsushu'] },
     title: { ja: '普通酒', zh: '普通酒', en: 'Futsushu' },
     body: {
@@ -62,6 +68,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'seimaibuai',
+    group: 'ingredient',
     terms: { ja: ['精米歩合'], zh: ['精米步合', '精米歩合'], en: ['polishing ratio', 'seimaibuai'] },
     title: { ja: '精米歩合', zh: '精米步合', en: 'Polishing Ratio' },
     body: {
@@ -72,6 +79,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'nihonshu-do',
+    group: 'flavor',
     terms: { ja: ['日本酒度'], zh: ['日本酒度'], en: ['nihonshu-do', 'SMV', 'sake meter value'] },
     title: { ja: '日本酒度', zh: '日本酒度 (SMV)', en: 'Nihonshu-do / SMV' },
     body: {
@@ -82,6 +90,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'sando',
+    group: 'flavor',
     terms: { ja: ['酸度'], zh: ['酸度'], en: ['acidity', 'sando'] },
     title: { ja: '酸度', zh: '酸度', en: 'Acidity' },
     body: {
@@ -92,6 +101,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'namazake',
+    group: 'method',
     terms: { ja: ['生酒', '生貯蔵酒'], zh: ['生酒', '生貯藏酒'], en: ['namazake', 'nama sake'] },
     title: { ja: '生酒', zh: '生酒', en: 'Namazake' },
     body: {
@@ -102,6 +112,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'genshu',
+    group: 'method',
     terms: { ja: ['原酒'], zh: ['原酒'], en: ['genshu'] },
     title: { ja: '原酒', zh: '原酒', en: 'Genshu' },
     body: {
@@ -112,6 +123,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'kimoto',
+    group: 'method',
     terms: { ja: ['生酛'], zh: ['生酛', '生酛系'], en: ['kimoto'] },
     title: { ja: '生酛', zh: '生酛', en: 'Kimoto' },
     body: {
@@ -122,6 +134,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'yamahai',
+    group: 'method',
     terms: { ja: ['山廃'], zh: ['山廃', '山廃系'], en: ['yamahai'] },
     title: { ja: '山廃', zh: '山廃', en: 'Yamahai' },
     body: {
@@ -132,6 +145,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'hiire',
+    group: 'method',
     terms: { ja: ['火入れ'], zh: ['火入れ', '加熱殺菌'], en: ['hiire', 'pasteurization'] },
     title: { ja: '火入れ', zh: '火入れ（低温殺菌）', en: 'Hiire (Pasteurization)' },
     body: {
@@ -142,6 +156,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'amakuchi',
+    group: 'flavor',
     terms: { ja: ['甘口'], zh: ['甘口', '甜口'], en: ['amakuchi', 'sweet'] },
     title: { ja: '甘口', zh: '甘口（甜）', en: 'Amakuchi (Sweet)' },
     body: {
@@ -152,6 +167,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'karakuchi',
+    group: 'flavor',
     terms: { ja: ['辛口'], zh: ['辛口', '干口'], en: ['karakuchi', 'dry'] },
     title: { ja: '辛口', zh: '辛口（干）', en: 'Karakuchi (Dry)' },
     body: {
@@ -162,6 +178,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'shiboritate',
+    group: 'method',
     terms: { ja: ['しぼりたて', '搾りたて'], zh: ['搾りたて', '新鮮生酒'], en: ['shiboritate'] },
     title: { ja: 'しぼりたて', zh: '搾りたて（新鮮）', en: 'Shiboritate' },
     body: {
@@ -172,6 +189,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'toji',
+    group: 'people',
     terms: { ja: ['杜氏'], zh: ['杜氏', '藏匠'], en: ['toji', 'master brewer'] },
     title: { ja: '杜氏', zh: '杜氏（藏匠）', en: 'Toji (Master Brewer)' },
     body: {
@@ -182,6 +200,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'kuramoto',
+    group: 'people',
     terms: { ja: ['蔵元'], zh: ['蔵元', '酒廠', '酒厂'], en: ['kuramoto', 'brewery'] },
     title: { ja: '蔵元', zh: '蔵元（酒廠）', en: 'Kuramoto (Brewery)' },
     body: {
@@ -192,6 +211,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'umami',
+    group: 'flavor',
     terms: { ja: ['旨味', '旨み', '旨口'], zh: ['旨味', '鮮味', '鲜味'], en: ['umami'] },
     title: { ja: '旨味', zh: '旨味（鮮味）', en: 'Umami' },
     body: {
@@ -203,6 +223,7 @@ export const WIKI_TERMS = [
   // ── 酒米 ───────────────────────────────────────────────────────────
   {
     id: 'sake-rice',
+    group: 'ingredient',
     terms: { ja: ['酒米', '酒造好適米'], zh: ['酒米', '釀酒米'], en: ['sake rice'] },
     title: { ja: '酒米（酒造好適米）', zh: '酒米（釀酒適性米）', en: 'Sake Rice' },
     body: {
@@ -431,9 +452,197 @@ export const WIKI_TERMS = [
       en: 'An improved strain of Omachi, bred for better lodging resistance while retaining its bold umami and body. Grown in Hyogo and Okayama, used in many of the same breweries that champion classic Omachi.',
     },
   },
+  {
+    id: 'ginnoyume',
+    group: 'regional-rice',
+    terms: { ja: ['吟の夢', '吟の夢(高知)'], zh: ['吟之夢', '吟の夢'], en: ['ginnoyume', 'gin no yume'] },
+    title: { ja: '吟の夢', zh: '吟の夢', en: 'Gin no Yume' },
+    body: {
+      ja: '高知県が「山田錦」×「ヒノヒカリ」を交配して2001年に品種登録した酒米。大粒で心白発現が良く、暖地でも安定して育つ。淡麗ながら米の甘みと旨味を素直に引き出し、フルーティーな吟醸香に向く。「土佐鶴」「酔鯨」など県内蔵のフラッグシップに採用。',
+      zh: '高知縣以「山田錦」×「ヒノヒカリ」交配、2001年品種登記的酒米。粒大心白發現佳，暖地也能穩定生長。淡麗中能引出米的甘味與旨味，適合果香型吟釀香。「土佐鶴」「酔鯨」等縣內蔵之旗艦酒款採用。',
+      en: 'A Kochi sake rice registered in 2001, bred from Yamadanishiki × Hinohikari. Large grain with reliable shinpaku, stable in warm climates. Draws out clean sweetness and umami suited to fruity ginjo aromas. Adopted by flagship Kochi breweries like Tosatsuru and Suigei.',
+    },
+  },
+  {
+    id: 'tosarei',
+    group: 'regional-rice',
+    terms: { ja: ['土佐麗', 'とされい'], zh: ['土佐麗'], en: ['tosarei'] },
+    title: { ja: '土佐麗', zh: '土佐麗', en: 'Tosarei' },
+    body: {
+      ja: '高知県が2017年に品種登録した新しい酒造好適米。「土佐麗」の名の通り、澄んだ酒質と気品を目標に開発された。低精白でも雑味が出にくく、透明感のあるクリアな味わいを生む。県内の若手蔵元による新世代吟醸酒に多く採用されつつある。',
+      zh: '高知縣2017年品種登記的新酒造好適米。以「土佐麗」為名，追求澄澈酒質與氣質而開發。低精白亦不易出雑味，能酿出透明感十足的清澈口感。縣內新世代蔵元的新型吟釀酒逐漸採用。',
+      en: 'A newly registered (2017) Kochi sake rice bred for clarity and elegance. Even at modest polishing ratios it yields clean, transparent sake with minimal off-flavors. Increasingly used by younger Kochi brewers for next-generation ginjo styles.',
+    },
+  },
+  {
+    id: 'matsuyama-mii',
+    group: 'regional-rice',
+    terms: { ja: ['松山三井', 'まつやまみい'], zh: ['松山三井'], en: ['matsuyama mii', 'matsuyamamii'] },
+    title: { ja: '松山三井', zh: '松山三井', en: 'Matsuyama Mii' },
+    body: {
+      ja: '愛媛県の食用米として1953年に誕生し、後に酒造適性が認められた愛媛の代表酒米。大粒で心白が大きく、まろやかで柔らかな酒質を生む。「石鎚」「梅錦」「賀儀屋」など愛媛の主要蔵が積極的に使用し、県のオリジナリティを象徴する。',
+      zh: '愛媛縣1953年育成的原食用米，其後被認定具酒造適性，成為愛媛代表酒米。粒大心白發達，能酿出圓潤柔和的酒質。「石鎚」「梅錦」「賀儀屋」等愛媛主要蔵積極採用，象徵縣的原創性。',
+      en: 'Originally a table rice bred in Ehime in 1953, later recognized for brewing use — now Ehime\'s signature sake rice. Large grain and shinpaku produce mellow, soft-textured sake. Championed by leading Ehime breweries like Ishizuchi, Umenishiki, and Kagiya as an expression of local identity.',
+    },
+  },
+  {
+    id: 'gin-ginga',
+    group: 'regional-rice',
+    terms: { ja: ['吟ぎんが', 'ぎんぎんが'], zh: ['吟ぎんが'], en: ['gin ginga', 'ginginga'] },
+    title: { ja: '吟ぎんが', zh: '吟ぎんが', en: 'Gin Ginga' },
+    body: {
+      ja: '岩手県が1998年に品種登録した酒造好適米。県産の「たかね錦」を親に持ち、耐冷性に優れ、寒冷地・岩手で安定した心白発現を実現。柔らかな旨味と穏やかな香りを引き出し、「南部美人」「あさ開」「浜千鳥」など県内蔵の吟醸造りに広く使われる。',
+      zh: '岩手縣1998年品種登記的酒造好適米，親米為縣產「たかね錦」，耐冷性優異，在寒冷的岩手能穩定發現心白。引出柔和旨味與溫和香氣，「南部美人」「あさ開」「浜千鳥」等縣內蔵之吟釀造酒廣泛使用。',
+      en: 'An Iwate sake rice registered in 1998, descended from local Takanenishiki. Highly cold-resistant with reliable shinpaku formation in Iwate\'s harsh climate. Yields soft umami and gentle aromas. Widely used for ginjo brewing by Nanbu Bijin, Asabiraki, Hamachidori and other Iwate breweries.',
+    },
+  },
+  {
+    id: 'saito-no-shizuku',
+    group: 'regional-rice',
+    terms: { ja: ['西都の雫', 'さいとのしずく'], zh: ['西都の雫', '西都之雫'], en: ['saito no shizuku', 'saitonoshizuku'] },
+    title: { ja: '西都の雫', zh: '西都の雫', en: 'Saito no Shizuku' },
+    body: {
+      ja: '宮崎県が「山田錦」を父に持つ系統から育成した酒造好適米。暖地・宮崎の気候に適応し、大粒で心白が明確。淡麗さの中にしっかりした旨味と滑らかな口当たりを生む。宮崎の「千徳」「杜氏の里」など地元蔵で使われ、南九州の日本酒アイデンティティを担う。',
+      zh: '宮崎縣以「山田錦」為父系育成的酒造好適米，適應暖地宮崎氣候，粒大心白明確。淡麗中帶有紮實旨味與滑順口感。宮崎「千徳」「杜氏の里」等本地蔵使用，承擔南九州日本酒身分認同。',
+      en: 'A Miyazaki sake rice descended from Yamadanishiki, adapted to the warm southern climate. Large grain with clear shinpaku produces sake that is clean yet layered with umami and a smooth mouthfeel. Used by local Miyazaki breweries such as Sentoku, anchoring southern Kyushu\'s sake identity.',
+    },
+  },
+  {
+    id: 'isehikari',
+    group: 'regional-rice',
+    terms: { ja: ['イセヒカリ', '伊勢光'], zh: ['イセヒカリ', '伊勢光'], en: ['isehikari', 'ise hikari'] },
+    title: { ja: 'イセヒカリ', zh: 'イセヒカリ', en: 'Isehikari' },
+    body: {
+      ja: '1989年、伊勢神宮の神田で台風後に発見されたコシヒカリの突然変異米。倒伏に強く病気にも強い神秘的な出自を持ち、神宮の御饌米として奉納される。近年、日本酒醸造用にも注目され、「白鷹」「辻本店（御前酒）」などが使用。しっとりとした甘みと落ち着いた旨味が特徴。',
+      zh: '1989年在伊勢神宮神田因颱風後發現的コシヒカリ突變米。抗倒伏、抗病，帶有神秘出身，作為神宮御饌米獻上。近年也受日本酒釀造關注，「白鷹」「辻本店（御前酒）」等使用。以濕潤甘味與沉靜旨味為特徵。',
+      en: 'A Koshihikari mutation discovered in 1989 in the sacred rice paddies of Ise Grand Shrine after a typhoon. Resistant to lodging and disease, offered as ritual rice at the shrine. Recently adopted for sake brewing by breweries like Hakutaka and Tsujihonten (Gozenshu), yielding moist sweetness and quiet umami.',
+    },
+  },
+  {
+    id: 'akitsuho',
+    group: 'regional-rice',
+    terms: { ja: ['秋津穂', 'アキツホ'], zh: ['秋津穂'], en: ['akitsuho'] },
+    title: { ja: '秋津穂', zh: '秋津穂', en: 'Akitsuho' },
+    body: {
+      ja: '奈良県で長く栽培されてきた食用米。低アミロースで柔らかい米質。奈良・油長酒造の「風の森 秋津穂」シリーズが低精白酒母として使い、酒造好適米に劣らぬ表現力を証明した。米そのものの旨味を強く感じるふくよかな酒に仕上がる。',
+      zh: '奈良縣長期栽培的食用米，低直鏈澱粉，米質柔軟。奈良油長酒造「風の森 秋津穂」系列以低精白酒母使用，證明其表現力不遜於酒造好適米。能酿出強烈感受米本身旨味的豐潤酒質。',
+      en: 'A long-cultivated Nara table rice with low amylose and soft texture. Yucho Shuzo\'s "Kaze no Mori Akitsuho" series proved its brewing potential at low polishing ratios, delivering rich, expressive sake driven by the rice itself.',
+    },
+  },
+  {
+    id: 'tosanishiki',
+    group: 'regional-rice',
+    terms: { ja: ['土佐錦', 'とさにしき'], zh: ['土佐錦'], en: ['tosanishiki'] },
+    title: { ja: '土佐錦', zh: '土佐錦', en: 'Tosanishiki' },
+    body: {
+      ja: '高知県の在来酒造好適米で、「風鳴子」「吟の夢」以前の県産酒米として長く使われてきた。栽培しやすく、地元の食用米にも近い性格を持ち、しっとりした素朴な味わいを生む。今も高知の一部蔵で地元米使用へのこだわりとして活用される。',
+      zh: '高知縣在來酒造好適米，在「風鳴子」「吟の夢」之前長期作為縣產酒米使用。栽培容易，性格接近本地食用米，能酿出濕潤樸實的味道。至今高知部分蔵仍作為堅持使用本地米的表現而活用。',
+      en: 'A traditional Kochi sake rice used long before the arrival of Kanaruko or Ginnoyume. Easy to cultivate with characteristics close to local table rice, producing moist, homey-flavored sake. Still used by select Kochi breweries as a statement of local sourcing.',
+    },
+  },
+  {
+    id: 'hitogokochi',
+    group: 'regional-rice',
+    terms: { ja: ['ひとごこち'], zh: ['ひとごこち'], en: ['hitogokochi'] },
+    title: { ja: 'ひとごこち', zh: 'ひとごこち', en: 'Hitogokochi' },
+    body: {
+      ja: '長野県が1994年に品種登録した酒造好適米。「美山錦」×「信交190号」の交配種で、耐冷性と栽培しやすさを兼ね備える。淡麗ですっきりとした酒質を生み、まろやかで柔らかい旨味が特徴。「真澄」「大信州」「亀齢」など長野の蔵が広く使用。',
+      zh: '長野縣1994年品種登記的酒造好適米，「美山錦」×「信交190号」交配種，兼具耐冷性與易栽培性。能酿出淡麗清爽的酒質，以圓潤柔和的旨味為特徵。「真澄」「大信州」「亀齢」等長野蔵廣泛使用。',
+      en: 'A Nagano sake rice registered in 1994, from Miyamanishiki × Shinko-190. Combines cold resistance with cultivation ease. Produces clean, dry sake with mellow, gentle umami. Widely used by Nagano breweries including Masumi, Daishinshu, and Kirei.',
+    },
+  },
+  {
+    id: 'hyogo-nishiki',
+    group: 'regional-rice',
+    terms: { ja: ['兵庫錦', 'ひょうごにしき'], zh: ['兵庫錦'], en: ['hyogo nishiki', 'hyogonishiki'] },
+    title: { ja: '兵庫錦', zh: '兵庫錦', en: 'Hyogo Nishiki' },
+    body: {
+      ja: '兵庫県が2004年に品種登録した酒造好適米。山田錦の血統を引き、山田錦より栽培しやすく、県内広域で作られる新世代の兵庫酒米。心白発現が良好で、上品な旨味とやわらかい香りの吟醸酒に仕上がる。',
+      zh: '兵庫縣2004年品種登記的酒造好適米，承襲山田錦血統，比山田錦更易栽培，是兵庫縣廣域栽培的新世代酒米。心白發現良好，能酿出高雅旨味與柔和香氣的吟釀酒。',
+      en: 'A Hyogo sake rice registered in 2004, descended from Yamadanishiki but easier to cultivate. Grown broadly across the prefecture, it offers strong shinpaku formation and produces refined ginjo with soft aromas and elegant umami.',
+    },
+  },
+  {
+    id: 'tachiharuka',
+    group: 'regional-rice',
+    terms: { ja: ['タチハルカ', '立春香'], zh: ['タチハルカ'], en: ['tachiharuka'] },
+    title: { ja: 'タチハルカ', zh: 'タチハルカ', en: 'Tachiharuka' },
+    body: {
+      ja: '九州沖縄農業研究センターが暖地向けに開発した酒造好適米（2010年頃品種登録）。九州の高温期の登熟に強く、大粒で心白発達も良好。九州各県で栽培が広がり、南九州の吟醸酒シーンに新しい選択肢を提供している。',
+      zh: '九州沖繩農業研究中心針對暖地開發的酒造好適米（2010年前後品種登記）。耐九州高溫期登熟，粒大心白發達。九州各縣栽培擴展中，為南九州吟釀酒場帶來新選項。',
+      en: 'A sake rice developed by the Kyushu-Okinawa Agricultural Research Center for warm-climate cultivation (registered around 2010). Tolerates high summer temperatures at ripening, with large grain and strong shinpaku. Increasingly grown across Kyushu, offering new options for southern ginjo brewing.',
+    },
+  },
+  {
+    id: 'iwai',
+    group: 'regional-rice',
+    terms: { ja: ['祝', 'いわい'], zh: ['祝'], en: ['iwai'] },
+    title: { ja: '祝', zh: '祝', en: 'Iwai' },
+    body: {
+      ja: '京都府の在来酒造好適米。戦前から栽培されたが一度絶えかけ、1990年代以降に復活栽培された歴史ある品種。柔らかく素朴な米の旨味が特徴で、京都伏見の「玉川」「澤屋まつもと」「英勲」など京都蔵に使われ、京都酒のアイデンティティを支える。',
+      zh: '京都府在來酒造好適米。戰前開始栽培，曾一度斷絕，1990年代後復活栽培的歷史品種。特徵是柔和樸實的米之旨味。京都伏見的「玉川」「澤屋まつもと」「英勲」等京都蔵使用，支撐京都酒的身分認同。',
+      en: 'A native Kyoto sake rice cultivated since prewar times; once nearly extinct, revived from the 1990s onward. Yields soft, rustic rice umami. Used by Kyoto/Fushimi breweries such as Tamagawa, Sawaya Matsumoto, and Eikun as a hallmark of Kyoto sake identity.',
+    },
+  },
+  {
+    id: 'sanoto',
+    group: 'regional-rice',
+    terms: { ja: ['さんおと', 'サンオト'], zh: ['さんおと'], en: ['sanoto'] },
+    title: { ja: 'さんおと', zh: 'さんおと', en: 'Sanoto' },
+    body: {
+      ja: '岩手県産の酒造好適米。「吟ぎんが」と並ぶ岩手の新世代酒米で、心白発現が安定し、寒冷地でも高品質に育つ。素朴で滋味深い旨味と柔らかい香りを生み、南部杜氏の伝統を受け継ぐ岩手の蔵元が採用している。',
+      zh: '岩手縣產酒造好適米，與「吟ぎんが」並列為岩手新世代酒米。心白發現穩定，寒冷地也能高品質生長。能酿出樸實深邃的旨味與柔和香氣，繼承南部杜氏傳統的岩手蔵元採用。',
+      en: 'An Iwate sake rice, part of the new generation alongside Ginginga. Reliable shinpaku formation and high quality even in cold climates. Delivers rustic, layered umami with soft aromas, adopted by Iwate breweries carrying on the Nanbu Toji tradition.',
+    },
+  },
+  {
+    id: 'akebono',
+    group: 'regional-rice',
+    terms: { ja: ['アケボノ', '曙'], zh: ['アケボノ', '曙'], en: ['akebono'] },
+    title: { ja: 'アケボノ', zh: 'アケボノ', en: 'Akebono' },
+    body: {
+      ja: '岡山県産の食用米で、酒造用にも古くから使われてきた。大粒でしっかりした米質を持ち、雄町の血を引かないため独特のクリアな旨味と落ち着いた味わいを生む。岡山「御前酒」「利守酒造」など地元蔵が地米へのこだわりで採用する。',
+      zh: '岡山縣產食用米，自古亦作為酒造用。粒大、米質紮實，因不帶雄町血統，能酿出獨特清澄旨味與沉靜口感。岡山「御前酒」「利守酒造」等本地蔵以地米堅持而採用。',
+      en: 'An Okayama table rice long used in brewing. Large grain with firm texture; lacking Omachi ancestry, it produces uniquely clear umami and a settled character. Used by Okayama breweries like Gozenshu and Toshimori as an expression of homegrown rice.',
+    },
+  },
+  {
+    id: 'kokuryomiyako',
+    group: 'regional-rice',
+    terms: { ja: ['穀良都', 'こくりょうみやこ'], zh: ['穀良都'], en: ['kokuryomiyako', 'kokuryo miyako'] },
+    title: { ja: '穀良都', zh: '穀良都', en: 'Kokuryomiyako' },
+    body: {
+      ja: '明治時代に選抜された歴史ある山口県の在来酒造好適米。かつては全国で栽培されたが、栽培難度から一時途絶。近年、山口の「澄川酒造場」「澤の鶴」などが復活栽培に成功し、力強い旨味と伝統酒米らしい野趣ある味わいの酒を生む。',
+      zh: '明治時代選拔的山口縣歷史在來酒造好適米。曾遍及全國，因栽培難度一度斷絕。近年山口「澄川酒造場」「澤の鶴」等成功復活栽培，能酿出力道強勁的旨味與傳統酒米獨特的野性風味。',
+      en: 'A historic Yamaguchi sake rice selected in the Meiji era, once cultivated nationwide but abandoned due to difficulty. Recently revived by Sumikawa Shuzo, Sawanotsuru, and others, yielding bold umami and the wild, earthy character characteristic of heritage varieties.',
+    },
+  },
+  {
+    id: 'kanaruko',
+    group: 'regional-rice',
+    terms: { ja: ['風鳴子', 'かぜなるこ', '高育63号'], zh: ['風鳴子', '高育63号'], en: ['kanaruko', 'kaze naruko'] },
+    title: { ja: '風鳴子', zh: '風鳴子', en: 'Kanaruko' },
+    body: {
+      ja: '高知県が育成した酒造好適米「高育63号」の名称。「吟の夢」に続く高知の第二世代酒米として位置づけられ、より力強い旨味と芳醇な味わいを引き出す。宇宙酵母と組み合わせた「土佐宇宙酒 完全宇宙酒」で酒米側の担当としても使用された。',
+      zh: '高知縣育成的酒造好適米「高育63号」之名稱。作為「吟の夢」之後高知第二世代酒米，能引出更強勁的旨味與芳醇味道。曾在宇宙酵母結合的「土佐宇宙酒 完全宇宙酒」中作為酒米方擔當。',
+      en: 'The name given to Kochi\'s "Ko-iku 63" sake rice — positioned as Kochi\'s second-generation variety after Ginnoyume. Draws out bolder umami and richer flavor. Notably featured on the rice side of the "Tosa Uchushu Complete Space Sake" project paired with the space yeast.',
+    },
+  },
+  {
+    id: 'fukuhikari',
+    group: 'regional-rice',
+    terms: { ja: ['フクヒカリ', '福光'], zh: ['フクヒカリ'], en: ['fukuhikari'] },
+    title: { ja: 'フクヒカリ', zh: 'フクヒカリ', en: 'Fukuhikari' },
+    body: {
+      ja: '広く栽培される食用米で、酒造用にも各地で使われる。米質は柔らかく、酒造好適米には分類されないが、地元米使用にこだわる蔵で普通酒や本醸造の掛米として活用される。高知県では県内産米として地元米使用の一環で採用される例がある。',
+      zh: '廣泛栽培的食用米，各地也用於酒造。米質柔軟，不屬於酒造好適米，但堅持使用本地米的蔵作為普通酒或本釀造之掛米活用。高知縣有作為縣內產米在本地米堅持中採用的例子。',
+      en: 'A widely grown table rice also used in brewing across Japan. Softer than dedicated sake rice; typically serves as kake-mai (steamed rice) in futsushu or honjozo for breweries committed to local sourcing. Occasionally featured on Kochi labels emphasizing homegrown rice.',
+    },
+  },
   // ── 酵母 ───────────────────────────────────────────────────────────
   {
     id: 'sake-yeast',
+    group: 'ingredient',
     terms: { ja: ['酵母'], zh: ['酵母'], en: ['yeast'] },
     title: { ja: '酵母', zh: '酵母', en: 'Sake Yeast' },
     body: {
@@ -445,7 +654,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-7',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会7号', '7号酵母', '真澄酵母'], zh: ['協會7號', '7號酵母'], en: ['kyokai 7', 'association yeast no.7'] },
+    terms: { ja: ['協会7号', '7号酵母', '真澄酵母', '協会701号', '701号酵母', 'きょうかい701号'], zh: ['協會7號', '7號酵母', '協會701號', '701號酵母'], en: ['kyokai 7', 'kyokai 701', 'association yeast no.7'] },
     title: { ja: '協会7号酵母', zh: '協會7號酵母', en: 'Kyokai No. 7 Yeast' },
     body: {
       ja: '日本で最も広く使われる協会酵母。長野県諏訪・真澄蔵由来。アルコール耐性が高く安定した発酵が可能で、穏やかな香りとしっかりした旨味を生む。全国の蔵で愛用されるスタンダードな酵母。',
@@ -456,7 +665,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-9',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会9号', '9号酵母', '熊本酵母'], zh: ['協會9號', '9號酵母', '熊本酵母'], en: ['kyokai 9', 'kumamoto yeast'] },
+    terms: { ja: ['協会9号', '9号酵母', '熊本酵母', '協会901号', '901号酵母', 'きょうかい901号', 'KA-1', '香露酵母'], zh: ['協會9號', '9號酵母', '熊本酵母', '協會901號', '901號酵母'], en: ['kyokai 9', 'kyokai 901', 'kumamoto yeast', 'KA-1'] },
     title: { ja: '協会9号酵母（熊本酵母）', zh: '協會9號酵母（熊本酵母）', en: 'Kyokai No. 9 Yeast (Kumamoto)' },
     body: {
       ja: '熊本酵母とも呼ばれる。カプロン酸エチルを豊富に生成し、リンゴ・メロンを思わせる爽やかな吟醸香が特徴。「YK35（山田錦・9号酵母・精米35%）」の方程式で全国新酒鑑評会を席巻し、現代の吟醸ブームを牽引した。今も全国の蔵で広く使われる定番酵母で、泡なし株901号も普及している。',
@@ -467,7 +676,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-14',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会14号', '14号酵母', '金沢酵母'], zh: ['協會14號', '14號酵母', '金澤酵母'], en: ['kyokai 14', 'kanazawa yeast'] },
+    terms: { ja: ['協会14号', '14号酵母', '金沢酵母', '協会1401号', '1401号酵母', '協会1401号＆協会1801号'], zh: ['協會14號', '14號酵母', '金澤酵母', '協會1401號', '1401號酵母'], en: ['kyokai 14', 'kyokai 1401', 'kanazawa yeast'] },
     title: { ja: '協会14号酵母（金沢酵母）', zh: '協會14號酵母（金澤酵母）', en: 'Kyokai No. 14 Yeast (Kanazawa)' },
     body: {
       ja: '金沢酵母とも呼ばれる。酢酸イソアミルを多く生成し、バナナ・マスカットを思わせる華やかな香りが特徴。酸が少なく穏やかな吟醸香で食事との相性が良い。北陸地方を中心に使われ、1998年に開発された泡なし株1401号が広く普及。',
@@ -511,7 +720,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-10',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会10号', '10号酵母', '協会1001号'], zh: ['協會10號', '10號酵母', '1001號'], en: ['kyokai 10', 'association yeast no.10'] },
+    terms: { ja: ['協会10号', '10号酵母', '協会1001号', '1001号酵母', '小川酵母', '明利小川酵母'], zh: ['協會10號', '10號酵母', '1001號', '協會1001號', '小川酵母'], en: ['kyokai 10', 'kyokai 1001', 'ogawa yeast', 'association yeast no.10'] },
     title: { ja: '協会10号酵母', zh: '協會10號酵母', en: 'Kyokai No. 10 Yeast' },
     body: {
       ja: '茨城県水戸市の明利酒類で小川力博士が開発したことから「小川酵母」「明利小川酵母」とも呼ばれる。全協会酵母中で最も酸が少ない特徴を持ち、低温長期型の発酵でカプロン酸エチルを豊富に生成。繊細で華やかな吟醸香と清澄な味わいを生む。関東・甲信越を中心に普及し、泡なし株1001号が広く使われる。',
@@ -555,7 +764,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-18',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会1801号', '1801号酵母', '18号酵母'], zh: ['協會1801號', '1801號酵母'], en: ['kyokai 1801', 'association yeast no.1801'] },
+    terms: { ja: ['協会1801号', '1801号酵母', '18号酵母', '1801', 'きょうかい1801号'], zh: ['協會1801號', '1801號酵母', '1801'], en: ['kyokai 1801', 'association yeast no.1801', '1801'] },
     title: { ja: '協会1801号酵母', zh: '協會1801號酵母', en: 'Kyokai No. 1801 Yeast' },
     body: {
       ja: '現在の全国新酒鑑評会金賞受賞酒の約48%に使われる、現代で最も重要な競技用酵母（2006年頒布）。1601号×901号の交配株で、カプロン酸エチルと酢酸イソアミルの両方が1601号を40〜50%上回る。さらに1601号の「発酵力の弱さ」と1701号の「イソアミルアルコール（老香の原因）の多さ」という両方の弱点を解決。最初から泡なし設計。',
@@ -718,7 +927,96 @@ export const WIKI_TERMS = [
     },
   },
   {
+    id: 'kochi-yeast',
+    group: 'local-yeast',
+    terms: { ja: ['高知酵母', '高知県酵母', 'AA-41', 'AA41', 'AC-17', 'AC17', 'AT10', 'かんかん丸'], zh: ['高知酵母', '高知縣酵母'], en: ['kochi yeast', 'AA-41', 'AC-17'] },
+    title: { ja: '高知酵母', zh: '高知酵母', en: 'Kochi Yeasts' },
+    body: {
+      ja: '高知県醸造試験場（現・高知県工業技術センター）が独自に開発した酵母群の総称。AA-41・AC-17・AT-10などの吟醸酵母、発泡性のCEL-19やCEL-24、「かんかん丸」などバリエーションが豊富。総じてリンゴ酸を多く生成し、爽やかで果実感の強い酒質を生む。県内約17蔵が使い分け、高知の「淡麗辛口＋フルーティー」という独自ポジションを支える。',
+      zh: '高知縣釀造試驗場（現高知縣工業技術中心）獨自開發的酵母群總稱。AA-41、AC-17、AT-10等吟釀酵母，發泡性CEL-19、CEL-24，「かんかん丸」等品種豐富。整體以蘋果酸產量高、酿出清爽果實感強的酒質為特徵。縣內約17蔵分別使用，支撐高知「淡麗辛口＋果香」的獨特定位。',
+      en: 'A family of yeasts developed by the Kochi Brewing Research Institute. Includes ginjo strains like AA-41, AC-17, AT-10, sparkling strains CEL-19 and CEL-24, and specialty strains like "Kankan-Maru." Collectively produce elevated malic acid and vivid fruity character — the backbone of Kochi\'s distinctive "clean-dry-yet-fruity" identity across roughly 17 local breweries.',
+    },
+  },
+  {
+    id: 'iwate-yeast',
+    group: 'local-yeast',
+    terms: { ja: ['岩手酵母', 'ゆうこの想い', 'ジョバンニの調べ', 'すず音'], zh: ['岩手酵母'], en: ['iwate yeast', 'giovanni no shirabe'] },
+    title: { ja: '岩手酵母', zh: '岩手酵母', en: 'Iwate Yeasts' },
+    body: {
+      ja: '岩手県工業技術センターが開発した独自酵母群の総称。「ゆうこの想い」（華やか吟醸系）、「ジョバンニの調べ」（宮沢賢治『銀河鉄道の夜』にちなむ、繊細で幻想的な香り）、「すず音」（発泡向け）など、詩情ある命名で知られる。南部杜氏の伝統に加え、県産酒米「吟ぎんが」「さんおと」と組み合わせて、岩手発の個性豊かな吟醸酒を生む。',
+      zh: '岩手縣工業技術中心開發的獨自酵母群總稱。「ゆうこの想い」（華麗吟釀系）、「ジョバンニの調べ」（取自宮澤賢治《銀河鐵道之夜》，纖細幻想香氣）、「すず音」（發泡向）等，以詩意命名聞名。結合南部杜氏傳統與縣產酒米「吟ぎんが」「さんおと」，酿出岩手獨特個性的吟釀酒。',
+      en: 'A family of yeasts developed by the Iwate Industrial Research Institute. Includes "Yuko no Omoi" (bright ginjo character), "Giovanni no Shirabe" (named after Miyazawa Kenji\'s Night on the Galactic Railroad — delicate, dreamlike aromas), and "Suzune" for sparkling styles. Combined with Nanbu Toji brewing tradition and local rice varieties, they define Iwate\'s poetic sake voice.',
+    },
+  },
+  {
+    id: 'yamaguchi-9e',
+    group: 'local-yeast',
+    terms: { ja: ['9E', '山口酵母9E', '山口酵母', '山口県酵母9E'], zh: ['9E', '山口酵母', '山口酵母9E'], en: ['yamaguchi 9E', '9E yeast'] },
+    title: { ja: '山口酵母 9E', zh: '山口酵母 9E', en: 'Yamaguchi Yeast 9E' },
+    body: {
+      ja: '山口県産業技術センターが選抜育成した吟醸酵母。協会9号系から派生した株で、カプロン酸エチルを豊富に生成しつつ酸が穏やか、キレの良い吟醸香を持つ。「獺祭」が協会1801号と併用することで知られ、「東洋美人」「雁木」など県内蔵も採用。山口が「吟醸大国」として世界に躍り出た立役者の一つ。',
+      zh: '山口縣產業技術中心選拔育成的吟釀酵母。從協會9號系派生的酵母株，能豐富產生己酸乙酯同時酸度溫和，具備爽利吟釀香。「獺祭」以其與協會1801號併用聞名，「東洋美人」「雁木」等縣內蔵也採用。是山口作為「吟釀大國」躍上世界舞台的功臣之一。',
+      en: 'A ginjo yeast selectively bred by the Yamaguchi Industrial Technology Center. Derived from the Kyokai No. 9 lineage, it delivers abundant ethyl caproate with restrained acidity and crisp ginjo aromas. Famously blended with Kyokai No. 1801 in Dassai brewing, and used by Toyobijin, Gangi, and other Yamaguchi breweries powering the region\'s global ginjo profile.',
+    },
+  },
+  {
+    id: 'kyoto-yeast',
+    group: 'local-yeast',
+    terms: { ja: ['京都酵母', '京の咲', '京都酵母 京の咲'], zh: ['京都酵母', '京の咲'], en: ['kyoto yeast', 'kyo no saki'] },
+    title: { ja: '京都酵母 京の咲', zh: '京都酵母 京の咲', en: 'Kyoto Yeast "Kyo no Saki"' },
+    body: {
+      ja: '京都府農林水産技術センターが開発した京都府オリジナル酵母。バナナ・洋梨系の柔らかい吟醸香と、京料理に寄り添う穏やかで上品な酸味が特徴。伏見の蔵元を中心に、京都産酒米「祝」との組み合わせで京都テロワールを表現する試みに使われる。',
+      zh: '京都府農林水產技術中心開發的京都府原創酵母。以香蕉、洋梨系柔和吟釀香，以及貼近京料理的溫和高雅酸味為特徵。伏見蔵元為中心，與京都產酒米「祝」搭配，用於表現京都風土的嘗試。',
+      en: 'A proprietary Kyoto yeast developed by the Kyoto Agricultural Technology Center. Soft banana- and pear-like ginjo aromas with restrained, elegant acidity that pairs with Kyoto cuisine. Used mainly by Fushimi breweries — often together with the Kyoto rice "Iwai" — as an expression of Kyoto terroir.',
+    },
+  },
+  {
+    id: 'ringo-san-kobo',
+    group: 'local-yeast',
+    terms: { ja: ['リンゴ酸酵母', 'リンゴ酸高生産性酵母', 'リンゴ酸高生産酵母', '高リンゴ酸酵母'], zh: ['蘋果酸酵母', 'リンゴ酸酵母'], en: ['malic acid yeast', 'high malic acid yeast'] },
+    title: { ja: 'リンゴ酸酵母（高リンゴ酸生産性酵母）', zh: '蘋果酸酵母', en: 'Malic Acid Yeast' },
+    body: {
+      ja: '通常の酵母より数倍〜十数倍のリンゴ酸を生成する特殊酵母の総称。爽やかで白ワインを思わせる酸味を生み、低アルコール・食中酒向けの日本酒に用いられる。福島県開発の「うつくしま煌酵母」、静岡・山梨など複数の県が独自株を持ち、CEL-24などスパークリング系にも共通する性質。',
+      zh: '產生比一般酵母高數倍至十數倍蘋果酸的特殊酵母總稱。能酿出清爽、令人聯想到白酒的酸味，用於低酒精・佐餐向的日本酒。福島縣開發的「うつくしま煌酵母」，靜岡・山梨等多縣皆有獨自酵母株，也與CEL-24等發泡系共通此特性。',
+      en: 'A family of specialty yeasts that produce several to over ten times the malic acid of standard strains. Yields crisp, white-wine-like acidity — used for low-alcohol, food-friendly sake. Fukushima\'s "Utsukushima Kirameki," Shizuoka and Yamanashi strains all belong here; the property is also shared by CEL-24 and other sparkling yeasts.',
+    },
+  },
+  {
+    id: 'kura-tsuki-kobo',
+    group: 'ingredient',
+    terms: { ja: ['蔵付酵母', '蔵付き酵母', '蔵付十号酵母', '自社蔵付十號', '家付き酵母', 'ハウス酵母'], zh: ['蔵付酵母', '藏付酵母', '房內酵母'], en: ['kura-tsuki yeast', 'house yeast'] },
+    title: { ja: '蔵付酵母', zh: '蔵付酵母', en: 'Kura-tsuki (House) Yeast' },
+    body: {
+      ja: '酒蔵の建物・設備に自然に住み着いている野生酵母群の総称。長年同じ蔵で酒を醸すうちに、その蔵に適応した独自の酵母群が形成される。協会酵母のような均一な発酵は難しいが、他の蔵では再現できない「その蔵だけの味」を生む。生酛・山廃系や無添加醸造で重視され、「新政」の6号酵母もかつては蔵付酵母だった。',
+      zh: '酒蔵建築與設備上自然棲息的野生酵母群總稱。同一蔵長年釀酒的過程中，會形成適應該蔵的獨自酵母群。難以像協會酵母那樣均勻發酵，但能酿出其他蔵無法重現的「該蔵獨有的味道」。生酛・山廃系與無添加釀造重視此類酵母，「新政」6號酵母亦曾是蔵付酵母。',
+      en: 'The community of wild yeasts naturally inhabiting a brewery\'s building and equipment. Over generations of brewing, each kura develops its own adapted yeast community. Less predictable than Kyokai yeasts, but produces a "sound of the house" no other brewery can replicate. Central to kimoto/yamahai and additive-free brewing — Aramasa\'s Kyokai No. 6 originated as a house yeast.',
+    },
+  },
+  {
+    id: 'kobo-mutenka',
+    group: 'method',
+    terms: { ja: ['酵母無添加', '無添加', '酵母添加なし'], zh: ['酵母無添加'], en: ['no added yeast', 'yeast-free', 'yeast unadded'] },
+    title: { ja: '酵母無添加', zh: '酵母無添加', en: 'No Added Yeast' },
+    body: {
+      ja: '培養酵母を添加せず、蔵付酵母や酒母中に自然に増殖する酵母のみで発酵させる醸造法。生酛・山廃系との組み合わせが多く、発酵の主導権を微生物の自然な生態系に委ねる。予測しづらいが、複雑で個性的な味わいと蔵の風土を反映した酒が生まれる。近年の自然派・クラシック系ムーブメントの代表的キーワード。',
+      zh: '不添加培養酵母，僅以蔵付酵母或酒母中自然增殖之酵母進行發酵的釀造法。多與生酛・山廃系搭配，將發酵主導權交給微生物的自然生態系。難以預測，但能酿出複雜個性的味道，反映蔵之風土。近年自然派・復古系運動的代表關鍵字。',
+      en: 'A brewing method that adds no cultured yeast — fermentation relies on the house yeasts already present in the brewery or that naturally proliferate in the moto. Typically paired with kimoto or yamahai. Yields unpredictable but complex, terroir-driven sake, and stands as a signature keyword of the natural/classic sake movement.',
+    },
+  },
+  {
+    id: 'shirokoji',
+    group: 'ingredient',
+    terms: { ja: ['白麹', '白麴', '白麹菌'], zh: ['白麴', '白麴菌'], en: ['shirokoji', 'white koji'] },
+    title: { ja: '白麹', zh: '白麴', en: 'Shirokoji (White Koji)' },
+    body: {
+      ja: '本来は焼酎造りに用いられる麹菌 Aspergillus kawachii（アワモリ黒麹菌の白色変異株）。日本酒の一般的な黄麹と比べクエン酸を大量に生成するため、爽やかで白ワインのような酸味を持つ新感覚の日本酒が造れる。「新政 亜麻猫」を筆頭に、近年一部の革新系蔵元が黄麹と併用して独自の酒質を追求している。',
+      zh: '原本用於燒酎釀造的麴菌 Aspergillus kawachii（泡盛黑麴菌之白色變異株）。與日本酒常用之黃麴相比，能大量產生檸檬酸，可酿出清爽如白酒般酸味的新感覺日本酒。「新政 亜麻猫」為首，近年部分革新系蔵元將其與黃麴併用，追求獨特酒質。',
+      en: 'A koji mold (Aspergillus kawachii) traditionally used in shochu — a white mutation of the black koji used for awamori. Compared to sake\'s standard yellow koji, it produces abundant citric acid, enabling crisp, white-wine-like sake. Aramasa\'s "Amaneko" popularized its use; a handful of innovative breweries now blend it with yellow koji to craft distinctive new styles.',
+    },
+  },
+  {
     id: 'kijoshu',
+    group: 'type',
     terms: { ja: ['貴醸酒'], zh: ['貴釀酒', '贵酿酒'], en: ['kijoshu'] },
     title: { ja: '貴醸酒', zh: '貴釀酒', en: 'Kijoshu' },
     body: {
@@ -729,6 +1027,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'kire',
+    group: 'flavor',
     terms: { ja: ['キレ', '切れ'], zh: ['切れ', '乾淨收尾', '干净收尾'], en: ['kire', 'clean finish'] },
     title: { ja: 'キレ', zh: '切れ（乾淨收尾）', en: 'Kire (Clean Finish)' },
     body: {
@@ -739,6 +1038,7 @@ export const WIKI_TERMS = [
   },
   {
     id: 'meigara',
+    group: 'people',
     terms: { ja: ['銘柄'], zh: ['銘柄', '品牌'], en: ['meigara', 'sake brand'] },
     title: { ja: '銘柄', zh: '銘柄（品牌名）', en: 'Meigara (Brand Name)' },
     body: {
