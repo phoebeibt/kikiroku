@@ -1,3 +1,4 @@
+// Bundle bust marker for cache invalidation after DB summary refresh (2026-07-06)
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { WIKI_TERMS } from '../lib/wiki'
