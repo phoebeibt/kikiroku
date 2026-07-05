@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import Nav from '../components/Nav'
 import { WikiText } from '../components/WikiTooltip'
 import { useWiki } from '../contexts/WikiContext'
@@ -614,6 +614,7 @@ export default function Wiki({ session }) {
   const { lang } = useLang()
   const { articles, reload } = useWiki()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [tab, setTab] = useState(() => {
     const t = searchParams.get('tab')
@@ -664,7 +665,12 @@ export default function Wiki({ session }) {
       </div>
       <div style={{ ...s.tabs, flexWrap: 'wrap', gap: 6 }}>
         {Object.entries(TAB_META).map(([id, m]) => (
-          <button key={id} style={s.tab(tab === id)} onClick={() => setTab(id)}>
+          <button key={id} style={s.tab(tab === id)} onClick={() => {
+            setTab(id)
+            // Clear any lingering #term-id hash so the new tab starts at the top
+            navigate(`/wiki?tab=${id}`, { replace: true })
+            window.scrollTo({ top: 0 })
+          }}>
             {m[lang] || m.ja}
           </button>
         ))}
