@@ -375,6 +375,21 @@ export default function Display({ session }) {
   const [filters, setFilters] = useState({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
   const [searchOpen, setSearchOpen] = useState(false)
   const [filterCollapsed, setFilterCollapsed] = useState(false)
+
+  // Auto-collapse filter panel on scroll-down while browsing; re-expand near top / on scroll-up
+  useEffect(() => {
+    let lastY = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      const delta = y - lastY
+      if (y < 60) setFilterCollapsed(false)
+      else if (delta > 8 && y > 120) setFilterCollapsed(true)
+      else if (delta < -30) setFilterCollapsed(false)
+      lastY = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const [detail, setDetail] = useState(null)
   const [detailAwards, setDetailAwards] = useState([])
   const [detailBrand, setDetailBrand] = useState(null) // null=loading, false=not found, object=found
