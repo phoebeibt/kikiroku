@@ -617,8 +617,8 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
   const activeFilterCount = Object.values(filters).filter(Boolean).length
   const clearFilters = () => setFilters({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
 
-  const dropLabel = { ja: { rice: '米', yeast: '酵母', method: '製法・特徴', region: '産地' },
-                     zh: { rice: '米', yeast: '酵母', method: '製法・特徵', region: '產地' },
+  const dropLabel = { ja: { rice: '米', yeast: '酵母', method: '製法', region: '産地' },
+                     zh: { rice: '米', yeast: '酵母', method: '製法', region: '產地' },
                      en: { rice: 'Rice', yeast: 'Yeast', method: 'Method', region: 'Region' } }[lang] || {}
 
   const dropSections = [
@@ -674,17 +674,19 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             </div>
           )}
 
-          {/* Row 1: compact dropdowns + search-toggle icon */}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+          {/* Row 1: compact dropdowns (single line, equally distributed) + search icon */}
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', marginBottom: 10 }}>
             {dropSections.map(sec => (
               <select key={sec.key}
                 style={{
-                  height: 30, padding: '0 26px 0 10px', borderRadius: 6,
+                  height: 30, padding: '0 20px 0 8px', borderRadius: 6,
                   border: '1px solid var(--border)',
-                  background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 10px center`,
+                  background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 7px center`,
                   color: filters[sec.key] ? 'var(--accent)' : 'var(--sub)', fontSize: 12,
                   outline: 'none', appearance: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)', minWidth: 0,
+                  fontFamily: 'var(--font-sans)',
+                  flex: '1 1 0', minWidth: 0,
+                  textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap',
                 }}
                 value={filters[sec.key]}
                 onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
@@ -697,11 +699,11 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             ))}
             {activeFilterCount > 0 && (
               <button onClick={clearFilters}
-                style={{ height: 30, padding: '0 10px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
-                × {activeFilterCount}
+                title={String(activeFilterCount)}
+                style={{ height: 30, width: 26, padding: 0, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                ×
               </button>
             )}
-            <div style={{ flex: 1 }} />
             <button onClick={() => setSearchOpen(o => !o)}
               title={t('search')}
               style={{
