@@ -373,6 +373,7 @@ export default function Display({ session }) {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
+  const [searchOpen, setSearchOpen] = useState(false)
   const [detail, setDetail] = useState(null)
   const [detailAwards, setDetailAwards] = useState([])
   const [detailBrand, setDetailBrand] = useState(null) // null=loading, false=not found, object=found
@@ -648,17 +649,43 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
       <BrandMarkFull />
       <div style={s.stickyBar}>
         <div style={s.stickyInner}>
-          {/* Row 1: search + 4 dropdowns share horizontal space */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'wrap', marginBottom: 10 }}>
-            <div style={{ display: 'flex', flex: '2 1 200px', minWidth: 180, gap: 4, alignItems: 'stretch' }}>
-              <input style={{ ...s.searchInput, flex: 1, minWidth: 0 }} value={search} onChange={e => setSearch(e.target.value)}
+          {/* Optional row 0 — search bar (opens on demand OR when filter yields nothing) */}
+          {(searchOpen || (!loading && filtered.length === 0)) && (
+            <div style={{ position: 'relative', marginBottom: 10 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--sub)', pointerEvents: 'none' }}>
+                <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+              <input autoFocus={searchOpen}
+                style={{
+                  width: '100%', height: 40, padding: '0 44px 0 42px', borderRadius: 20,
+                  border: '1px solid var(--border)', background: 'var(--surface-card)',
+                  color: 'var(--text)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                  fontFamily: 'var(--font-sans)',
+                }}
+                value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={t('search')} />
-              {search && <button onClick={() => setSearch('')}
-                style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
+              {(search || searchOpen) && (
+                <button onClick={() => { setSearch(''); setSearchOpen(false) }}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}>
+                  ×
+                </button>
+              )}
             </div>
+          )}
+
+          {/* Row 1: compact dropdowns + search-toggle icon */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
             {dropSections.map(sec => (
               <select key={sec.key}
-                style={{ ...s.drop, height: 42, flex: '1 1 110px', minWidth: 100, boxSizing: 'border-box' }}
+                style={{
+                  height: 30, padding: '0 26px 0 10px', borderRadius: 6,
+                  border: '1px solid var(--border)',
+                  background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 10px center`,
+                  color: filters[sec.key] ? 'var(--accent)' : 'var(--sub)', fontSize: 12,
+                  outline: 'none', appearance: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)', minWidth: 0,
+                }}
                 value={filters[sec.key]}
                 onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
                 disabled={sec.options.length === 0}>
@@ -670,16 +697,29 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             ))}
             {activeFilterCount > 0 && (
               <button onClick={clearFilters}
-                style={{ flexShrink: 0, height: 42, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+                style={{ height: 30, padding: '0 10px', borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
                 × {activeFilterCount}
               </button>
             )}
+            <div style={{ flex: 1 }} />
+            <button onClick={() => setSearchOpen(o => !o)}
+              title={t('search')}
+              style={{
+                width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
+                background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
+                color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+            </button>
           </div>
 
-          {/* Row 2: chip sections for type + 甘辛度 (direct-pick) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Row 3: chip sections for type + 甘辛度 (direct-pick) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {chipSections.map(sec => sec.options.length > 0 && (
-              <div key={sec.key} style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div key={sec.key} style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', fontWeight: 500, minWidth: 42 }}>
                   {(sec.label[lang] || sec.label.ja).toUpperCase()}
                 </div>
