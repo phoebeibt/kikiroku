@@ -374,6 +374,7 @@ export default function Display({ session }) {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
   const [searchOpen, setSearchOpen] = useState(false)
+  const [filterCollapsed, setFilterCollapsed] = useState(false)
   const [detail, setDetail] = useState(null)
   const [detailAwards, setDetailAwards] = useState([])
   const [detailBrand, setDetailBrand] = useState(null) // null=loading, false=not found, object=found
@@ -674,69 +675,122 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             </div>
           )}
 
-          {/* Row 1: compact dropdowns (single line, equally distributed) + search icon */}
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', marginBottom: 10 }}>
-            {dropSections.map(sec => (
-              <select key={sec.key}
+          {filterCollapsed ? (
+            /* Collapsed — single-line summary bar */
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button onClick={() => setFilterCollapsed(false)}
                 style={{
-                  height: 30, padding: '0 20px 0 8px', borderRadius: 6,
-                  border: '1px solid var(--border)',
-                  background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 7px center`,
-                  color: filters[sec.key] ? 'var(--accent)' : 'var(--sub)', fontSize: 12,
-                  outline: 'none', appearance: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)',
-                  flex: '1 1 0', minWidth: 0,
-                  textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap',
-                }}
-                value={filters[sec.key]}
-                onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
-                disabled={sec.options.length === 0}>
-                <option value="">{dropLabel[sec.key] || sec.key}</option>
-                {sec.options.map(o => (
-                  <option key={o.id} value={o.id}>{o.label} ({o.count})</option>
-                ))}
-              </select>
-            ))}
-            {activeFilterCount > 0 && (
-              <button onClick={clearFilters}
-                title={String(activeFilterCount)}
-                style={{ height: 30, width: 26, padding: 0, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                ×
+                  display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0,
+                  height: 32, padding: '0 12px', borderRadius: 8,
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--sub)',
+                  fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  whiteSpace: 'nowrap', overflow: 'hidden',
+                }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                </svg>
+                <span>{lang === 'ja' ? '絞り込み' : lang === 'zh' ? '篩選' : 'Filters'}</span>
+                {activeFilterCount > 0 && (
+                  <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 600 }}>{activeFilterCount}</span>
+                )}
+                <span style={{ marginLeft: 'auto', opacity: 0.6, fontSize: 10 }}>▼</span>
               </button>
-            )}
-            <button onClick={() => setSearchOpen(o => !o)}
-              title={t('search')}
-              style={{
-                width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
-                background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
-                color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Row 3: chip sections for type + 甘辛度 (direct-pick) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {chipSections.map(sec => sec.options.length > 0 && (
-              <div key={sec.key} style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', fontWeight: 500, minWidth: 42 }}>
-                  {(sec.label[lang] || sec.label.ja).toUpperCase()}
-                </div>
-                {sec.options.map(opt => {
-                  const active = filters[sec.key] === opt.id
-                  return (
-                    <button key={opt.id} onClick={() => setF(sec.key, opt.id)} style={chipStyle(active)}>
-                      {opt.label}
-                      <span style={{ fontSize: 10, opacity: active ? 0.75 : 0.55 }}>{opt.count}</span>
-                    </button>
-                  )
-                })}
+              {activeFilterCount > 0 && (
+                <button onClick={clearFilters}
+                  style={{ height: 32, width: 30, padding: 0, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>
+                  ×
+                </button>
+              )}
+              <button onClick={() => setSearchOpen(o => !o)}
+                title={t('search')}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)',
+                  background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
+                  color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Row 1: compact dropdowns (single line, equally distributed) + collapse + search icon */}
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', marginBottom: 10 }}>
+                {dropSections.map(sec => (
+                  <select key={sec.key}
+                    style={{
+                      height: 30, padding: '0 20px 0 8px', borderRadius: 6,
+                      border: '1px solid var(--border)',
+                      background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 7px center`,
+                      color: filters[sec.key] ? 'var(--accent)' : 'var(--sub)', fontSize: 12,
+                      outline: 'none', appearance: 'none', cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)',
+                      flex: '1 1 0', minWidth: 0,
+                      textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap',
+                    }}
+                    value={filters[sec.key]}
+                    onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
+                    disabled={sec.options.length === 0}>
+                    <option value="">{dropLabel[sec.key] || sec.key}</option>
+                    {sec.options.map(o => (
+                      <option key={o.id} value={o.id}>{o.label} ({o.count})</option>
+                    ))}
+                  </select>
+                ))}
+                {activeFilterCount > 0 && (
+                  <button onClick={clearFilters}
+                    title={String(activeFilterCount)}
+                    style={{ height: 30, width: 26, padding: 0, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>
+                    ×
+                  </button>
+                )}
+                <button onClick={() => setSearchOpen(o => !o)}
+                  title={t('search')}
+                  style={{
+                    width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
+                    background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
+                    color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+                  </svg>
+                </button>
+                <button onClick={() => setFilterCollapsed(true)}
+                  title={lang === 'ja' ? '閉じる' : lang === 'zh' ? '收起' : 'Collapse'}
+                  style={{
+                    width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
+                    background: 'transparent', color: 'var(--sub)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10,
+                  }}>
+                  ▲
+                </button>
               </div>
-            ))}
-          </div>
+
+              {/* Row 2: chip sections for type + 甘辛度 (direct-pick) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {chipSections.map(sec => sec.options.length > 0 && (
+                  <div key={sec.key} style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', fontWeight: 500, minWidth: 42 }}>
+                      {(sec.label[lang] || sec.label.ja).toUpperCase()}
+                    </div>
+                    {sec.options.map(opt => {
+                      const active = filters[sec.key] === opt.id
+                      return (
+                        <button key={opt.id} onClick={() => setF(sec.key, opt.id)} style={chipStyle(active)}>
+                          {opt.label}
+                          <span style={{ fontSize: 10, opacity: active ? 0.75 : 0.55 }}>{opt.count}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
