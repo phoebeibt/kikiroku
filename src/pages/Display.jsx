@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
@@ -8,6 +8,7 @@ import { useLang } from '../contexts/LangContext'
 import { useTagResolver } from '../contexts/TagsContext'
 import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
+import { WIKI_TERMS } from '../lib/wiki'
 import { localizedTerm } from '../lib/wiki'
 import { displayName } from '../lib/localize'
 
@@ -15,6 +16,41 @@ import { displayName } from '../lib/localize'
 // Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
 // Used in browse tile and detail modal — clean displayed labels
 const cleanLabel = (s) => (s || '').replace(/[(（][぀-ゟ゠-ヿ\s]+[)）]/g, '').trim()
+
+// ── Sake-choice filter helpers ────────────────────────────────────────
+// Extract standard rice/yeast varieties from WIKI_TERMS (with terms as aliases)
+const RICE_VARIETIES = WIKI_TERMS.filter(t => t.group?.endsWith('-rice')).map(t => ({
+  id: t.id,
+  title: t.title,
+  aliases: [...(t.terms?.ja || []), ...(t.terms?.zh || []), ...(t.terms?.en || []), t.title?.ja].filter(Boolean),
+}))
+const YEAST_VARIETIES = WIKI_TERMS.filter(t => t.group?.endsWith('-yeast')).map(t => ({
+  id: t.id,
+  title: t.title,
+  aliases: [...(t.terms?.ja || []), ...(t.terms?.zh || []), ...(t.terms?.en || []), t.title?.ja].filter(Boolean),
+}))
+
+function textMatchesVariety(text, variety) {
+  if (!text) return false
+  const lower = text.toLowerCase()
+  return variety.aliases.some(a => a && (text.includes(a) || lower.includes(a.toLowerCase())))
+}
+
+// SMV bucketing per SSI convention (甘口/中口/辛口)
+const SMV_BUCKETS = [
+  { id: 'sweet',  label: { ja: '甘口', zh: '甘口', en: 'Sweet' },  test: v => v <= -3 },
+  { id: 'medium', label: { ja: '中口', zh: '中口', en: 'Medium' }, test: v => v > -3 && v < 3 },
+  { id: 'dry',    label: { ja: '辛口', zh: '辛口', en: 'Dry' },    test: v => v >= 3 },
+]
+function smvBucketOf(entry) {
+  const n = Number(entry.smv)
+  if (isNaN(n) || entry.smv === null || entry.smv === '') return null
+  return SMV_BUCKETS.find(b => b.test(n))?.id || null
+}
+
+// Method tag whitelist (objective brewing method — sake-property, not personal preference)
+const METHOD_TAG_ORDER = ['namazake', 'genshu', 'nigori', 'sparkling', 'kimoto', 'yamahai', 'taruzake', 'koshu', 'kijoshu']
+
 
 const WaveDivider = () => (
   <svg style={{ display: 'block', width: '100%', height: 12, margin: '0' }}
@@ -336,10 +372,7 @@ export default function Display({ session }) {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [activeTag, setActiveTag] = useState('')
-  const [tagsExp, setTagsExp] = useState(false)
-  const [filters, setFilters] = useState({ type: '', brewery: '', region: '', rice: '', rating: '' })
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filters, setFilters] = useState({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
   const [detail, setDetail] = useState(null)
   const [detailAwards, setDetailAwards] = useState([])
   const [detailBrand, setDetailBrand] = useState(null) // null=loading, false=not found, object=found
@@ -471,24 +504,58 @@ export default function Display({ session }) {
     q.then(({ data }) => { setRelatedEntries(data || []); setRelatedLoading(false) })
   }, [detail?.id])
 
-  const allTags = [...new Set(entries.flatMap(e => e.tags || []))]
-  const topTags = allTags.slice(0, 6)
-  const visibleTags = tagsExp ? allTags : topTags
+  // Build filter chip options with counts from all fetched entries
+  const chipOptions = useMemo(() => {
+    const riceMap = new Map(), yeastMap = new Map(), typeMap = new Map()
+    const smvMap = new Map(), methodMap = new Map(), regionMap = new Map()
+    for (const e of entries) {
+      // Rice — match against each standard variety's aliases
+      for (const v of RICE_VARIETIES) {
+        if (textMatchesVariety(e.rice, v)) riceMap.set(v.id, (riceMap.get(v.id) || 0) + 1)
+      }
+      // Yeast — same
+      for (const v of YEAST_VARIETIES) {
+        if (textMatchesVariety(e.yeast, v)) yeastMap.set(v.id, (yeastMap.get(v.id) || 0) + 1)
+      }
+      // Type
+      if (e.type) typeMap.set(e.type, (typeMap.get(e.type) || 0) + 1)
+      // SMV bucket
+      const bucket = smvBucketOf(e)
+      if (bucket) smvMap.set(bucket, (smvMap.get(bucket) || 0) + 1)
+      // Method tags (objective brewing methods only)
+      for (const mt of (e.method_tags || [])) {
+        if (METHOD_TAG_ORDER.includes(mt)) methodMap.set(mt, (methodMap.get(mt) || 0) + 1)
+      }
+      // Region
+      if (e.region) regionMap.set(e.region, (regionMap.get(e.region) || 0) + 1)
+    }
+    return {
+      rice: RICE_VARIETIES.filter(v => riceMap.has(v.id)).map(v => ({ ...v, count: riceMap.get(v.id) }))
+        .sort((a, b) => b.count - a.count),
+      yeast: YEAST_VARIETIES.filter(v => yeastMap.has(v.id)).map(v => ({ ...v, count: yeastMap.get(v.id) }))
+        .sort((a, b) => b.count - a.count),
+      type: [...typeMap.entries()].map(([id, count]) => ({ id, count })).sort((a, b) => b.count - a.count),
+      smv: SMV_BUCKETS.filter(b => smvMap.has(b.id)).map(b => ({ ...b, count: smvMap.get(b.id) })),
+      method: METHOD_TAG_ORDER.filter(m => methodMap.has(m)).map(m => ({ id: m, count: methodMap.get(m) })),
+      region: [...regionMap.entries()].map(([id, count]) => ({ id, count })).sort((a, b) => a.id.localeCompare(b.id, 'ja')),
+    }
+  }, [entries])
 
-  const types = [...new Set(entries.map(e => e.type).filter(Boolean))]
-  const breweries = [...new Set(entries.map(e => e.brewery).filter(Boolean))]
-  const regions = [...new Set(entries.map(e => e.region).filter(Boolean))].sort()
-  const rices = [...new Set(entries.map(e => e.rice).filter(Boolean))]
-
-  const setF = (k, v) => setFilters(p => ({ ...p, [k]: v }))
+  const setF = (k, v) => setFilters(p => ({ ...p, [k]: p[k] === v ? '' : v }))
 
   const filtered = entries.filter(e => {
-    if (activeTag && !e.tags?.includes(activeTag)) return false
     if (filters.type && e.type !== filters.type) return false
-    if (filters.brewery && e.brewery !== filters.brewery) return false
     if (filters.region && e.region !== filters.region) return false
-    if (filters.rice && e.rice !== filters.rice) return false
-    if (filters.rating && (e.rating || 0) < Number(filters.rating)) return false
+    if (filters.smv && smvBucketOf(e) !== filters.smv) return false
+    if (filters.method && !(e.method_tags || []).includes(filters.method)) return false
+    if (filters.rice) {
+      const v = RICE_VARIETIES.find(x => x.id === filters.rice)
+      if (!v || !textMatchesVariety(e.rice, v)) return false
+    }
+    if (filters.yeast) {
+      const v = YEAST_VARIETIES.find(x => x.id === filters.yeast)
+      if (!v || !textMatchesVariety(e.yeast, v)) return false
+    }
     if (search) {
       const q = search.toLowerCase()
       if ((e.brand || '').toLowerCase().includes(q)) return true
@@ -546,7 +613,34 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
     )
   }
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length + (activeTag ? 1 : 0)
+  const activeFilterCount = Object.values(filters).filter(Boolean).length
+  const clearFilters = () => setFilters({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
+
+  const dropLabel = { ja: { rice: '米', yeast: '酵母', method: '製法・特徴', region: '産地' },
+                     zh: { rice: '米', yeast: '酵母', method: '製法・特徵', region: '產地' },
+                     en: { rice: 'Rice', yeast: 'Yeast', method: 'Method', region: 'Region' } }[lang] || {}
+
+  const dropSections = [
+    { key: 'rice',   options: chipOptions.rice.map(o => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
+    { key: 'yeast',  options: chipOptions.yeast.map(o => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
+    { key: 'method', options: chipOptions.method.map(o => ({ id: o.id, label: cleanLabel(tagLabel(o.id, 'method')), count: o.count })) },
+    { key: 'region', options: chipOptions.region.map(o => ({ id: o.id, label: o.id, count: o.count })) },
+  ]
+  const chipSections = [
+    { key: 'type', label: { ja: 'タイプ',   zh: '類型',   en: 'Type' },
+      options: chipOptions.type.map(o => ({ id: o.id, label: cleanLabel(typeLabel(o.id)), count: o.count })) },
+    { key: 'smv',  label: { ja: '甘辛度',   zh: '甘辛度', en: 'Sweetness' },
+      options: chipOptions.smv.map(o => ({ id: o.id, label: o.label[lang] || o.label.ja, count: o.count })) },
+  ]
+
+  const chipStyle = (active) => ({
+    padding: '5px 12px', borderRadius: 16, cursor: 'pointer', fontSize: 12,
+    border: active ? 'none' : '1px solid var(--border)',
+    background: active ? 'var(--accent)' : 'var(--surface-card)',
+    color: active ? '#fff' : 'var(--text)',
+    fontFamily: 'var(--font-sans)',
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+  })
 
   return (
     <div style={s.page}>
@@ -554,72 +648,53 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
       <BrandMarkFull />
       <div style={s.stickyBar}>
         <div style={s.stickyInner}>
-          {/* Search bar — always visible */}
-          <div style={{ ...s.searchRow, marginBottom: session && filtersOpen ? 10 : 0 }}>
-            <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)}
-              placeholder={t('search')} />
-            {search && <button onClick={() => setSearch('')}
-              style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
-            {session && (
-              <>
-                {activeFilterCount > 0 && (
-                  <button onClick={() => { setFilters({ type: '', brewery: '', region: '', rice: '', rating: '' }); setActiveTag('') }}
-                    style={{ flexShrink: 0, height: 42, padding: '0 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
-                    ×
-                  </button>
-                )}
-                <button onClick={() => setFiltersOpen(x => !x)}
-                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '0 14px', height: 42, borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
-                  {t('display.filters')}
-                  {activeFilterCount > 0
-                    ? <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 600 }}>{activeFilterCount}</span>
-                    : <span style={{ fontSize: 10, opacity: 0.8 }}>{filtersOpen ? '▲' : '▼'}</span>}
-                </button>
-              </>
+          {/* Row 1: search + 4 dropdowns share horizontal space */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ display: 'flex', flex: '2 1 200px', minWidth: 180, gap: 4, alignItems: 'stretch' }}>
+              <input style={{ ...s.searchInput, flex: 1, minWidth: 0 }} value={search} onChange={e => setSearch(e.target.value)}
+                placeholder={t('search')} />
+              {search && <button onClick={() => setSearch('')}
+                style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }}>×</button>}
+            </div>
+            {dropSections.map(sec => (
+              <select key={sec.key}
+                style={{ ...s.drop, height: 42, flex: '1 1 110px', minWidth: 100, boxSizing: 'border-box' }}
+                value={filters[sec.key]}
+                onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
+                disabled={sec.options.length === 0}>
+                <option value="">{dropLabel[sec.key] || sec.key}</option>
+                {sec.options.map(o => (
+                  <option key={o.id} value={o.id}>{o.label} ({o.count})</option>
+                ))}
+              </select>
+            ))}
+            {activeFilterCount > 0 && (
+              <button onClick={clearFilters}
+                style={{ flexShrink: 0, height: 42, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
+                × {activeFilterCount}
+              </button>
             )}
           </div>
 
-          {/* Collapsible filter panel — logged-in only */}
-          {session && filtersOpen && (
-            <>
-              <div style={s.dropRow}>
-                <select style={s.drop} value={filters.type} onChange={e => setF('type', e.target.value)}>
-                  <option value="">{t('filter.type')}</option>
-                  {types.map(tp => <option key={tp} value={tp}>{typeLabel(tp)}</option>)}
-                </select>
-                <select style={s.drop} value={filters.region} onChange={e => setF('region', e.target.value)}>
-                  <option value="">{t('filter.region')}</option>
-                  {regions.map(r => <option key={r}>{r}</option>)}
-                </select>
-                <select style={s.drop} value={filters.brewery} onChange={e => setF('brewery', e.target.value)}>
-                  <option value="">{t('filter.brewery')}</option>
-                  {breweries.map(b => <option key={b}>{b}</option>)}
-                </select>
-                <select style={s.drop} value={filters.rice} onChange={e => setF('rice', e.target.value)}>
-                  <option value="">{t('filter.rice')}</option>
-                  {rices.map(r => <option key={r}>{r}</option>)}
-                </select>
-                <select style={s.drop} value={filters.rating} onChange={e => setF('rating', e.target.value)}>
-                  <option value="">{t('filter.rating')}</option>
-                  <option value="4">{t('filter.rating4')}</option>
-                  <option value="5">{t('filter.rating5')}</option>
-                </select>
-              </div>
-              {allTags.length > 0 && (
-                <div style={s.chips}>
-                  <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
-                  {visibleTags.map(tag => (
-                    <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tagLabel(tag, 'flavor')}</button>
-                  ))}
-                  {allTags.length > 6 && (
-                    <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>
-                      {tagsExp ? t('less') : t('more')}
-                    </button>
-                  )}
+          {/* Row 2: chip sections for type + 甘辛度 (direct-pick) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {chipSections.map(sec => sec.options.length > 0 && (
+              <div key={sec.key} style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', fontWeight: 500, minWidth: 42 }}>
+                  {(sec.label[lang] || sec.label.ja).toUpperCase()}
                 </div>
-              )}
-            </>
-          )}
+                {sec.options.map(opt => {
+                  const active = filters[sec.key] === opt.id
+                  return (
+                    <button key={opt.id} onClick={() => setF(sec.key, opt.id)} style={chipStyle(active)}>
+                      {opt.label}
+                      <span style={{ fontSize: 10, opacity: active ? 0.75 : 0.55 }}>{opt.count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
