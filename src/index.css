@@ -228,3 +228,5 @@ select option { background: var(--surface-card); color: var(--text); }
   from { border-color: var(--accent); }
   to   { border-color: var(--accent-bg); }
 }
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }

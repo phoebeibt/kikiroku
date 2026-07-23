@@ -51,6 +51,21 @@ function smvBucketOf(entry) {
 // Method tag whitelist (objective brewing method — sake-property, not personal preference)
 const METHOD_TAG_ORDER = ['namazake', 'genshu', 'nigori', 'sparkling', 'kimoto', 'yamahai', 'taruzake', 'koshu', 'kijoshu']
 
+// Per-axis palette (soft brand-neutral pastels — reads on all 3 themes over surface bg)
+const AXIS_PALETTE = {
+  rice:   { icon: '米', bg: 'rgba(228,200,126,.14)', fg: '#c9a95f' },
+  yeast:  { icon: '菌', bg: 'rgba(240,206,114,.14)', fg: '#d1b04d' },
+  type:   { icon: '類', bg: 'rgba(228,136,100,.14)', fg: '#c67351' },
+  smv:    { icon: '辛', bg: 'rgba(243,174,198,.15)', fg: '#d489a5' },
+  method: { icon: '法', bg: 'rgba(168,216,168,.14)', fg: '#84b384' },
+  region: { icon: '地', bg: 'rgba(197,166,216,.14)', fg: '#a889bd' },
+}
+const SMV_CHIP_TINT = {
+  sweet:  { bg: 'rgba(243,174,198,.15)', fg: '#d489a5' },
+  medium: { bg: 'rgba(216,180,150,.14)', fg: '#c39b6f' },
+  dry:    { bg: 'rgba(168,200,240,.14)', fg: '#7fa2d1' },
+}
+
 
 const WaveDivider = () => (
   <svg style={{ display: 'block', width: '100%', height: 12, margin: '0' }}
@@ -521,42 +536,84 @@ export default function Display({ session }) {
     q.then(({ data }) => { setRelatedEntries(data || []); setRelatedLoading(false) })
   }, [detail?.id])
 
-  // Build filter chip options with counts from all fetched entries
+  // Single-axis predicate — used both for filtered list and for cross-axis counting
+  const passesAxis = (e, axis, value) => {
+    if (!value) return true
+    if (axis === 'type')   return e.type === value
+    if (axis === 'region') return e.region === value
+    if (axis === 'smv')    return smvBucketOf(e) === value
+    if (axis === 'method') return (e.method_tags || []).includes(value)
+    if (axis === 'rice') {
+      const v = RICE_VARIETIES.find(x => x.id === value)
+      return v ? textMatchesVariety(e.rice, v) : false
+    }
+    if (axis === 'yeast') {
+      const v = YEAST_VARIETIES.find(x => x.id === value)
+      return v ? textMatchesVariety(e.yeast, v) : false
+    }
+    return true
+  }
+  const AXES = ['rice', 'yeast', 'type', 'smv', 'method', 'region']
+
+  // Build filter chip options with cross-axis intersection counts.
+  // Each axis' counts reflect entries that pass ALL OTHER active filters —
+  // so picking 山田錦 immediately updates 純米大吟醸's tally to the intersection,
+  // and axes that would zero out get a visual dimmed state instead of a dead click.
   const chipOptions = useMemo(() => {
-    const riceMap = new Map(), yeastMap = new Map(), typeMap = new Map()
-    const smvMap = new Map(), methodMap = new Map(), regionMap = new Map()
-    for (const e of entries) {
-      // Rice — match against each standard variety's aliases
-      for (const v of RICE_VARIETIES) {
-        if (textMatchesVariety(e.rice, v)) riceMap.set(v.id, (riceMap.get(v.id) || 0) + 1)
-      }
-      // Yeast — same
-      for (const v of YEAST_VARIETIES) {
-        if (textMatchesVariety(e.yeast, v)) yeastMap.set(v.id, (yeastMap.get(v.id) || 0) + 1)
-      }
-      // Type
-      if (e.type) typeMap.set(e.type, (typeMap.get(e.type) || 0) + 1)
-      // SMV bucket
-      const bucket = smvBucketOf(e)
-      if (bucket) smvMap.set(bucket, (smvMap.get(bucket) || 0) + 1)
-      // Method tags (objective brewing methods only)
-      for (const mt of (e.method_tags || [])) {
-        if (METHOD_TAG_ORDER.includes(mt)) methodMap.set(mt, (methodMap.get(mt) || 0) + 1)
-      }
-      // Region
-      if (e.region) regionMap.set(e.region, (regionMap.get(e.region) || 0) + 1)
+    const subsetFor = (skipAxis) => entries.filter(e =>
+      AXES.filter(a => a !== skipAxis).every(a => passesAxis(e, a, filters[a]))
+    )
+    const buildRice = () => {
+      const m = new Map()
+      const universe = new Set()
+      for (const e of entries) for (const v of RICE_VARIETIES) if (textMatchesVariety(e.rice, v)) universe.add(v.id)
+      for (const e of subsetFor('rice')) for (const v of RICE_VARIETIES) if (textMatchesVariety(e.rice, v)) m.set(v.id, (m.get(v.id) || 0) + 1)
+      return RICE_VARIETIES.filter(v => universe.has(v.id)).map(v => ({ ...v, count: m.get(v.id) || 0 })).sort((a, b) => b.count - a.count)
+    }
+    const buildYeast = () => {
+      const m = new Map()
+      const universe = new Set()
+      for (const e of entries) for (const v of YEAST_VARIETIES) if (textMatchesVariety(e.yeast, v)) universe.add(v.id)
+      for (const e of subsetFor('yeast')) for (const v of YEAST_VARIETIES) if (textMatchesVariety(e.yeast, v)) m.set(v.id, (m.get(v.id) || 0) + 1)
+      return YEAST_VARIETIES.filter(v => universe.has(v.id)).map(v => ({ ...v, count: m.get(v.id) || 0 })).sort((a, b) => b.count - a.count)
+    }
+    const buildType = () => {
+      const universe = new Set()
+      for (const e of entries) if (e.type) universe.add(e.type)
+      const m = new Map()
+      for (const e of subsetFor('type')) if (e.type) m.set(e.type, (m.get(e.type) || 0) + 1)
+      return [...universe].map(id => ({ id, count: m.get(id) || 0 })).sort((a, b) => b.count - a.count)
+    }
+    const buildSmv = () => {
+      const universe = new Set()
+      for (const e of entries) { const b = smvBucketOf(e); if (b) universe.add(b) }
+      const m = new Map()
+      for (const e of subsetFor('smv')) { const b = smvBucketOf(e); if (b) m.set(b, (m.get(b) || 0) + 1) }
+      return SMV_BUCKETS.filter(b => universe.has(b.id)).map(b => ({ ...b, count: m.get(b.id) || 0 }))
+    }
+    const buildMethod = () => {
+      const universe = new Set()
+      for (const e of entries) for (const mt of (e.method_tags || [])) if (METHOD_TAG_ORDER.includes(mt)) universe.add(mt)
+      const m = new Map()
+      for (const e of subsetFor('method')) for (const mt of (e.method_tags || [])) if (METHOD_TAG_ORDER.includes(mt)) m.set(mt, (m.get(mt) || 0) + 1)
+      return METHOD_TAG_ORDER.filter(id => universe.has(id)).map(id => ({ id, count: m.get(id) || 0 }))
+    }
+    const buildRegion = () => {
+      const universe = new Set()
+      for (const e of entries) if (e.region) universe.add(e.region)
+      const m = new Map()
+      for (const e of subsetFor('region')) if (e.region) m.set(e.region, (m.get(e.region) || 0) + 1)
+      return [...universe].map(id => ({ id, count: m.get(id) || 0 })).sort((a, b) => a.id.localeCompare(b.id, 'ja'))
     }
     return {
-      rice: RICE_VARIETIES.filter(v => riceMap.has(v.id)).map(v => ({ ...v, count: riceMap.get(v.id) }))
-        .sort((a, b) => b.count - a.count),
-      yeast: YEAST_VARIETIES.filter(v => yeastMap.has(v.id)).map(v => ({ ...v, count: yeastMap.get(v.id) }))
-        .sort((a, b) => b.count - a.count),
-      type: [...typeMap.entries()].map(([id, count]) => ({ id, count })).sort((a, b) => b.count - a.count),
-      smv: SMV_BUCKETS.filter(b => smvMap.has(b.id)).map(b => ({ ...b, count: smvMap.get(b.id) })),
-      method: METHOD_TAG_ORDER.filter(m => methodMap.has(m)).map(m => ({ id: m, count: methodMap.get(m) })),
-      region: [...regionMap.entries()].map(([id, count]) => ({ id, count })).sort((a, b) => a.id.localeCompare(b.id, 'ja')),
+      rice:   buildRice(),
+      yeast:  buildYeast(),
+      type:   buildType(),
+      smv:    buildSmv(),
+      method: buildMethod(),
+      region: buildRegion(),
     }
-  }, [entries])
+  }, [entries, filters])
 
   const setF = (k, v) => setFilters(p => ({ ...p, [k]: p[k] === v ? '' : v }))
 
@@ -633,30 +690,42 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
   const activeFilterCount = Object.values(filters).filter(Boolean).length
   const clearFilters = () => setFilters({ rice: '', yeast: '', type: '', smv: '', method: '', region: '' })
 
-  const dropLabel = { ja: { rice: '米', yeast: '酵母', method: '製法', region: '産地' },
-                     zh: { rice: '米', yeast: '酵母', method: '製法', region: '產地' },
-                     en: { rice: 'Rice', yeast: 'Yeast', method: 'Method', region: 'Region' } }[lang] || {}
-
-  const dropSections = [
-    { key: 'rice',   options: chipOptions.rice.map(o => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
-    { key: 'yeast',  options: chipOptions.yeast.map(o => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
+  // Unified 6-axis section list — every axis gets an icon + color-coded chip row
+  const AXIS_META = [
+    { key: 'rice',   options: chipOptions.rice.map(o   => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
+    { key: 'yeast',  options: chipOptions.yeast.map(o  => ({ id: o.id, label: o.title[lang] || o.title.ja, count: o.count })) },
+    { key: 'type',   options: chipOptions.type.map(o   => ({ id: o.id, label: cleanLabel(typeLabel(o.id)), count: o.count })) },
+    { key: 'smv',    options: chipOptions.smv.map(o    => ({ id: o.id, label: o.label[lang] || o.label.ja, count: o.count })) },
     { key: 'method', options: chipOptions.method.map(o => ({ id: o.id, label: cleanLabel(tagLabel(o.id, 'method')), count: o.count })) },
     { key: 'region', options: chipOptions.region.map(o => ({ id: o.id, label: o.id, count: o.count })) },
   ]
-  const chipSections = [
-    { key: 'type', label: { ja: 'タイプ',   zh: '類型',   en: 'Type' },
-      options: chipOptions.type.map(o => ({ id: o.id, label: cleanLabel(typeLabel(o.id)), count: o.count })) },
-    { key: 'smv',  label: { ja: '甘辛度',   zh: '甘辛度', en: 'Sweetness' },
-      options: chipOptions.smv.map(o => ({ id: o.id, label: o.label[lang] || o.label.ja, count: o.count })) },
-  ]
 
-  const chipStyle = (active) => ({
-    padding: '5px 12px', borderRadius: 16, cursor: 'pointer', fontSize: 12,
-    border: active ? 'none' : '1px solid var(--border)',
-    background: active ? 'var(--accent)' : 'var(--surface-card)',
-    color: active ? '#fff' : 'var(--text)',
-    fontFamily: 'var(--font-sans)',
-    display: 'inline-flex', alignItems: 'center', gap: 5,
+  // Chip styling — axis-tinted by default, accent-solid when active. SMV chips further tint by bucket.
+  const chipStyle = (axis, optId, active) => {
+    if (active) {
+      return {
+        padding: '5px 12px', borderRadius: 14, cursor: 'pointer', fontSize: 11.5,
+        border: '1px solid var(--accent)', background: 'var(--accent)', color: '#fff',
+        fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 500,
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+      }
+    }
+    const tint = axis === 'smv' ? (SMV_CHIP_TINT[optId] || AXIS_PALETTE.smv) : AXIS_PALETTE[axis]
+    return {
+      padding: '5px 12px', borderRadius: 14, cursor: 'pointer', fontSize: 11.5,
+      border: '1px solid transparent', background: tint.bg, color: tint.fg,
+      fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+    }
+  }
+
+  // Active filter chips for the collapsed summary bar (color-coded per axis)
+  const activeChips = AXIS_META.flatMap(sec => {
+    const v = filters[sec.key]
+    if (!v) return []
+    const opt = sec.options.find(o => o.id === v)
+    if (!opt) return []
+    return [{ axis: sec.key, id: v, label: opt.label }]
   })
 
   return (
@@ -690,82 +759,60 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             </div>
           )}
 
-          {filterCollapsed ? (
-            /* Collapsed — single-line summary bar */
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <button onClick={() => setFilterCollapsed(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0,
-                  height: 32, padding: '0 12px', borderRadius: 8,
-                  border: '1px solid var(--border)', background: 'transparent',
-                  color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--sub)',
-                  fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                  whiteSpace: 'nowrap', overflow: 'hidden',
-                }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-                </svg>
-                <span>{lang === 'ja' ? '絞り込み' : lang === 'zh' ? '篩選' : 'Filters'}</span>
-                {activeFilterCount > 0 && (
-                  <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 10, fontWeight: 600 }}>{activeFilterCount}</span>
-                )}
-                <span style={{ marginLeft: 'auto', opacity: 0.6, fontSize: 10 }}>▼</span>
-              </button>
-              {activeFilterCount > 0 && (
-                <button onClick={clearFilters}
-                  style={{ height: 32, width: 30, padding: 0, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>
-                  ×
+          {/* ── Collapsed summary bar (animated in/out) ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateRows: filterCollapsed ? '1fr' : '0fr',
+            opacity: filterCollapsed ? 1 : 0,
+            transition: 'grid-template-rows 260ms ease, opacity 200ms ease',
+          }}>
+            <div style={{ overflow: 'hidden', minHeight: 0 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', pointerEvents: filterCollapsed ? 'auto' : 'none' }}>
+                <button onClick={() => setFilterCollapsed(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0,
+                    height: 34, padding: '0 10px', borderRadius: 10,
+                    border: '1px solid var(--border)', background: 'var(--surface-card)',
+                    color: 'var(--sub)', fontSize: 12, cursor: 'pointer',
+                    fontFamily: 'var(--font-sans)', overflow: 'hidden',
+                  }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                  </svg>
+                  {activeChips.length === 0 ? (
+                    <span style={{ color: 'var(--sub)' }}>{lang === 'ja' ? '絞り込み' : lang === 'zh' ? '篩選' : 'Filters'}</span>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 4, overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                      {activeChips.map(ac => {
+                        const tint = ac.axis === 'smv' ? (SMV_CHIP_TINT[ac.id] || AXIS_PALETTE.smv) : AXIS_PALETTE[ac.axis]
+                        return (
+                          <span key={ac.axis}
+                            style={{
+                              padding: '2px 8px', borderRadius: 8, fontSize: 11,
+                              background: tint.bg, color: tint.fg,
+                              whiteSpace: 'nowrap', flexShrink: 0,
+                            }}>
+                            {ac.label}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <span style={{ marginLeft: 'auto', flexShrink: 0, color: 'var(--sub)', fontSize: 11 }}>
+                    {filtered.length}{lang === 'ja' ? '件' : lang === 'zh' ? '筆' : ''}
+                  </span>
+                  <span style={{ opacity: 0.6, fontSize: 10, flexShrink: 0 }}>▼</span>
                 </button>
-              )}
-              <button onClick={() => setSearchOpen(o => !o)}
-                title={t('search')}
-                style={{
-                  width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)',
-                  background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
-                  color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Row 1: compact dropdowns (single line, equally distributed) + collapse + search icon */}
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', marginBottom: 10 }}>
-                {dropSections.map(sec => (
-                  <select key={sec.key}
-                    style={{
-                      height: 30, padding: '0 20px 0 8px', borderRadius: 6,
-                      border: '1px solid var(--border)',
-                      background: `${filters[sec.key] ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent'} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='rgba(160,140,120,0.5)'/%3E%3C/svg%3E") no-repeat right 7px center`,
-                      color: filters[sec.key] ? 'var(--accent)' : 'var(--sub)', fontSize: 12,
-                      outline: 'none', appearance: 'none', cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      flex: '1 1 0', minWidth: 0,
-                      textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap',
-                    }}
-                    value={filters[sec.key]}
-                    onChange={e => setFilters(p => ({ ...p, [sec.key]: e.target.value }))}
-                    disabled={sec.options.length === 0}>
-                    <option value="">{dropLabel[sec.key] || sec.key}</option>
-                    {sec.options.map(o => (
-                      <option key={o.id} value={o.id}>{o.label} ({o.count})</option>
-                    ))}
-                  </select>
-                ))}
                 {activeFilterCount > 0 && (
                   <button onClick={clearFilters}
-                    title={String(activeFilterCount)}
-                    style={{ height: 30, width: 26, padding: 0, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>
+                    style={{ height: 34, width: 32, padding: 0, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>
                     ×
                   </button>
                 )}
                 <button onClick={() => setSearchOpen(o => !o)}
                   title={t('search')}
                   style={{
-                    width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
+                    width: 34, height: 34, borderRadius: 10, border: '1px solid var(--border)',
                     background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
                     color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -774,38 +821,95 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                     <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
                   </svg>
                 </button>
-                <button onClick={() => setFilterCollapsed(true)}
-                  title={lang === 'ja' ? '閉じる' : lang === 'zh' ? '收起' : 'Collapse'}
-                  style={{
-                    width: 30, height: 30, borderRadius: 6, border: '1px solid var(--border)',
-                    background: 'transparent', color: 'var(--sub)',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 10,
-                  }}>
-                  ▲
-                </button>
               </div>
+            </div>
+          </div>
 
-              {/* Row 2: chip sections for type + 甘辛度 (direct-pick) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {chipSections.map(sec => sec.options.length > 0 && (
-                  <div key={sec.key} style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', fontWeight: 500, minWidth: 42 }}>
-                      {(sec.label[lang] || sec.label.ja).toUpperCase()}
+          {/* ── Expanded panel (animated in/out) ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateRows: filterCollapsed ? '0fr' : '1fr',
+            opacity: filterCollapsed ? 0 : 1,
+            transition: 'grid-template-rows 260ms ease, opacity 220ms ease',
+          }}>
+            <div style={{ overflow: 'hidden', minHeight: 0 }}>
+              <div style={{ pointerEvents: filterCollapsed ? 'none' : 'auto' }}>
+                {/* Header: title · counter · clear · search · collapse */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 11, color: 'var(--sub)' }}>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '.05em' }}>
+                    {lang === 'ja' ? '絞り込み' : lang === 'zh' ? '篩選' : 'Filters'}
+                  </span>
+                  <span style={{ opacity: 0.6 }}>· {filtered.length}{lang === 'ja' ? '件' : lang === 'zh' ? '筆' : ''}</span>
+                  <div style={{ flex: 1 }} />
+                  {activeFilterCount > 0 && (
+                    <button onClick={clearFilters}
+                      style={{ background: 'none', border: 'none', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                      {lang === 'ja' ? 'クリア' : lang === 'zh' ? '清除' : 'Clear'}
+                    </button>
+                  )}
+                  <button onClick={() => setSearchOpen(o => !o)}
+                    title={t('search')}
+                    style={{
+                      width: 26, height: 26, borderRadius: 6, border: '1px solid var(--border)',
+                      background: searchOpen || search ? 'var(--accent-bg, rgba(124,58,40,.10))' : 'transparent',
+                      color: searchOpen || search ? 'var(--accent)' : 'var(--sub)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                  </button>
+                  <button onClick={() => setFilterCollapsed(true)}
+                    title={lang === 'ja' ? '閉じる' : lang === 'zh' ? '收起' : 'Collapse'}
+                    style={{
+                      width: 26, height: 26, borderRadius: 6, border: '1px solid var(--border)',
+                      background: 'transparent', color: 'var(--sub)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10,
+                    }}>
+                    ▲
+                  </button>
+                </div>
+
+                {/* 6 axis rows — icon + horizontally-scrollable chip strip */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {AXIS_META.map(sec => sec.options.length > 0 && (
+                    <div key={sec.key}
+                      style={{
+                        display: 'grid', gridTemplateColumns: '24px 1fr', gap: 8, alignItems: 'center',
+                        padding: '6px 0',
+                        borderTop: '1px solid rgba(200,225,255,.06)',
+                      }}>
+                      <div style={{
+                        width: 24, height: 24, borderRadius: 5,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-serif)', fontSize: 12,
+                        background: AXIS_PALETTE[sec.key].bg, color: AXIS_PALETTE[sec.key].fg,
+                        flexShrink: 0,
+                      }}>
+                        {AXIS_PALETTE[sec.key].icon}
+                      </div>
+                      <div style={{
+                        display: 'flex', gap: 5, overflowX: 'auto',
+                        minWidth: 0, paddingBottom: 2,
+                        scrollbarWidth: 'none', msOverflowStyle: 'none',
+                      }} className="hide-scrollbar">
+                        {sec.options.map(opt => {
+                          const active = filters[sec.key] === opt.id
+                          return (
+                            <button key={opt.id} onClick={() => setF(sec.key, opt.id)}
+                              style={chipStyle(sec.key, opt.id, active)}>
+                              {opt.label}
+                              <span style={{ fontSize: 9.5, opacity: active ? 0.75 : 0.55 }}>{opt.count}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                    {sec.options.map(opt => {
-                      const active = filters[sec.key] === opt.id
-                      return (
-                        <button key={opt.id} onClick={() => setF(sec.key, opt.id)} style={chipStyle(active)}>
-                          {opt.label}
-                          <span style={{ fontSize: 10, opacity: active ? 0.75 : 0.55 }}>{opt.count}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
       </div>
 
