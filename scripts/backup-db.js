@@ -23,6 +23,7 @@ const TABLES = [
   'sake_products',
   'wiki_articles',
   'invite_codes',
+  'sake_tags',
 ]
 
 const PAGE = 1000
