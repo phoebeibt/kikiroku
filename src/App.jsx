@@ -1,7 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
-import { applyTheme, getTheme } from './lib/theme'
+import { initTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
 import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
@@ -24,7 +24,7 @@ export default function App() {
   const [session, setSession] = useState(undefined)
 
   useEffect(() => {
-    applyTheme(getTheme())
+    initTheme()
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()

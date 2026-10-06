@@ -5,7 +5,6 @@ import Nav from '../components/Nav'
 import Stars from '../components/Stars'
 import JapanMap, { JA_TO_CODE } from '../components/JapanMap'
 import { useLang } from '../contexts/LangContext'
-import { THEMES, getTheme, applyTheme } from '../lib/theme'
 import { useTagResolver } from '../contexts/TagsContext'
 
 const s = {
@@ -58,11 +57,9 @@ export default function Profile({ session }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [stats, setStats] = useState({ total: 0, avg: null, shared: 0, topTypes: [], topRegions: [], regionCounts: {}, regionEntries: {}, topAroma: [], topTaste: [], tasteBase: 'all' })
-  const [currentTheme, setCurrentTheme] = useState(getTheme)
   const [regionView, setRegionView] = useState('map')
   const [selectedPref, setSelectedPref] = useState(null)
 
-  const handleTheme = id => { applyTheme(id); setCurrentTheme(id) }
 
   useEffect(() => {
     if (!session) { nav('/login'); return }
@@ -328,34 +325,6 @@ export default function Profile({ session }) {
             )}
           </div>
         )}
-
-        {/* Theme section */}
-        <div style={s.section}>
-          <div style={s.sectionTitle}>{lbl('theme', lang).toUpperCase()}</div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {THEMES.map(th => (
-              <button
-                key={th.id}
-                onClick={() => handleTheme(th.id)}
-                style={{
-                  flex: 1, padding: '12px 8px', borderRadius: 12, cursor: 'pointer',
-                  border: currentTheme === th.id ? '2px solid var(--accent)' : '2px solid var(--border)',
-                  background: th.preview[0], display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  outline: 'none', transition: 'border-color .2s',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {th.preview.map((c, i) => (
-                    <div key={i} style={{ width: 14, height: 14, borderRadius: '50%', background: c, border: '1px solid rgba(255,255,255,.15)' }} />
-                  ))}
-                </div>
-                <span style={{ fontSize: 11, color: th.preview[2], letterSpacing: '.04em', fontFamily: 'var(--font-sans)' }}>
-                  {th[lang] || th.en}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
 
       </div>
     </div>

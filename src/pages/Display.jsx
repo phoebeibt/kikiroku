@@ -6,11 +6,13 @@ import Stars, { StarsLight } from '../components/Stars'
 import { BrandMarkFull } from '../components/BrandMark'
 import { useLang } from '../contexts/LangContext'
 import { useTagResolver } from '../contexts/TagsContext'
-import { getTheme } from '../lib/theme'
 import { WikiText } from '../components/WikiTooltip'
 import { WIKI_TERMS } from '../lib/wiki'
 import { localizedTerm } from '../lib/wiki'
 import { displayName } from '../lib/localize'
+import { normalizeType } from '../lib/sakeType'
+import { pressable } from '../lib/a11y'
+import Sheet, { CloseIcon } from '../components/ui/Sheet'
 
 
 // Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
@@ -287,7 +289,7 @@ const s = {
   notesProse: { fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--text)', fontStyle: 'italic', padding: '10px 14px 10px 18px', borderLeft: '2px solid var(--accent)', background: 'var(--accent-bg)', borderRadius: 3, margin: '12px 20px', lineHeight: 1.7, letterSpacing: '.02em' },
   empty: { textAlign: 'center', color: 'var(--sub)', paddingTop: 60, fontSize: 14 },
   stickyBar: {
-    position: 'sticky', top: 52, zIndex: 30,
+    position: 'sticky', top: 'calc(52px + env(safe-area-inset-top, 0px))', zIndex: 30,
     background: 'var(--stickybar-bg)',
     backdropFilter: 'blur(28px) saturate(1.8)',
     WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
@@ -308,7 +310,7 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
     const hasBrand = !!e.brand
     const hasType = !!e.type
     return (
-      <div style={s.gridTile} onClick={() => onOpen(e)}>
+      <div style={s.gridTile} {...pressable(() => onOpen(e), [e.brand, e.name].filter(Boolean).join(' '))}>
         {onWish && (
           <button onClick={ev => onWish(e.id, ev)} style={s.wishBtn(wished)} title={wished ? '想喝リストから外す' : '想喝'}>
             {wishIcon}
@@ -348,7 +350,7 @@ function SakeCard({ e, lang, typeLabel, tagLabel, onOpen, wished, onWish, awarde
 
   // list mode
   return (
-    <div style={s.listCard} onClick={() => onOpen(e)}>
+    <div style={s.listCard} {...pressable(() => onOpen(e), [e.brand, e.name].filter(Boolean).join(' '))}>
       <div style={s.listThumb}>
         {!isGuest && e.photo_url
           ? <img style={s.listThumbImg} src={e.photo_url} alt={e.name} />
@@ -434,7 +436,7 @@ export default function Display({ session }) {
     const { data } = await supabase.from('sake_entries').select('*')
       .eq('is_public', true).order('tasted_at', { ascending: false })
       .range(pageNum * PAGE_SIZE, pageNum * PAGE_SIZE + PAGE_SIZE - 1)
-    const rows = data || []
+    const rows = (data || []).map(e => ({ ...e, type: normalizeType(e.type) || null }))
     setEntries(prev => pageNum === 0 ? rows : [...prev, ...rows])
     setHasMore(rows.length === PAGE_SIZE)
     if (pageNum === 0) setLoading(false); else setLoadingMore(false)
@@ -741,7 +743,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                 style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--sub)', pointerEvents: 'none' }}>
                 <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
               </svg>
-              <input autoFocus={searchOpen}
+              <input autoFocus={searchOpen} type="search" aria-label={lang === 'ja' ? '酒を検索' : lang === 'zh' ? '搜尋酒款' : 'Search sake'}
                 style={{
                   width: '100%', height: 40, padding: '0 44px 0 42px', borderRadius: 20,
                   border: '1px solid var(--border)', background: 'var(--surface-card)',
@@ -970,9 +972,18 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
       </div>
 
       {/* Detail modal */}
-      {detail && (
-        <div style={s.backdrop} onClick={() => setDetail(null)}>
-          <div style={s.detModal} onClick={e => e.stopPropagation()}>
+      <Sheet
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        className="kk-panel--fit"
+        label={detail ? [detail.brand, detail.name].filter(Boolean).join(' ') : ''}
+        header={<>
+          <button type="button" className="kk-icon-btn" onClick={() => setDetail(null)} aria-label={lang === 'ja' ? '閉じる' : lang === 'zh' ? '關閉' : 'Close'}><CloseIcon /></button>
+          <span />
+          <span className="kk-panel__head-spacer" />
+        </>}
+      >
+        {detail && (<div style={{ margin: '-14px -16px -20px' }}>
           {session && <button
               onClick={async () => {
                 if (shareLoading) return
@@ -985,7 +996,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
                     taste_tags_labels: detail.taste_tags?.map(id => tagLabel(id, 'taste')),
                     tags_labels: detail.tags?.map(id => tagLabel(id, 'flavor')),
                   }
-                  const canvas = await generateShareCard(entryWithLabels, lang, getTheme())
+                  const canvas = await generateShareCard(entryWithLabels, lang)
                   const blob = await canvasToBlob(canvas)
                   const file = new File([blob], `${detail.name}.png`, { type: 'image/png' })
                   if (navigator.canShare?.({ files: [file] })) {
@@ -1001,7 +1012,8 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
               }}
               disabled={shareLoading}
               title={lang === 'ja' ? '画像をシェア' : lang === 'zh' ? '分享圖片' : 'Share image'}
-              style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'var(--green)', color: '#fff', cursor: shareLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, opacity: shareLoading ? 0.65 : 1, transition: 'opacity .2s' }}>
+              aria-label={lang === 'ja' ? '画像をシェア' : lang === 'zh' ? '分享圖片' : 'Share image'}
+              style={{ position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: 9, border: 'none', background: 'var(--green)', color: '#fff', cursor: shareLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, opacity: shareLoading ? 0.65 : 1, transition: 'opacity .2s' }}>
               {shareLoading
                 ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -1243,16 +1255,14 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
               )}
 
             </div>
-          </div>
-        </div>
-      )}
+        </div>)}
+      </Sheet>
 
-      {lightboxImg && (
-        <div onClick={() => setLightboxImg(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.9)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <img src={lightboxImg} style={{ maxWidth: '100%', maxHeight: '90svh', borderRadius: 10, objectFit: 'contain' }} />
+      <Sheet open={!!lightboxImg} onClose={() => setLightboxImg(null)} variant="viewer" label={lang === 'ja' ? '写真' : lang === 'zh' ? '照片' : 'Photo'}>
+        <div onClick={() => setLightboxImg(null)} style={{ width: '100%', height: '100%', padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={lightboxImg || ''} alt="" style={{ maxWidth: '100%', maxHeight: '90svh', borderRadius: 10, objectFit: 'contain' }} />
         </div>
-      )}
+      </Sheet>
     </div>
   )
 }

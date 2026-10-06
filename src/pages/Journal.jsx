@@ -11,6 +11,9 @@ import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
 import { useTags, useTagResolver } from '../contexts/TagsContext'
 import { WikiText, WikiIcon } from '../components/WikiTooltip'
+import { normalizeType } from '../lib/sakeType'
+import Sheet, { CloseIcon } from '../components/ui/Sheet'
+import { pressable } from '../lib/a11y'
 
 
 
@@ -237,7 +240,8 @@ function CropModal({ src, onConfirm, onCancel }) {
   const HH = 20
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
+    <Sheet open onClose={onCancel} variant="viewer" label="Crop">
+    <div style={{ position: 'absolute', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
       <div style={{ position: 'relative', touchAction: 'none', cursor: 'crosshair', lineHeight: 0 }}
         onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
         onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
@@ -260,6 +264,7 @@ function CropModal({ src, onConfirm, onCancel }) {
         <button onClick={confirm} style={{ padding: '9px 22px', borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer' }}>確認裁剪</button>
       </div>
     </div>
+    </Sheet>
   )
 }
 
@@ -300,33 +305,25 @@ function WishlistView({ entries, loading, lang, typeLabel, onForward, onRemove }
 
 function ForwardConfirmDialog({ entry, lang, onConfirm, onCancel }) {
   const [skip, setSkip] = React.useState(false)
+  const title = lang === 'ja' ? '記録しますか？' : lang === 'zh' ? '確認記錄？' : 'Log this sake?'
+  const name = [entry.brand, entry.name].filter(Boolean).join(' ')
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(3,10,20,.7)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ background: 'var(--surface-card)', borderRadius: 16, padding: '24px 20px', maxWidth: 340, width: '100%' }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, marginBottom: 10, color: 'var(--text)' }}>
-          {lang === 'ja' ? '記録しますか？' : lang === 'zh' ? '確認記錄？' : 'Log this sake?'}
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--sub)', lineHeight: 1.6, marginBottom: 18 }}>
-          {lang === 'ja'
-            ? `「${[entry.brand, entry.name].filter(Boolean).join(' ')}」を記録すると、想喝リストから削除されます。`
-            : lang === 'zh'
-            ? `記錄「${[entry.brand, entry.name].filter(Boolean).join(' ')}」後，將從想喝清單中移除。`
-            : `"${[entry.brand, entry.name].filter(Boolean).join(' ')}" will be removed from your wish list after logging.`}
-        </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--sub)', marginBottom: 20, cursor: 'pointer' }}>
-          <input type="checkbox" checked={skip} onChange={e => setSkip(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
-          {lang === 'ja' ? '次から表示しない' : lang === 'zh' ? '下次不再提示' : "Don't show again"}
-        </label>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>
-            {lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}
-          </button>
-          <button onClick={() => onConfirm(skip)} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, cursor: 'pointer' }}>
-            {lang === 'ja' ? '記録する' : lang === 'zh' ? '確認' : 'Confirm'}
-          </button>
-        </div>
+    <Sheet open onClose={onCancel} variant="dialog" label={title}>
+      <h2 className="kk-confirm__title">{title}</h2>
+      <p className="kk-confirm__note">
+        {lang === 'ja' ? `「${name}」を記録すると、飲みたいリストから外れます。`
+          : lang === 'zh' ? `記錄「${name}」後，將從想喝清單中移除。`
+          : `"${name}" will be removed from your wish list after logging.`}
+      </p>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--muted)', margin: '-6px 0 18px', cursor: 'pointer' }}>
+        <input type="checkbox" checked={skip} onChange={e => setSkip(e.target.checked)} style={{ accentColor: 'var(--green)' }} />
+        {lang === 'ja' ? '次から表示しない' : lang === 'zh' ? '下次不再提示' : "Don't show again"}
+      </label>
+      <div className="kk-confirm__actions">
+        <button type="button" className="kk-btn" onClick={onCancel}>{lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}</button>
+        <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => onConfirm(skip)}>{lang === 'ja' ? '記録する' : lang === 'zh' ? '確認' : 'Confirm'}</button>
       </div>
-    </div>
+    </Sheet>
   )
 }
 
@@ -361,6 +358,7 @@ export default function Journal({ session }) {
   const [photoPreview2, setPhotoPreview2] = useState(null)
   const [saving, setSaving] = useState(false)
   const [confirmDel, setConfirmDel] = useState(null)
+  const [deleting, setDeleting] = useState(false)
   const [draftRestored, setDraftRestored] = useState(false)
   const [hasDraft, setHasDraft] = useState(() => !!loadDraft())
   const [awardYears, setAwardYears] = useState([])
@@ -392,28 +390,6 @@ export default function Journal({ session }) {
   }, [form, formTags, aromaTags, tasteTags, formDates, methodTags, sheet, editId])
 
   // ── Swipe-down to save/dismiss ──────────────────────────────
-  const [sheetDragY, setSheetDragY] = useState(0)
-  const [sheetDragging, setSheetDragging] = useState(false)
-  const sheetDragStart = useRef(0)
-  const DRAG_CLOSE_THRESHOLD = 90
-
-  const onSheetDragStart = e => {
-    sheetDragStart.current = e.touches[0].clientY
-    setSheetDragging(true)
-  }
-  const onSheetDragMove = e => {
-    const dy = Math.max(0, e.touches[0].clientY - sheetDragStart.current)
-    setSheetDragY(dy)
-  }
-  const onSheetDragEnd = () => {
-    setSheetDragging(false)
-    if (sheetDragY >= DRAG_CLOSE_THRESHOLD) {
-      setSheetDragY(0)
-      close()
-    } else {
-      setSheetDragY(0)
-    }
-  }
   const [searchLoading, setSearchLoading] = useState(false)
   const [lightbox, setLightbox] = useState(null)
   const [detail, setDetail] = useState(null)
@@ -472,7 +448,7 @@ export default function Journal({ session }) {
     setLoading(true)
     const { data } = await supabase.from('sake_entries').select('*')
       .eq('user_id', session.user.id).order('tasted_at', { ascending: false })
-    setEntries(data || [])
+    setEntries((data || []).map(e => ({ ...e, type: normalizeType(e.type) || null })))
     setLoading(false)
     if (pendingOpenIdRef.current) {
       const entry = (data || []).find(e => e.id === pendingOpenIdRef.current)
@@ -557,7 +533,7 @@ export default function Journal({ session }) {
   const openForward = fwd => {
     setForm({
       ...EMPTY_FORM,
-      brand: fwd.brand || '', name: fwd.name || '', brewery: fwd.brewery || '', region: fwd.region || '', type: fwd.type || '',
+      brand: fwd.brand || '', name: fwd.name || '', brewery: fwd.brewery || '', region: fwd.region || '', type: normalizeType(fwd.type),
       alcohol: fwd.alcohol || '', rice: fwd.rice || '', polishing: fwd.polishing || '',
       smv: fwd.smv || '', acidity: fwd.acidity || '', yeast: fwd.yeast || '',
       contributor_name: defaultName,
@@ -574,7 +550,7 @@ export default function Journal({ session }) {
 
   const openEdit = e => {
     setForm({
-      brand: e.brand || '', name: e.name || '', brewery: e.brewery || '', region: e.region || '', type: e.type || '',
+      brand: e.brand || '', name: e.name || '', brewery: e.brewery || '', region: e.region || '', type: normalizeType(e.type),
       alcohol: e.alcohol || '', rice: e.rice || '', polishing: e.polishing || '',
       smv: e.smv || '', acidity: e.acidity || '', yeast: e.yeast || '',
       rating: e.rating || 0, notes: e.notes || '',
@@ -685,7 +661,7 @@ export default function Journal({ session }) {
               name:         fullName,
               brewery_name: form.brewery.trim() || null,
               region:       form.region.trim()  || null,
-              type:         form.type           || null,
+              type:         normalizeType(form.type) || null,
               rice:         form.rice.trim()    || null,
               yeast:        form.yeast.trim()   || null,
               polishing:    form.polishing ? parseFloat(form.polishing) : null,
@@ -704,7 +680,6 @@ export default function Journal({ session }) {
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
-  const SAKE_TYPE_IDS = ['純米','純米吟醸','純米大吟醸','吟醸','大吟醸','特別純米','本醸造','普通酒','その他']
 
 
   const runSearch = async (currentForm) => {
@@ -722,7 +697,7 @@ export default function Journal({ session }) {
         ...(data.name_reading && !prev.name_reading ? { name_reading: data.name_reading } : {}),
         ...(data.brewery   && !prev.brewery   ? { brewery: data.brewery }     : {}),
         ...(data.region    && !prev.region    ? { region: data.region }       : {}),
-        ...(data.type && !prev.type && SAKE_TYPE_IDS.includes(data.type) ? { type: data.type } : {}),
+        ...(!prev.type && normalizeType(data.type) ? { type: normalizeType(data.type) } : {}),
         ...(data.rice      && !prev.rice      ? { rice: data.rice }           : {}),
         ...(data.yeast     && !prev.yeast     ? { yeast: data.yeast }         : {}),
         ...(data.polishing != null && !prev.polishing ? { polishing: String(data.polishing) } : {}),
@@ -794,7 +769,7 @@ export default function Journal({ session }) {
         ) : (<>
 
         <div style={s.searchRow}>
-          <input style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} />
+          <input type="search" aria-label={t('search')} style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} />
           {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18 }}>×</button>}
           <div style={{ display: 'flex', gap: 2, background: 'var(--surface-card)', borderRadius: 8, padding: 3, border: '1px solid var(--border)', flexShrink: 0 }}>
             <button onClick={() => toggleView('grid')} title="Grid" style={{ width: 30, height: 26, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: viewMode === 'grid' ? 'rgba(255,245,230,.1)' : 'transparent', color: viewMode === 'grid' ? 'var(--text)' : 'var(--sub)' }}>
@@ -868,7 +843,7 @@ export default function Journal({ session }) {
                         {mLabel.toUpperCase()}
                       </div>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} onClick={() => setDetail(e)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} {...pressable(() => setDetail(e), [e.brand, e.name].filter(Boolean).join(' '))}>
                       <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: 'hidden', background: '#2d2520' }}>
                         {e.photo_url
                           ? <img src={e.photo_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
@@ -915,7 +890,7 @@ export default function Journal({ session }) {
             <div style={{ ...s.empty, gridColumn: '1/-1' }}>{t('noResults', { q: search })}</div>
           )}
           {filtered.map(e => (
-            <div key={e.id} style={s.card} onClick={() => setDetail(e)}>
+            <div key={e.id} style={s.card} {...pressable(() => setDetail(e), [e.brand, e.name].filter(Boolean).join(' '))}>
               {e.is_public && <div style={s.publicBadge}>{t('public')}</div>}
               {e.photo_url ? <img style={s.cardImg} src={e.photo_url} alt={e.name} /> : <div style={s.cardNo}>🍶</div>}
               <div style={s.cardOverlay} />
@@ -956,11 +931,18 @@ export default function Journal({ session }) {
       )}
 
       {/* Detail modal */}
-      {sheet !== 'form' && detail && (
-        <div style={s.backdrop} onClick={close}>
-          <div style={s.detModal} onClick={e => e.stopPropagation()}>
-            <MarkSVG />
-            <button style={s.detClose} onClick={close}>✕</button>
+      <Sheet
+        open={sheet !== 'form' && !!detail}
+        onClose={close}
+        className="kk-panel--fit"
+        label={detail ? [detail.brand, detail.name].filter(Boolean).join(' ') : ''}
+        header={<>
+          <button type="button" className="kk-icon-btn" onClick={close} aria-label={(lang === 'ja' ? '閉じる' : lang === 'zh' ? '關閉' : 'Close')}><CloseIcon /></button>
+          <span />
+          <span className="kk-panel__head-spacer" />
+        </>}
+      >
+        {detail && (<div style={{ position: 'relative', padding: '4px 8px 4px' }}>
             {detail.type && <div style={{ fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 4 }}>{typeLabel(detail.type)}</div>}
             {detail.brand && (lang === 'ja' ? brandMap[detail.brand]?.furigana : brandMap[detail.brand]?.romaji) && (
               <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.08em', marginBottom: 3 }}>
@@ -1031,77 +1013,60 @@ export default function Journal({ session }) {
                 {t('public')}{detail.contributor_name ? ` · ${detail.contributor_name}` : ''}
               </div>
             )}
-            <div style={s.detActions}>
-              <button style={s.editBtn} onClick={() => { setDetail(null); openEdit(detail) }}>{t('edit')}</button>
-              <button style={s.delBtn} onClick={() => setConfirmDel(detail)}>{t('delete')}</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 20 }}>
+              <button type="button" className="kk-btn kk-btn--primary kk-btn--block" onClick={() => { setDetail(null); openEdit(detail) }}>{t('edit')}</button>
+              <button type="button" className="kk-btn kk-btn--danger-text kk-btn--sm" style={{ alignSelf: 'center' }} onClick={() => setConfirmDel(detail)}>
+                {(lang === 'ja' ? 'この記録を削除' : lang === 'zh' ? '刪除這筆記錄' : 'Delete this record')}
+              </button>
             </div>
-          </div>
-        </div>
-      )}
+        </div>)}
+      </Sheet>
 
       {/* Back label crop */}
       {cropSrc && <CropModal src={cropSrc} onConfirm={onCropConfirm} onCancel={onCropCancel} />}
 
       {/* Photo lightbox */}
-      {lightbox && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.92)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setLightbox(null)}>
-          <img src={lightbox} alt="" style={{ maxWidth: '96vw', maxHeight: '92svh', objectFit: 'contain', borderRadius: 8 }} />
-          <button onClick={() => setLightbox(null)}
-            style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,.3)', background: 'rgba(0,0,0,.5)', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            ✕
-          </button>
+      <Sheet open={!!lightbox} onClose={() => setLightbox(null)} variant="viewer" label={lang === 'ja' ? '写真' : lang === 'zh' ? '照片' : 'Photo'}>
+        <div onClick={() => setLightbox(null)} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <img src={lightbox || ''} alt="" style={{ maxWidth: '96vw', maxHeight: '92svh', objectFit: 'contain', borderRadius: 8 }} />
         </div>
-      )}
+        <button type="button" className="kk-icon-btn" onClick={() => setLightbox(null)} aria-label={lang === 'ja' ? '閉じる' : lang === 'zh' ? '關閉' : 'Close'}
+          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: 16, background: 'rgba(0,0,0,.5)', borderColor: 'rgba(255,255,255,.3)', color: '#fff' }}>
+          <CloseIcon />
+        </button>
+      </Sheet>
 
-      {/* Delete confirmation modal */}
-      {confirmDel && (
-        <div style={s.backdrop} onClick={() => setConfirmDel(null)}>
-          <div style={{ background: 'var(--surface-card)', borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 340, textAlign: 'center' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8, color: 'var(--text)' }}>{t('confirmDelete')}</div>
-            <div style={{ fontSize: 13, color: 'var(--sub)', marginBottom: 24 }}>{[confirmDel.brand, confirmDel.name].filter(Boolean).join(' ')}</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button style={s.editBtn} onClick={() => setConfirmDel(null)}>{lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}</button>
-              <button style={s.delBtn} onClick={async () => {
-                await supabase.from('sake_entries').delete().eq('id', confirmDel.id)
-                setConfirmDel(null); await fetchEntries(); closeClean()
-              }}>{t('delete')}</button>
-            </div>
+      {/* Delete confirmation */}
+      <Sheet open={!!confirmDel} onClose={() => setConfirmDel(null)} variant="dialog" label={t('confirmDelete')}>
+        {confirmDel && (<>
+          <h2 className="kk-confirm__title kk-confirm__title--danger">{t('confirmDelete')}</h2>
+          <p className="kk-confirm__target">{[confirmDel.brand, confirmDel.name].filter(Boolean).join(' ')}</p>
+          <p className="kk-confirm__note">{(lang === 'ja' ? '写真・メモ・評価もすべて消え、元に戻せません。' : lang === 'zh' ? '照片、筆記和評分都會一併刪除，無法復原。' : 'Photos, notes and rating will be removed. This cannot be undone.')}</p>
+          <div className="kk-confirm__actions">
+            <button type="button" className="kk-btn" data-autofocus onClick={() => setConfirmDel(null)}>{(lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel')}</button>
+            <button type="button" className="kk-btn kk-btn--danger" disabled={deleting} onClick={async () => {
+              setDeleting(true)
+              await supabase.from('sake_entries').delete().eq('id', confirmDel.id)
+              setDeleting(false)
+              setConfirmDel(null); await fetchEntries(); closeClean()
+            }}>{t('delete')}</button>
           </div>
-        </div>
-      )}
+        </>)}
+      </Sheet>
 
       {/* Form sheet */}
-      {sheet === 'form' && (
-        <div style={s.formBackdrop} onClick={close}>
-          <div
-            style={{
-              ...s.formSheet,
-              transform: `translateY(${sheetDragY}px)`,
-              transition: sheetDragging ? 'none' : 'transform .35s cubic-bezier(.32,0,.67,0)',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div
-              style={{ ...s.handle, touchAction: 'none', cursor: 'grab',
-                background: sheetDragY >= DRAG_CLOSE_THRESHOLD ? 'var(--accent)' : 'var(--border)',
-                transition: 'background .15s',
-              }}
-              onTouchStart={onSheetDragStart}
-              onTouchMove={onSheetDragMove}
-              onTouchEnd={onSheetDragEnd}
-            />
-            <div
-              style={s.formHead}
-              onTouchStart={onSheetDragStart}
-              onTouchMove={onSheetDragMove}
-              onTouchEnd={onSheetDragEnd}
-            >
-              <span style={s.formTitle}>{editId ? t('form.editEntry') : t('form.newEntry')}</span>
-              <button style={s.closeBtn} onClick={close}>✕</button>
-            </div>
-            <div style={s.formInner}>
+      <Sheet
+        open={sheet === 'form'}
+        onClose={close}
+        title={editId ? t('form.editEntry') : t('form.newEntry')}
+        closeLabel={lang === 'ja' ? '閉じる' : lang === 'zh' ? '關閉' : 'Close'}
+        footer={
+          <button type="button" className="kk-btn kk-btn--primary" onClick={save} disabled={saving}>
+            {saving ? t('saving') : t('save')}
+          </button>
+        }
+      >
+            <div>
 
               {forwardSource && (
                 <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--sub)' }}>
@@ -1183,7 +1148,7 @@ export default function Journal({ session }) {
                         ...prev,
                         brewery:   prev.brewery   || p.brewery   || '',
                         region:    prev.region    || p.region    || '',
-                        type:      prev.type      || p.type      || '',
+                        type:      prev.type      || normalizeType(p.type),
                         rice:      prev.rice      || p.rice      || '',
                         yeast:     prev.yeast     || p.yeast     || '',
                         polishing: prev.polishing || p.polishing || '',
@@ -1375,13 +1340,8 @@ export default function Journal({ session }) {
                 )}
               </div>
 
-              <button style={s.saveBtn} onClick={save} disabled={saving}>
-                {saving ? t('saving') : t('save')}
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Sheet>
     </div>
   )
 }
