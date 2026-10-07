@@ -7,36 +7,43 @@
 .kk-feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .kk-feed > li { min-width: 0; }
 
-/* One public 酒札: small bottle anchor on the left, the tag on the right */
+/* One public 酒札 — a compact reading row, not a gallery tile or a social post.
+   Bottle = small index on the left; reason → name/score → brewery → short note; who + actions recede to a footer. */
+.kk-feed { gap: 8px; }
 .kk-plaque-card {
-  border-radius: 10px; border-left: 5px solid var(--wood);
-  border-top: 1px solid rgba(138, 117, 99, .14); border-right: 1px solid rgba(138, 117, 99, .14); border-bottom: 1px solid rgba(138, 117, 99, .14);
-  background: repeating-linear-gradient(90deg, rgba(138, 117, 99, .06) 0 1px, transparent 1px 15px), #fbf3de;
-  padding: 12px 12px 12px 10px;
+  border-radius: 8px; border: 1px solid rgba(138, 117, 99, .16); border-left: 4px solid var(--wood);
+  background: #fbf3de; padding: 10px 12px 2px 8px;
+  display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start;
 }
-.kk-plaque-card__main { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: start; cursor: pointer; }
-.kk-plaque-card__bottle {
-  width: 42px; height: 100px; margin-top: 2px; border-radius: 8px;
-  display: grid; place-items: end center; padding-bottom: 4px;
-  background: radial-gradient(circle at 50% 14%, rgba(185, 151, 74, .14), transparent 46%), rgba(255, 253, 248, .42);
-  border: 1px solid rgba(138, 117, 99, .12);
-}
+.kk-plaque-card__bottle { width: 34px; height: 88px; display: grid; place-items: end center; border-bottom: 2px solid rgba(138, 117, 99, .28); cursor: pointer; }
 .kk-plaque-card__body { min-width: 0; }
-.kk-plaque-card__who { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: var(--muted); font-size: 11px; font-weight: 800; min-width: 0; }
-.kk-plaque-card__who > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kk-plaque-card__reason { color: var(--green); white-space: nowrap; }
-.kk-avatar {
-  width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center;
-  background: var(--tanuki); color: #fffdf8; font-size: 10px; font-weight: 800;
-}
-.kk-plaque-card__title { margin: 0 0 3px; font-size: 15px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.kk-plaque-card__meta { margin: 0; font-size: 12px; color: var(--muted); }
-.kk-plaque-card__rating { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; }
-.kk-plaque-card__note { margin: 6px 0 0; font-size: 14px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.kk-plaque-card .kk-hit { white-space: normal; }
+.kk-plaque-card__main { cursor: pointer; border-radius: 4px; }
 
-/* Actions sit under the content, side by side, never wrapping into vertical text */
-.kk-plaque-card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-left: 54px; }
-.kk-plaque-card__actions .kk-btn { white-space: nowrap; flex: 0 0 auto; }
-.kk-plaque-card__actions .kk-btn.is-on { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
-@media (max-width: 360px) { .kk-plaque-card__actions { padding-left: 0; } }
+/* Why this card is here — always one line, always first */
+.kk-reason { display: flex; align-items: baseline; gap: 6px; margin: 0 0 3px; font-size: 11px; line-height: 1.4; font-weight: 800; color: var(--muted); min-width: 0; }
+.kk-reason__label { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; }
+.kk-reason__label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.kk-reason__detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.kk-reason--taste, .kk-reason--brewery, .kk-reason--region { color: var(--green); }
+.kk-reason--top .kk-reason__label::before { background: #b9974a; }
+
+.kk-plaque-card__head { display: flex; align-items: flex-start; gap: 10px; }
+.kk-plaque-card__title { flex: 1; min-width: 0; margin: 0; font-size: 16px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.kk-plaque-card__rating { flex-shrink: 0; margin: 1px 0 0; line-height: 1.1; }
+.kk-plaque-card__rating .kk-score { font-size: 18px; }
+.kk-plaque-card__meta { margin: 3px 0 0; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kk-plaque-card__note { margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Footer: who/when stays quiet; actions are text buttons, never solid, never wrapping */
+.kk-plaque-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; min-width: 0; }
+.kk-plaque-card__who { display: flex; gap: 6px; margin: 0; min-width: 0; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.kk-plaque-card__who > span { flex-shrink: 0; }
+.kk-plaque-card__who > .kk-plaque-card__name { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kk-plaque-card__actions { display: flex; flex-shrink: 0; gap: 2px; margin-right: -6px; }
+.kk-act {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 8px; white-space: nowrap;
+  border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.kk-act:hover { background: rgba(138, 117, 99, .1); }
+.kk-act:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.kk-act.is-on, .kk-act--go { color: var(--green); }

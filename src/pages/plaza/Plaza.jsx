@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import Nav from '../../components/Nav'
 import LangButton from '../../components/LangButton'
-import Stars from '../../components/Stars'
 import SakeBottleCrop from '../../components/bottle/SakeBottleCrop'
 import { useLang } from '../../contexts/LangContext'
 import { useTagResolver } from '../../contexts/TagsContext'
@@ -66,15 +65,18 @@ export default function Plaza({ session }) {
   }, [mine])
   const canMatch = !!profile && profile.tags.size > 0
 
-  // Why this 酒札 is shown (only in 近い好み, or when it obviously relates to the user).
+  // Why this 酒札 is in front of you — every card states one reason.
+  // Personal reasons first (taste, brewery, region you've recorded), then the tab's own reason.
   const reasonFor = useCallback(e => {
-    if (!profile) return null
-    const overlap = [...(e.aroma_tags || []), ...(e.taste_tags || [])].filter(t => profile.tags.has(t))
-    if (overlap.length >= 2) return { kind: 'taste', label: L('近い好み', '口味相近', 'Close to your taste'), detail: overlap.slice(0, 2).map(sensoryLabel).join('・') }
-    if (e.brewery && profile.breweries.has(e.brewery)) return { kind: 'brewery', label: L('同じ酒造', '同一酒造', 'Same brewery') }
-    if (e.region && profile.regions.has(e.region)) return { kind: 'region', label: L('同じ産地', '同一產地', 'Same region') }
-    return null
-  }, [profile, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (profile && !isGuest) {
+      const overlap = [...new Set([...(e.aroma_tags || []), ...(e.taste_tags || [])])].filter(t => profile.tags.has(t))
+      if (overlap.length >= (tab === 'near' ? 1 : 2)) return { kind: 'taste', label: L('近い好み', '口味相近', 'Your taste'), detail: overlap.slice(0, 2).map(sensoryLabel).join('・') }
+      if (e.brewery && profile.breweries.has(e.brewery)) return { kind: 'brewery', label: L('飲んだことのある酒造', '喝過的酒造', 'A brewery you’ve had') }
+      if (e.region && profile.regions.has(e.region)) return { kind: 'region', label: L('記録のある産地', '記錄過的產地', 'A region you’ve recorded'), detail: shortRegion(e.region) }
+    }
+    if (tab === 'top') return { kind: 'top', label: L('評価上位', '高評分', 'Top rated') }
+    return { kind: 'new', label: L('新着', '最新公開', 'Newly shared') }
+  }, [profile, tab, isGuest, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchPage = useCallback(async (page, replace) => {
     setLoading(true)
@@ -153,46 +155,54 @@ export default function Plaza({ session }) {
 
         <ul className="kk-feed" aria-busy={loading}>
           {rows.map(e => {
-            const reason = tab === 'near' || !isGuest ? reasonFor(e) : null
+            const reason = reasonFor(e)
             const who = e.contributor_name || L('匿名', '匿名', 'Someone')
             const title = [e.brand, e.name].filter(Boolean).join(' ')
             const wished = wishes.has(e.id)
+            const rated = !isGuest && Number(e.rating) > 0
             return (
               <li key={e.id}>
                 <article className="kk-plaque-card">
-                  <div className="kk-plaque-card__main" {...pressable(() => open(e), title)}>
-                    <div className="kk-plaque-card__bottle" aria-hidden="true">
-                      <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="92px" />
-                    </div>
-                    <div className="kk-plaque-card__body">
-                      {!isGuest && (
-                        <p className="kk-plaque-card__who">
-                          <span className="kk-avatar" aria-hidden="true">{who.slice(0, 1)}</span>
-                          <span>{L(`${who} の公開酒札`, `${who} 的公開酒札`, `${who}’s public tag`)}</span>
-                          <span aria-hidden="true">·</span>
-                          {reason && (tab === 'near' || reason.kind !== 'taste')
-                            ? <span className="kk-plaque-card__reason">{reason.label}</span>
-                            : <span>{relativeTime(e.created_at, lang)}</span>}
-                        </p>
-                      )}
-                      <h2 className="kk-plaque-card__title">{title}</h2>
+                  <div className="kk-plaque-card__bottle" aria-hidden="true" onClick={() => open(e)}>
+                    <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
+                  </div>
+                  <div className="kk-plaque-card__body">
+                    <div className="kk-plaque-card__main" {...pressable(() => open(e), title)}>
+                      <p className={`kk-reason kk-reason--${reason.kind}`}>
+                        <span className="kk-reason__label">{reason.label}</span>
+                        {reason.detail && <span className="kk-reason__detail">{reason.detail}</span>}
+                      </p>
+                      <div className="kk-plaque-card__head">
+                        <h2 className="kk-plaque-card__title">{title}</h2>
+                        {rated && (
+                          <p className="kk-plaque-card__rating" aria-label={L(`評価 ${formatRating(e.rating)}`, `評分 ${formatRating(e.rating)}`, `Rated ${formatRating(e.rating)}`)}>
+                            <span className="kk-score">{formatRating(e.rating)}</span>
+                          </p>
+                        )}
+                      </div>
                       <p className="kk-plaque-card__meta">{[e.brewery, shortRegion(e.region), e.type && tagLabel(e.type, 'type')].filter(Boolean).join(' · ')}</p>
-                      {!isGuest && Number(e.rating) > 0 && (
-                        <p className="kk-plaque-card__rating"><span className="kk-score">{formatRating(e.rating)}</span><Stars rating={e.rating} size={10} /></p>
-                      )}
                       {!isGuest && e.notes && <p className="kk-plaque-card__note">{e.notes}</p>}
-                      {tab === 'near' && reason?.detail && <p className="kk-hit">{L(`好みの「${reason.detail}」`, `你喜歡的「${reason.detail}」`, `Your “${reason.detail}”`)}</p>}
+                    </div>
+                  <div className="kk-plaque-card__foot">
+                    <p className="kk-plaque-card__who">
+                      {!isGuest && <><span className="kk-plaque-card__name">{who}</span><span aria-hidden="true">·</span></>}
+                      <span>{relativeTime(e.created_at, lang)}</span>
+                    </p>
+                    <div className="kk-plaque-card__actions">
+                      {isGuest ? (
+                        <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
+                      ) : (<>
+                        <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
+                          {L('飲みたい', '想喝', 'Want to try')}
+                        </button>
+                        <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                          {L('自分も記録', '我也記錄', 'Record it too')}
+                        </button>
+                      </>)}
                     </div>
                   </div>
-                  <div className="kk-plaque-card__actions">
-                    {isGuest ? (
-                      <button type="button" className="kk-btn kk-btn--sm" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
-                    ) : (<>
-                      <button type="button" className={`kk-btn kk-btn--sm${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
-                        {wished ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
-                      </button>
-                      <button type="button" className="kk-btn kk-btn--sm kk-btn--primary" onClick={() => recordToo(e)}>{L('自分も記録', '我也記錄', 'Record it too')}</button>
-                    </>)}
                   </div>
                 </article>
               </li>
