@@ -38,7 +38,7 @@
 .kk-pcard.has-scene .kk-pcard__score, .kk-pcard.has-scene .kk-reason { padding-right: 70px; }
 
 .kk-pcard__score { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; line-height: 1; }
-.kk-pcard__num { font-family: Georgia, "Times New Roman", var(--font-sans); font-size: 24px; font-weight: 700; color: var(--t-num); font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
+.kk-pcard__num { font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif; font-size: 25px; font-weight: 600; color: var(--t-num); font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
 .kk-pdots { display: inline-flex; gap: 3px; }
 .kk-pdots i { width: 8px; height: 8px; border-radius: 50%; border: 1.3px solid var(--t-dot); box-sizing: border-box; }
 .kk-pdots i.is-full { background: var(--t-dot); }
