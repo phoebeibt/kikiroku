@@ -178,7 +178,7 @@ export default function Plaza({ session }) {
             return (
               <li key={e.id}>
                 <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}>
-                  {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" width="64" height="64" loading="lazy" />}
+                  {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" width="256" height="256" loading="lazy" />}
                   <div className="kk-pcard__paper">
                     <div className="kk-pcard__bottle" aria-hidden="true" onClick={() => open(e)}>
                       <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
@@ -189,7 +189,7 @@ export default function Plaza({ session }) {
                           <p className="kk-pcard__score" title={L(tier.ja, tier.zh, tier.en)} aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
                             <span className="kk-pcard__num">{formatRating(e.rating)}</span>
                             <Dots rating={e.rating} />
-                            {!scene && <PlazaStamp kind={tier.stamp} />}
+                            <PlazaStamp kind={tier.stamp} />
                           </p>
                         )}
                         <p className={`kk-reason kk-reason--${reason.kind}`}>
@@ -222,7 +222,6 @@ export default function Plaza({ session }) {
                       </div>
                     </div>
                   </div>
-                  {scene && <span className="kk-pcard__scene-stamp"><PlazaStamp kind={tier.stamp} /></span>}
                 </article>
               </li>
             )

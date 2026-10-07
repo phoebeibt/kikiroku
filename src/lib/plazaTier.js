@@ -16,6 +16,5 @@ export function tierFor(rating) {
   return PLAZA_TIERS.find(t => r >= t.min)
 }
 
-// ⚠️ TEMPORARY: round crops of the v3 concept board. Replace with the designer's 6 transparent
-// tanuki (≥256×256, body cut at the lower edge) and switch the card to the peek-over-the-edge layout.
+// Transparent 256×256 tanuki from the designer (CLAUDE_PLAZA_TANUKI_ASSETS_REPLY); paws rest at ~74% height.
 export const tanukiSrc = tier => `/plaza/tanuki-${tier.id}.webp`

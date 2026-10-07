@@ -15,7 +15,8 @@
   position: relative; border-radius: 12px; padding: 5px;
   background: linear-gradient(135deg, var(--t-a), var(--t-b));
 }
-.kk-pcard.has-scene { padding-top: 22px; }
+/* Scene cards: the tanuki rests its paws on the paper's top edge and peeks out above the card */
+.kk-pcard.has-scene { --tk: 80px; padding-top: 18px; margin-top: 30px; }
 .kk-pcard--treasure { --t-a: #d4ae5c; --t-b: #efdcab; --t-num: #73490c; --t-dot: #a8741f; --t-ink: #7a5212; }
 .kk-pcard--again    { --t-a: #e5b26e; --t-b: #f3dbb4; --t-num: #8f3a22; --t-dot: #c0682c; --t-ink: #8a4a24; }
 .kk-pcard--good     { --t-a: #8fae9e; --t-b: #cfdccf; --t-num: #2f5b4b; --t-dot: #4f7a63; --t-ink: #2f5b4b; }
@@ -28,14 +29,13 @@
   border-radius: 8px; background: #fffbf2; padding: 10px 10px 2px 8px;
 }
 .kk-pcard__tanuki {
-  position: absolute; z-index: 1; top: -2px; right: 10px; width: 64px; height: 64px; border-radius: 50%;
-  box-shadow: 0 0 0 3px #fffbf2; pointer-events: none;
+  position: absolute; z-index: 1; right: 4px; width: var(--tk); height: var(--tk);
+  top: calc(5px + 18px - var(--tk) * .74); pointer-events: none;
 }
-.kk-pcard__scene-stamp { position: absolute; z-index: 2; top: 44px; right: 62px; width: 26px; height: 26px; border-radius: 50%; background: #fffbf2; }
 .kk-pcard__bottle { width: 34px; height: 88px; display: grid; place-items: end center; border-bottom: 2px solid rgba(138, 117, 99, .28); cursor: pointer; }
 .kk-pcard__body { min-width: 0; }
 .kk-pcard__main { cursor: pointer; border-radius: 4px; }
-.kk-pcard.has-scene .kk-pcard__score, .kk-pcard.has-scene .kk-reason { padding-right: 70px; }
+.kk-pcard.has-scene .kk-pcard__score { padding-right: 78px; }
 
 .kk-pcard__score { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; line-height: 1; }
 .kk-pcard__num { font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif; font-size: 25px; font-weight: 600; color: var(--t-num); font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
