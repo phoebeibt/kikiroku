@@ -7,6 +7,7 @@ import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import LangButton from '../components/LangButton'
 import SakeShelf from './wiki/SakeShelf'
+import { normalizeRegion, regionPath } from '../lib/region'
 import './journal/ledger.css'
 import './sakeDetail.css'
 import './wiki/wiki.css'
@@ -204,8 +205,18 @@ function ArticleCard({ article, lang, isEditor, onSaved }) {
 // ── Brewery Directory ──────────────────────────────────────────────────────────
 
 // Click to reveal reading: furigana in Japanese, romaji in Chinese/English
-function BreweryDirectory({ lang, initialQ = '' }) {
+function BreweryDirectory({ lang, initialQ = '', session }) {
   const navigate = useNavigate()
+  const [ownByArea, setOwnByArea] = useState({})
+  useEffect(() => {
+    if (!session) return
+    supabase.from('sake_entries').select('region,status').eq('user_id', session.user.id)
+      .then(({ data }) => setOwnByArea((data || []).reduce((m, e) => {
+        if (e.status === 'draft' || !e.region) return m
+        const r = normalizeRegion(e.region)
+        return { ...m, [r]: (m[r] || 0) + 1 }
+      }, {})))
+  }, [session?.user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [breweries, setBreweries] = useState(null)
   const [q, setQ] = useState(initialQ)
   const [openAreas, setOpenAreas] = useState(new Set())
@@ -283,7 +294,7 @@ function BreweryDirectory({ lang, initialQ = '' }) {
     })
   }
 
-  const searchPlaceholder = lang === 'ja' ? '蔵名・読み・ローマ字で検索' : lang === 'zh' ? '搜尋酒造名稱・讀音' : 'Search brewery name or reading'
+  const searchPlaceholder = lang === 'ja' ? '酒造名・読み・ローマ字で検索' : lang === 'zh' ? '搜尋酒造名稱・讀音' : 'Search brewery name or reading'
   const loadingText = lang === 'ja' ? '読み込み中…' : lang === 'zh' ? '載入中…' : 'Loading…'
 
   if (breweries === null) {
@@ -315,10 +326,24 @@ function BreweryDirectory({ lang, initialQ = '' }) {
           <section key={area} className="kk-area">
             <button type="button" className="kk-area__head" aria-expanded={isOpen} onClick={() => toggleArea(area)}>
               {areaLabel(area, lang)}
-              <span>{lang === 'ja' ? `${list.length}蔵` : lang === 'zh' ? `${list.length} 家` : list.length} {isOpen ? '▴' : '▾'}</span>
+              <span>
+                {ownByArea[area] > 0 && <span className="kk-area__mine">{lang === 'ja' ? `あなた ${ownByArea[area]}` : lang === 'zh' ? `你 ${ownByArea[area]}` : `You ${ownByArea[area]}`} · </span>}
+                {lang === 'ja' ? `${list.length}蔵` : lang === 'zh' ? `${list.length} 家` : list.length} {isOpen ? '▴' : '▾'}
+              </span>
             </button>
             {isOpen && (
               <ul className="kk-shelf">
+                {area !== '不明' && area !== 'その他' && !q && (
+                  <li className="kk-area__open">
+                    <button type="button" className="kk-shelf__item" onClick={() => navigate(regionPath(area))}>
+                      <span className="kk-shelf__main">
+                        <span className="kk-shelf__title">{lang === 'ja' ? `${area}の産地ページ` : lang === 'zh' ? `${areaLabel(area, lang)}產地頁` : `About ${areaLabel(area, lang)}`}</span>
+                        <span className="kk-shelf__meta">{lang === 'ja' ? '自分の酒札・公開酒札・酒造' : lang === 'zh' ? '我的酒札・公開酒札・酒造' : 'Your tags, public tags, breweries'}</span>
+                      </span>
+                      <span className="kk-shelf__chev" aria-hidden="true">›</span>
+                    </button>
+                  </li>
+                )}
                 {list.map(b => {
                   const iwc = iwcFor(b)
                   return (
@@ -436,7 +461,7 @@ function FlatDirectory({ items, lang }) {
 
 const TAB_META = {
   sake:      { ja: '酒款', zh: '酒款', en: 'Sakes' },
-  breweries: { ja: '酒造', zh: '酒造', en: 'Breweries' },
+  breweries: { ja: '産地・酒造', zh: '產地・酒造', en: 'Regions' },
   glossary:  { ja: '用語', zh: '用語', en: 'Terms' },
   materials: { ja: '原料', zh: '原料', en: 'Rice & yeast' },
 }
@@ -510,7 +535,7 @@ export default function Wiki({ session }) {
           ))}
         </div>
         {tab === 'sake'      && <SakeShelf lang={lang} isGuest={!session} />}
-        {tab === 'breweries' && <BreweryDirectory lang={lang} initialQ={breweryQ} />}
+        {tab === 'breweries' && <BreweryDirectory lang={lang} initialQ={breweryQ} session={session} />}
         {tab === 'materials' && (
           <div className="kk-wiki__legacy">
             <h2 className="kk-wiki__sec">{L('酒米', '酒米', 'Sake rice')}<small>{riceItems.length}</small></h2>

@@ -64,3 +64,25 @@
 
 /* Glossary / 原料 inside the new shell */
 .kk-wiki__legacy { margin-top: 4px; }
+
+/* 産地 */
+.kk-region__head { margin: 6px 0 12px; padding: 14px; border-radius: 12px; background: linear-gradient(135deg, #dfe9df, #f3ecdd); }
+.kk-region__head h1 { margin: 0 0 10px; font-size: 22px; }
+.kk-region__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 6px; margin: 0; }
+.kk-region__stats > div { display: flex; flex-direction: column-reverse; gap: 2px; padding: 8px 6px; border-radius: 8px; background: rgba(255, 253, 248, .85); text-align: center; min-width: 0; }
+.kk-region__stats dt { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.kk-region__stats dd { margin: 0; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kk-region__stats dd.is-text { font-size: 14px; line-height: 1.6; }
+.kk-region .kk-seg { display: flex; margin-bottom: 10px; }
+.kk-region .kk-seg button { flex: 1; min-height: 36px; font-size: 13px; }
+.kk-seg__n { margin-left: 5px; font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; }
+
+/* 産地・酒造 tab: prefecture header + link to its page */
+.kk-area__mine { color: var(--green); font-weight: 800; }
+.kk-area__open .kk-shelf__title { color: var(--green); }
+.kk-region .kk-seg button { white-space: nowrap; padding: 0 6px; }
+@media (max-width: 380px) {
+  .kk-region__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kk-region .kk-seg button { font-size: 12px; }
+  .kk-seg__n { margin-left: 3px; }
+}

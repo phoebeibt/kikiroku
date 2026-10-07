@@ -9,6 +9,8 @@ import { useTags } from '../../contexts/TagsContext'
 import { useLang } from '../../contexts/LangContext'
 import { cleanLabel } from '../../lib/labels'
 import LangButton from '../../components/LangButton'
+import { Link } from 'react-router-dom'
+import { isPrefecture, normalizeRegion, regionPath } from '../../lib/region'
 import './ledger.css'
 
 const REPEAT_TAGS = ['repeat', 'bottle-worthy', 'osusume']
@@ -35,7 +37,7 @@ function passes(e, f) {
   if (f.period === '30d' && d < daysAgo(30)) return false
   if (f.period === 'year' && !d.startsWith(THIS_YEAR)) return false
   if (f.period === 'range' && ((f.from && d < f.from) || (f.to && d > f.to))) return false
-  if (f.regions.length && !f.regions.includes(e.region)) return false
+  if (f.regions.length && !f.regions.includes(normalizeRegion(e.region))) return false
   if (f.breweries?.length && !f.breweries.includes(e.brewery)) return false
   if (f.flavors.length) {
     const own = new Set([...(e.aroma_tags || []), ...(e.taste_tags || [])])
@@ -67,7 +69,7 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
 
   // Arriving from a detail page's 産地 link narrows the shelf to that region.
   useEffect(() => {
-    if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [initialRegion] }) // eslint-disable-line react-hooks/set-state-in-effect
+    if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [normalizeRegion(initialRegion)] }) // eslint-disable-line react-hooks/set-state-in-effect
   }, [initialRegion])
   // Arriving from 事典 › 酒造の詳細 narrows the shelf to exactly that brewery.
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
     const count = fn => { const m = {}; finished.forEach(e => fn(e).forEach(k => { if (k) m[k] = (m[k] || 0) + 1 })); return m }
     const top = (m, n) => Object.keys(m).sort((a, b) => m[b] - m[a]).slice(0, n)
     return {
-      regions: top(count(e => [e.region]), 12),
+      regions: top(count(e => [normalizeRegion(e.region)]), 12),
       breweries: top(count(e => [e.brewery]), 12),
       flavors: top(count(e => [...(e.aroma_tags || []), ...(e.taste_tags || [])]), 14),
     }
@@ -282,6 +284,11 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
             </button>
           ))}
           <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={clearAll}>{L('すべて解除', '全部清除', 'Clear all')}</button>
+          {filters.regions.length === 1 && isPrefecture(filters.regions[0]) && (
+            <Link className="kk-region-link" to={regionPath(filters.regions[0])}>
+              {L(`${normalizeRegion(filters.regions[0])}の産地ページ`, `${normalizeRegion(filters.regions[0])}的產地頁`, `About ${normalizeRegion(filters.regions[0])}`)} ›
+            </Link>
+          )}
         </div>
       )}
 

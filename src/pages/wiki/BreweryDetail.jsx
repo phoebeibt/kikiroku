@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import Nav from '../../components/Nav'
 import { useLang } from '../../contexts/LangContext'
+import { regionPath } from '../../lib/region'
 import './wiki.css'
 
 const PAGE = 30
@@ -85,9 +86,7 @@ export default function BreweryDetail({ session }) {
           <h1>{brewery.name}</h1>
           {area && area !== '不明' && (
             <p className="kk-wdetail__sub">
-              {session
-                ? <button type="button" className="kk-wdetail__link" onClick={() => navigate('/journal', { state: { region: area } })}>{area}</button>
-                : area}
+              <button type="button" className="kk-wdetail__link" onClick={() => navigate(regionPath(area))}>{area}</button>
             </p>
           )}
           {(gold.length > 0 || silver.length > 0) && (

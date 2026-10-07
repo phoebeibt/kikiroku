@@ -16,6 +16,7 @@ import { cleanLabel } from '../lib/labels'
 import { forwardFrom, useWishes } from '../lib/plaza'
 import './plaza/plaza.css'
 import './sakeDetail.css'
+import { regionPath } from '../lib/region'
 
 const dot = d => (d || '').replaceAll('-', '.')
 
@@ -98,7 +99,7 @@ export default function SakeDetail({ session }) {
   ].filter(([, v]) => v) : []
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/journal'))
-  const goRegion = () => navigate('/journal', { state: { region: entry.region } })
+  const goRegion = () => navigate(regionPath(entry.region))
   const goEdit = () => navigate('/journal', { state: { editEntryId: entry.id, returnTo: `/journal/${entry.id}` } })
 
   const patch = async fields => {

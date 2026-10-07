@@ -8,6 +8,7 @@ import { formatRating } from '../../lib/rating'
 import { forwardFrom } from '../../lib/plaza'
 import { entryFullName, entryMatchesProduct, loadPublicEntries } from '../../lib/sakeMatch'
 import '../sakeDetail.css'
+import { isPrefecture, normalizeRegion, regionPath } from '../../lib/region'
 import './wiki.css'
 
 const dot = d => (d || '').slice(0, 10).replaceAll('-', '.')
@@ -138,7 +139,7 @@ export default function ProductDetail({ session, recorded = false }) {
               {product.brewery_id
                 ? <button type="button" className="kk-wdetail__link" onClick={() => navigate(`/wiki/brewery/${product.brewery_id}`)}>{product.brewery_name}</button>
                 : product.brewery_name}
-              {product.region && <> · {product.region}</>}
+              {product.region && <> · {isPrefecture(product.region) ? <button type="button" className="kk-wdetail__link" onClick={() => navigate(regionPath(product.region))}>{normalizeRegion(product.region)}</button> : product.region}</>}
               {product.type && <> · {product.type}</>}
               {product.is_seasonal && <> · {L('季節限定', '季節限定', 'Seasonal')}</>}
             </p>

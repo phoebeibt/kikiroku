@@ -19,6 +19,7 @@ import RatingPicker from '../components/record/RatingPicker'
 import Toast from '../components/ui/Toast'
 import '../components/record/record.css'
 import Ledger from './journal/Ledger'
+import { normalizeRegion } from '../lib/region'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 
 const EMPTY_FORM = {
@@ -687,6 +688,7 @@ export default function Journal({ session }) {
       const isDraft = mode === 'draft'
       const payload = {
         ...form, tasted_at,
+        region: normalizeRegion(form.region) || null,
         type: normalizeType(form.type) || null,
         status: isDraft ? 'draft' : 'published',
         is_public: isDraft ? false : form.is_public,
@@ -715,7 +717,7 @@ export default function Journal({ session }) {
           const { data: made } = await supabase.from('sake_products').insert({
             name:         fullName,
             brewery_name: form.brewery.trim() || null,
-            region:       form.region.trim()  || null,
+            region:       normalizeRegion(form.region) || null,
             type:         normalizeType(form.type) || null,
             rice:         form.rice.trim()    || null,
             yeast:        form.yeast.trim()   || null,

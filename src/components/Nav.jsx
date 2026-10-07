@@ -74,12 +74,12 @@ export default function Nav({ session, topbar = true }) {
         { key: 'discover', to: '/',        icon: <IcoDiscover />, active: path === '/' },
         { key: 'ledger',   to: '/journal', icon: <IcoLedger />,   active: path === '/journal' && !isRecord },
         { key: 'record' },
-        { key: 'wiki',     to: '/wiki',    icon: <IcoWiki />,     active: path.startsWith('/wiki') },
+        { key: 'wiki',     to: '/wiki',    icon: <IcoWiki />,     active: path.startsWith('/wiki') || path.startsWith('/region') },
         { key: 'profile',  to: '/profile', icon: <IcoProfile />,  active: path === '/profile' },
       ]
     : [
         { key: 'discover', to: '/',     icon: <IcoDiscover />, active: path === '/' },
-        { key: 'wiki',     to: '/wiki', icon: <IcoWiki />,     active: path.startsWith('/wiki') },
+        { key: 'wiki',     to: '/wiki', icon: <IcoWiki />,     active: path.startsWith('/wiki') || path.startsWith('/region') },
       ]
 
   return (
