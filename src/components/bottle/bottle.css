@@ -1,3 +1,6 @@
+/* Outline lives in one place: crop.js BOTTLE_CLIP mirrors this value (editor outline uses BOTTLE_POINTS). */
+:root { --kk-bottle-clip: polygon(35% 0%, 65% 0%, 66% 3.6%, 66% 27%, 68% 30%, 72.5% 33%, 79% 36.3%, 86% 39.6%, 91.5% 42.8%, 94.8% 45.6%, 96% 48.5%, 96% 96.5%, 94.6% 98.9%, 91.5% 100%, 8.5% 100%, 5.4% 98.9%, 4% 96.5%, 4% 48.5%, 5.2% 45.6%, 8.5% 42.8%, 14% 39.6%, 21% 36.3%, 27.5% 33%, 32% 30%, 34% 27%, 34% 3.6%); }
+
 /* Standard sake-bottle template: slim neck, sloped shoulders, straight body, heavy base. */
 .kk-bottle {
   display: inline-block; aspect-ratio: 1 / 3.5; flex-shrink: 0;
@@ -6,7 +9,7 @@
 }
 .kk-bottle__mask {
   display: block; width: 100%; height: 100%; overflow: hidden; position: relative;
-  clip-path: polygon(40% 0, 60% 0, 61% 7%, 65% 8%, 65% 21%, 69% 29%, 82% 41%, 88% 53%, 90% 95%, 84% 99%, 16% 99%, 10% 95%, 12% 53%, 18% 41%, 31% 29%, 35% 21%, 35% 8%, 39% 7%);
+  clip-path: var(--kk-bottle-clip);
   background: var(--cream);
 }
 .kk-bottle__mask img {
@@ -22,13 +25,13 @@
     linear-gradient(180deg, #4f8a7b, #2f5b4b 62%, #24483b);
 }
 .kk-bottle__label {
-  position: absolute; left: 22%; right: 22%; top: 50%; height: 24%;
+  position: absolute; left: 14%; right: 14%; top: 57%; height: 23%;
   border-radius: 3px;
   background: linear-gradient(135deg, rgba(185, 151, 74, .78), rgba(255, 253, 248, .95)), #fffdf8;
   box-shadow: inset 0 0 0 1px rgba(138, 117, 99, .1);
 }
 .kk-bottle__cap {
-  position: absolute; left: 38%; right: 38%; top: 0; height: 7%;
+  position: absolute; left: 34%; right: 34%; top: 0; height: 4%;
   border-radius: 2px 2px 1px 1px;
   background: linear-gradient(180deg, rgba(255, 253, 248, .78), rgba(116, 108, 96, .36));
 }

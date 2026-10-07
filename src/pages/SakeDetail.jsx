@@ -182,7 +182,8 @@ export default function SakeDetail({ session }) {
           )}
           {view === 'bottle' ? (
             <div className="kk-detail-hero__stage">
-              <SakeBottleCrop imageUrl={entry.photo_url} crop={entry.photo_crop} height="236px" alt={title} />
+              <span className="kk-detail-hero__halo" aria-hidden="true" />
+              <SakeBottleCrop imageUrl={entry.photo_url} crop={entry.photo_crop} height="84%" alt={title} />
             </div>
           ) : (
             <button type="button" className="kk-detail-hero__photo" onClick={() => setLightbox(photo)} aria-label={L('写真を拡大', '放大照片', 'Enlarge photo')}>

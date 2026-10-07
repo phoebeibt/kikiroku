@@ -62,7 +62,7 @@
 @media (min-width: 720px) { .kk-shelf--card { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .kk-card {
-  position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 11px; align-items: start;
+  position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 11px; align-items: start;
   padding: 9px 10px 9px 8px; border-radius: 7px; cursor: pointer;
   border: 1px solid rgba(138, 117, 99, .18); border-left: 5px solid var(--wood);
   background: linear-gradient(90deg, rgba(217, 190, 140, .18), transparent 34%), var(--paper-2);
@@ -71,12 +71,14 @@
 .kk-card:hover { box-shadow: var(--shadow-sm); }
 .kk-card:active { transform: scale(.995); }
 .kk-card.is-draft { border-left-color: var(--line); border-style: dashed solid dashed solid; }
+/* Bottle slot: just enough room for a ≈31×108 bottle standing on a thin 木札 shelf. */
 .kk-card__photo {
-  width: 64px; height: 96px; border-radius: 7px; overflow: hidden;
-  display: grid; place-items: end center; padding-bottom: 5px;
-  background:
-    linear-gradient(160deg, rgba(217, 190, 140, .62), rgba(248, 245, 238, .72)),
-    repeating-linear-gradient(90deg, rgba(138, 117, 99, .1) 0 1px, transparent 1px 12px);
+  width: 40px; height: 114px; position: relative;
+  display: grid; place-items: end center; padding-bottom: 3px;
+}
+.kk-card__photo::after {
+  content: ""; position: absolute; left: 2px; right: 2px; bottom: 0; height: 3px; border-radius: 2px;
+  background: rgba(217, 190, 140, .55);
 }
 .kk-card__body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .kk-card__title { font-size: 15px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
@@ -160,5 +162,5 @@
 .kk-lang__btn { font-size: 13px; font-weight: 800; }
 
 /* 表 view: a small bottle as a visual anchor (≈26×90 slot), information first. */
-.kk-row__bottle { width: 26px; height: 84px; display: grid; place-items: end center; }
+.kk-row__bottle { width: 26px; height: 90px; display: grid; place-items: end center; }
 .kk-row__main { min-width: 0; }

@@ -326,7 +326,7 @@ export default function Ledger({ initialRegion, entries, loading, tagLabel: rawT
                 {density === 'table' ? (
                   <div className="kk-row" {...pressable(() => onOpen(e), title)}>
                     <span className="kk-row__bottle" aria-hidden="true">
-                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="76px" />
+                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="88px" />
                     </span>
                     <div className="kk-row__main">
                     <div className="kk-row__line">
@@ -343,7 +343,7 @@ export default function Ledger({ initialRegion, entries, loading, tagLabel: rawT
                 ) : (
                   <div className={`kk-card${isDraft ? ' is-draft' : ''}`} {...pressable(() => onOpen(e), title)}>
                     <div className="kk-card__photo">
-                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="86px" />
+                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="108px" />
                     </div>
                     <div className="kk-card__body">
                       <strong className="kk-card__title">{title}</strong>

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Sheet, { CloseIcon } from '../ui/Sheet'
-import { BOTTLE_ASPECT, DEFAULT_CROP, MAX_SCALE, MIN_SCALE, normalizeCrop } from './crop'
+import { BOTTLE_ASPECT, BOTTLE_POINTS, DEFAULT_CROP, MAX_SCALE, MIN_SCALE, normalizeCrop } from './crop'
+import './bottle.css'
 import './editor.css'
 
-// Template outline in a 100×100 box (stretched to the template), same points as the CSS clip-path.
-const OUTLINE = '40,0 60,0 61,7 65,8 65,21 69,29 82,41 88,53 90,95 84,99 16,99 10,95 12,53 18,41 31,29 35,21 35,8 39,7'
 
 /**
  * Manual alignment of a photo to the bottle template. No detection — the user
@@ -120,7 +119,7 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
               {src && <img src={src} alt="" draggable="false" style={imgStyle} />}
             </div>
             <svg className="kk-crop-box__outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <polygon points={OUTLINE} vectorEffect="non-scaling-stroke" />
+              <polygon points={BOTTLE_POINTS} vectorEffect="non-scaling-stroke" />
             </svg>
           </div>
           <p className="kk-crop-guidance">{L('だいたい瓶が入ればOK · あとで調整できます', '大致放進酒瓶就好 · 之後還能調整', 'Roughly inside is fine · you can adjust later')}</p>
