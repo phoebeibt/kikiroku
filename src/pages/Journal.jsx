@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadPhoto, compressImage } from '../lib/upload'
 import Nav from '../components/Nav'
-import Stars, { StarsLight } from '../components/Stars'
-import { BrandMarkFull } from '../components/BrandMark'
+import Stars from '../components/Stars'
 import { BreweryInput, BrandInput, RiceInput, NameInput } from '../components/Autocomplete'
 import TastingTagPicker from '../components/TastingTagPicker'
 import FlavorTagPicker from '../components/FlavorTagPicker'
@@ -13,10 +12,10 @@ import { useTags, useTagResolver } from '../contexts/TagsContext'
 import { WikiText, WikiIcon } from '../components/WikiTooltip'
 import { normalizeType } from '../lib/sakeType'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
-import { pressable } from '../lib/a11y'
 import RatingPicker from '../components/record/RatingPicker'
 import Toast from '../components/ui/Toast'
 import '../components/record/record.css'
+import Ledger from './journal/Ledger'
 
 
 
@@ -294,9 +293,6 @@ export default function Journal({ session }) {
   const navigate = useNavigate()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [activeTag, setActiveTag] = useState('')
-  const [tagsExp, setTagsExp] = useState(false)
   const [sheet, setSheet] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formTags, setFormTags] = useState([])
@@ -331,8 +327,6 @@ export default function Journal({ session }) {
   const [toast, setToast] = useState(null)
   const clearToast = useCallback(() => setToast(null), [])
   const [brandMap, setBrandMap] = useState({})
-  const [viewMode, setViewMode] = useState(() => localStorage.getItem('kk_view') || 'grid')
-  const [typeFilter, setTypeFilter] = useState('')
 
   // ── Auto-save draft (debounced 1s) ──────────────────────────
   const draftTimerRef = useRef()
@@ -364,7 +358,8 @@ export default function Journal({ session }) {
         setBrandMap(m)
       })
   }, [])
-  useEffect(() => { if (wishlistMode) fetchWishlist() }, [wishlistMode])
+  // Also on mount, so the ledger can show how many are on the wish list.
+  useEffect(() => { fetchWishlist() }, [wishlistMode])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -442,32 +437,6 @@ export default function Journal({ session }) {
     openForward(fwd)
   }
 
-  const allTags = [...new Set(entries.flatMap(e => e.tags || []))]
-  const visibleTags = tagsExp ? allTags : allTags.slice(0, 8)
-  const typeCounts = {}
-  entries.forEach(e => { if (e.type) typeCounts[e.type] = (typeCounts[e.type] || 0) + 1 })
-  const entryTypes = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a])
-  const toggleView = (m) => { setViewMode(m); localStorage.setItem('kk_view', m) }
-  const filtered = entries.filter(e => {
-    if (activeTag && !e.tags?.includes(activeTag)) return false
-    if (typeFilter && e.type !== typeFilter) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (e.brand || '').toLowerCase().includes(q) ||
-        (e.name || '').toLowerCase().includes(q) ||
-        (e.brewery || '').toLowerCase().includes(q) ||
-        (e.region || '').toLowerCase().includes(q) ||
-        e.tags?.some(tag => tag.toLowerCase().includes(q))
-    }
-    return true
-  })
-
-  const ratedEntries = entries.filter(e => e.rating && e.status !== 'draft')
-  const avgRating = ratedEntries.length ? (ratedEntries.reduce((s, e) => s + e.rating, 0) / ratedEntries.length).toFixed(1) : null
-  const breweryCount = entries.reduce((acc, e) => { if (e.brewery) acc[e.brewery] = (acc[e.brewery] || 0) + 1; return acc }, {})
-  const topBrewery = Object.keys(breweryCount).sort((a, b) => breweryCount[b] - breweryCount[a])[0]
-  const sharedCount = entries.filter(e => e.is_public).length
-  const draftCount = entries.filter(e => e.status === 'draft').length
   const defaultName = session.user.user_metadata?.display_name || session.user.email.split('@')[0]
 
   const openAdd = () => {
@@ -749,177 +718,28 @@ export default function Journal({ session }) {
   return (
     <div style={s.page}>
       <Nav session={session} />
-      <BrandMarkFull />
-      <div style={s.main}>
-        {/* Tab toggle: 記録 | 想喝 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-          <button onClick={() => setWishlistMode(false)} style={{ ...s.chip(!wishlistMode), fontSize: 13 }}>
-            {lang === 'ja' ? '記録' : lang === 'zh' ? '記錄' : 'Journal'}
-          </button>
-          <button onClick={() => setWishlistMode(true)} style={{ ...s.chip(wishlistMode), fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill={wishlistMode ? '#fff' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            {lang === 'ja' ? '想喝リスト' : lang === 'zh' ? '想喝清單' : 'Wish List'}
-            {wishedEntries.length > 0 && !wishlistLoading && <span style={{ background: 'rgba(255,255,255,.25)', borderRadius: 20, padding: '0 6px', fontSize: 11 }}>{wishedEntries.length}</span>}
-          </button>
-        </div>
-
-        {wishlistMode ? (
+      {wishlistMode ? (
+        <div className="kk-ledger">
+          <div className="kk-ledger__head">
+            <button type="button" className="kk-icon-btn" onClick={() => setWishlistMode(false)} aria-label={L3('マイ帳に戻る', '回到酒帳', 'Back to ledger')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <h1 className="kk-ledger__title" style={{ flex: 1 }}>{L3('飲みたいリスト', '想喝清單', 'Wish list')}</h1>
+          </div>
           <WishlistView
             entries={wishedEntries} loading={wishlistLoading} lang={lang}
             typeLabel={typeLabel} onForward={handleWishForward} onRemove={removeWish}
           />
-        ) : (<>
-
-        <div style={s.searchRow}>
-          <input type="search" aria-label={t('search')} style={s.searchInput} value={search} onChange={e => setSearch(e.target.value)} placeholder={t('search')} />
-          {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'var(--sub)', cursor: 'pointer', fontSize: 18 }}>×</button>}
-          <div style={{ display: 'flex', gap: 2, background: 'var(--surface-card)', borderRadius: 8, padding: 3, border: '1px solid var(--border)', flexShrink: 0 }}>
-            <button onClick={() => toggleView('grid')} title="Grid" style={{ width: 30, height: 26, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: viewMode === 'grid' ? 'rgba(255,245,230,.1)' : 'transparent', color: viewMode === 'grid' ? 'var(--text)' : 'var(--sub)' }}>
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
-            </button>
-            <button onClick={() => toggleView('list')} title="List" style={{ width: 30, height: 26, borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: viewMode === 'list' ? 'rgba(255,245,230,.1)' : 'transparent', color: viewMode === 'list' ? 'var(--text)' : 'var(--sub)' }}>
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="14" height="3" rx="1"/><rect x="1" y="7" width="14" height="3" rx="1"/><rect x="1" y="12" width="14" height="3" rx="1"/></svg>
-            </button>
-          </div>
         </div>
-
-        {entries.length > 0 && (
-          <div style={s.statsRow}>
-            <span><span style={s.statNum}>{entries.length - draftCount}</span> {t('stats.bottles')}</span>
-            {avgRating && <span>{t('stats.avg')} <span style={s.statNum}>{avgRating}</span> ★</span>}
-            {topBrewery && <span>{t('stats.most')} <span style={s.statNum}>{topBrewery}</span></span>}
-            {sharedCount > 0 && <span>{t('stats.shared')} <span style={s.statNum}>{sharedCount}</span></span>}
-            {draftCount > 0 && <span>{L3('下書き', '草稿', 'Drafts')} <span style={s.statNum}>{draftCount}</span></span>}
-          </div>
-        )}
-
-        {entryTypes.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 2 }}>
-            <button style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-sans)', background: !typeFilter ? 'var(--accent)' : 'var(--surface)', color: !typeFilter ? '#fff' : 'var(--sub)' }} onClick={() => setTypeFilter('')}>
-              {lang === 'ja' ? 'すべて' : lang === 'zh' ? '全部' : 'All'}
-            </button>
-            {entryTypes.map(type => (
-              <button key={type} style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--font-sans)', background: typeFilter === type ? 'var(--accent)' : 'var(--surface)', color: typeFilter === type ? '#fff' : 'var(--sub)' }} onClick={() => setTypeFilter(typeFilter === type ? '' : type)}>
-                {typeLabel(type)}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {allTags.length > 0 && (
-          <div style={s.chips}>
-            <button style={s.chip(!activeTag)} onClick={() => setActiveTag('')}>{t('all')}</button>
-            {visibleTags.map(tag => (
-              <button key={tag} style={s.chip(activeTag === tag)} onClick={() => setActiveTag(activeTag === tag ? '' : tag)}>{tagLabel(tag, 'flavor')}</button>
-            ))}
-            {allTags.length > 8 && (
-              <button style={s.chip(false)} onClick={() => setTagsExp(x => !x)}>{tagsExp ? t('less') : t('more')}</button>
-            )}
-          </div>
-        )}
-
-        {viewMode === 'list' ? (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} onClick={openAdd}>
-              <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'var(--border)' }}>+</div>
-              <div style={{ flex: 1, fontSize: 13, color: 'var(--sub)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {hasDraft ? (lang === 'ja' ? '草稿を続ける' : lang === 'zh' ? '繼續草稿' : 'Continue Draft') : t('form.newEntry')}
-                {hasDraft && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />}
-              </div>
-            </div>
-            {!loading && filtered.length === 0 && (search || typeFilter) && (
-              <div style={{ ...s.empty, paddingTop: 40 }}>
-                {search ? t('noResults', { q: search }) : (lang === 'ja' ? '該当なし' : lang === 'zh' ? '無符合結果' : 'No matches')}
-              </div>
-            )}
-            {(() => {
-              let lastMonth = null
-              return filtered.map(e => {
-                const month = e.tasted_at?.slice(0, 7)
-                const isNew = month !== lastMonth
-                if (isNew) lastMonth = month
-                const mLabel = month ? new Date(month + '-01').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'zh' ? 'zh-TW' : 'ja-JP', { year: 'numeric', month: 'long' }) : ''
-                return (
-                  <React.Fragment key={e.id}>
-                    {isNew && month && (
-                      <div style={{ fontSize: 10, color: 'rgba(255,245,230,.25)', letterSpacing: '.07em', padding: '14px 0 4px', fontWeight: 500 }}>
-                        {mLabel.toUpperCase()}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid rgba(255,245,230,.05)', cursor: 'pointer' }} {...pressable(() => setDetail(e), [e.brand, e.name].filter(Boolean).join(' '))}>
-                      <div style={{ width: 52, height: 52, borderRadius: 10, flexShrink: 0, overflow: 'hidden', background: '#2d2520' }}>
-                        {e.photo_url
-                          ? <img src={e.photo_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: 'rgba(255,245,230,.15)', fontFamily: 'var(--font-serif)', writingMode: 'vertical-rl', letterSpacing: '-.04em' }}>
-                              {(e.brand || e.name)?.slice(0, 2)}
-                            </div>}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontFamily: 'var(--font-serif)' }}>
-                            {e.brand || e.name}
-                          </div>
-                          {e.type && <span style={{ flexShrink: 0, fontSize: 9, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,245,230,.06)', color: 'rgba(255,245,230,.45)', border: '1px solid rgba(255,245,230,.1)', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>{typeLabel(e.type)}</span>}
-                        </div>
-                        {e.name && (
-                          <div style={{ fontSize: 11, color: 'var(--sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
-                            {e.name}
-                          </div>
-                        )}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <StarsLight rating={e.rating} />
-                          {(e.brewery || e.region) && (
-                            <span style={{ fontSize: 10, color: 'rgba(255,245,230,.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {e.rating ? ' · ' : ''}{[e.brewery, e.region].filter(Boolean).join(' · ')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,245,230,.18)" strokeWidth="2.5" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
-                    </div>
-                  </React.Fragment>
-                )
-              })
-            })()}
-          </div>
-        ) : (
-        <div style={s.grid}>
-          <div style={{ ...s.addCard, position: 'relative' }} onClick={openAdd}>
-            {hasDraft && <span style={{ position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
-            <span style={{ fontSize: 28, color: 'var(--border)' }}>+</span>
-            <span style={{ fontSize: 13 }}>{hasDraft ? (lang === 'ja' ? '草稿を続ける' : lang === 'zh' ? '繼續草稿' : 'Continue Draft') : t('form.newEntry')}</span>
-          </div>
-          {!loading && filtered.length === 0 && search && (
-            <div style={{ ...s.empty, gridColumn: '1/-1' }}>{t('noResults', { q: search })}</div>
-          )}
-          {filtered.map(e => (
-            <div key={e.id} style={s.card} {...pressable(() => e.status === 'draft' ? openEdit(e) : setDetail(e), [e.brand, e.name].filter(Boolean).join(' ') || L3('名前のない下書き', '未命名草稿', 'Untitled draft'))}>
-              {e.status === 'draft'
-                ? <span className="kk-status kk-status--draft" style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>{L3('下書き', '草稿', 'Draft')}</span>
-                : e.is_public && <div style={s.publicBadge}>{t('public')}</div>}
-              {e.photo_url ? <img style={s.cardImg} src={e.photo_url} alt={e.name} /> : <div style={s.cardNo}>🍶</div>}
-              <div style={s.cardOverlay} />
-              <div style={s.cardBody}>
-                {e.type && <div style={s.cardType}>{typeLabel(e.type)}</div>}
-                {e.brand && (lang === 'ja' ? brandMap[e.brand]?.furigana : brandMap[e.brand]?.romaji) && (
-                  <div style={s.cardReading}>{lang === 'ja' ? brandMap[e.brand].furigana : brandMap[e.brand].romaji}</div>
-                )}
-                <div style={s.cardName}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
-                {e.brewery && <div style={s.cardBrewery}>{e.brewery}</div>}
-                <StarsLight rating={e.rating} />
-                <div style={s.cardMeta}>{[e.region, e.tasted_at].filter(Boolean).join(' · ')}{e.tasted_dates?.length > 1 && <span style={{ opacity: .7 }}> ×{e.tasted_dates.length}</span>}</div>
-                {e.tags?.length > 0 && (
-                  <div style={s.cardTags}>
-                    {e.tags.slice(0, 3).map(tag => <span key={tag} style={s.cardTag}>{tagLabel(tag, 'flavor')}</span>)}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-        </>)}
-      </div>
+      ) : (
+        <Ledger
+          entries={entries} loading={loading} lang={lang}
+          tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
+          onOpen={e => e.status === 'draft' ? openEdit(e) : setDetail(e)}
+          onAdd={openAdd} hasDraft={hasDraft}
+          wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
+        />
+      )}
 
       {/* Forward confirmation dialog */}
       {forwardConfirmEntry && (
