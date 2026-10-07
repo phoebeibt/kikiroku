@@ -7,70 +7,81 @@
 .kk-feed { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .kk-feed > li { min-width: 0; }
 
-/* One public 酒札 (design: plaza-tanuki-scene-cards-v3, toned down for real use).
-   Tier colour frames a rice-paper tag; bottle = small index; tanuki scene only on weighted cards. */
-.kk-feed { gap: 10px; }
+/* One public 酒札 — designer asset pack v3: a hand-painted plate per rating tier, the hi-fi stamp,
+   an optional tanuki peeking over the top edge. Plate geometry (fractions of the plate):
+   paper tab top ≈ 17% (left 0–30%), main paper top ≈ 24%, right decoration from ≈ 84% wide. */
+.kk-feed { gap: 22px; padding-top: 6px; }
+@media (min-width: 700px) { .kk-feed { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 .kk-pcard {
-  --t-a: #e9dfcb; --t-b: #f3ecdd; --t-num: var(--ink); --t-dot: #b9974a; --t-ink: var(--muted);
-  position: relative; border-radius: 12px; padding: 5px;
-  background: linear-gradient(135deg, var(--t-a), var(--t-b));
+  position: relative; /* overflow stays visible so the tanuki's ears are never clipped */
+  aspect-ratio: 489 / 458; min-width: 0;
+  background: center / 100% 100% no-repeat;
+  border-radius: 18px;
+  filter: drop-shadow(0 8px 18px rgba(38, 32, 24, .12));
+  --t-ink: var(--ink); --t-acc: #66705a;
 }
-/* Scene cards: the tanuki rests its paws on the paper's top edge and peeks out above the card */
-.kk-pcard.has-scene { --tk: 80px; padding-top: 18px; margin-top: 30px; }
-.kk-pcard--treasure { --t-a: #d4ae5c; --t-b: #efdcab; --t-num: #73490c; --t-dot: #a8741f; --t-ink: #7a5212; }
-.kk-pcard--again    { --t-a: #e5b26e; --t-b: #f3dbb4; --t-num: #8f3a22; --t-dot: #c0682c; --t-ink: #8a4a24; }
-.kk-pcard--good     { --t-a: #8fae9e; --t-b: #cfdccf; --t-num: #2f5b4b; --t-dot: #4f7a63; --t-ink: #2f5b4b; }
-.kk-pcard--linger   { --t-a: #ab9784; --t-b: #dccfc0; --t-num: #5e4130; --t-dot: #8a6448; --t-ink: #6b4a33; }
-.kk-pcard--plain    { --t-a: #e1d6bf; --t-b: #efe7d6; --t-num: #4b553a; --t-dot: #7b8460; --t-ink: #59603f; }
-.kk-pcard--notmine  { --t-a: #93a3b5; --t-b: #cfd6de; --t-num: #3c4f66; --t-dot: #5e7590; --t-ink: #3c4f66; }
+.kk-pcard--treasure { --t-ink: #7a4d0f; --t-acc: #9b6517; }
+.kk-pcard--again    { --t-ink: #843d22; --t-acc: #a85d28; }
+.kk-pcard--good     { --t-ink: #2d513f; --t-acc: #345d49; }
+.kk-pcard--linger   { --t-ink: #5f4b38; --t-acc: #735c45; }
+.kk-pcard--plain    { --t-ink: #4f5546; --t-acc: #66705a; }
+.kk-pcard--notmine  { --t-ink: #394f5d; --t-acc: #496373; }
 
-.kk-pcard__paper {
-  position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start;
-  border-radius: 8px; background: #fffbf2; padding: 10px 10px 2px 8px;
+/* Content sits on the paper: below the tab, clear of the right-hand decoration */
+.kk-pcard__grid {
+  position: absolute; inset: 0; cursor: pointer; border-radius: 18px;
+  padding: 27% 21% 14% 6%;
+  display: grid; grid-template-columns: 23% minmax(0, 1fr); column-gap: 4%;
+  grid-template-rows: auto 1fr auto; grid-template-areas: "bottle score" "bottle info" "note note";
+  align-content: start;
 }
-.kk-pcard__tanuki {
-  position: absolute; z-index: 1; right: 4px; width: var(--tk); height: var(--tk);
-  top: calc(5px + 18px - var(--tk) * .74); pointer-events: none;
+.kk-pcard__grid:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.kk-pcard__bottle {
+  grid-area: bottle; align-self: start; height: min(48vw, 158px, 100%); aspect-ratio: 96 / 172;
+  display: grid; place-items: end center; padding: 9% 0 11%; margin-top: -32%; /* stands in the plate's raised tab */
+  background: url(/plaza/bottle-frame.svg) center / 100% 100% no-repeat;
 }
-.kk-pcard__bottle { width: 34px; height: 88px; display: grid; place-items: end center; border-bottom: 2px solid rgba(138, 117, 99, .28); cursor: pointer; }
-.kk-pcard__body { min-width: 0; }
-.kk-pcard__main { cursor: pointer; border-radius: 4px; }
-.kk-pcard.has-scene .kk-pcard__score { padding-right: 78px; }
+.kk-pcard__bottle .kk-bottle { height: 92% !important; }
+.kk-pcard__score { grid-area: score; display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 2px; margin: 0 0 2px; line-height: 1; }
+.kk-pcard__num { font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif; font-size: clamp(30px, 10vw, 40px); font-weight: 700; color: var(--t-ink); font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
+.kk-pdots { display: inline-flex; gap: 4px; }
+.kk-pdots i { width: 11px; height: 11px; border-radius: 50%; border: 1.8px solid var(--t-acc); box-sizing: border-box; }
+.kk-pdots i.is-full { background: var(--t-acc); }
+.kk-pdots i.is-half { background: linear-gradient(90deg, var(--t-acc) 50%, transparent 50%); }
 
-.kk-pcard__score { display: flex; align-items: center; gap: 8px; margin: 0 0 2px; line-height: 1; }
-.kk-pcard__num { font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif; font-size: 25px; font-weight: 600; color: var(--t-num); font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
-.kk-pdots { display: inline-flex; gap: 3px; }
-.kk-pdots i { width: 8px; height: 8px; border-radius: 50%; border: 1.3px solid var(--t-dot); box-sizing: border-box; }
-.kk-pdots i.is-full { background: var(--t-dot); }
-.kk-pdots i.is-half { background: linear-gradient(90deg, var(--t-dot) 50%, transparent 50%); }
-.kk-stamp { display: inline-block; width: 26px; height: 26px; color: var(--t-ink); opacity: .85; }
-.kk-pcard__score .kk-stamp { margin-left: auto; }
+.kk-pcard__info { grid-area: info; min-width: 0; }
+.kk-pcard--none .kk-pcard__info { grid-row: 1 / 3; }
+.kk-pcard__title { margin: 2px 0 4px; font-size: 15.5px; font-weight: 800; line-height: 1.3; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.kk-pcard__rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.kk-pcard__rows li { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: #5f584c; }
+.kk-pcard__rows span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kk-pcard__ico { flex-shrink: 0; color: #8a8173; }
+.kk-pcard__note {
+  grid-area: note; margin: 8px 0 0; padding-left: 9px; border-left: 3px solid var(--t-acc);
+  font-size: 13px; line-height: 1.55; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Stamp on the right edge, tanuki peeking over the top-right shoulder of the plate */
+.kk-pcard__stamp { position: absolute; z-index: 2; right: 4%; top: 40%; width: 17%; height: auto; pointer-events: none; transform: rotate(-6deg); }
+.kk-pcard__tanuki { position: absolute; z-index: 3; right: 3%; top: -7%; width: 33%; height: auto; pointer-events: none; }
+.kk-pcard.has-scene .kk-pcard__stamp { top: 44%; }
+
+/* Actions: quiet text buttons along the bottom of the paper */
+.kk-pcard__actions { position: absolute; z-index: 4; left: 4%; bottom: 3%; display: flex; gap: 2px; }
 
 /* Why this card is here — one line */
-.kk-reason { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 2px; font-size: 11px; line-height: 1.4; font-weight: 800; color: var(--muted); min-width: 0; }
+.kk-reason { display: flex; align-items: baseline; gap: 6px; margin: 0; font-size: 11px; line-height: 1.4; font-weight: 800; color: var(--muted); min-width: 0; }
 .kk-reason__label { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; }
 .kk-reason__label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .kk-reason__detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
 .kk-reason--taste, .kk-reason--brewery, .kk-reason--region { color: var(--green); }
 
-.kk-pcard__title { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.kk-pcard__meta { margin: 3px 0 0; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kk-pcard__note {
-  margin: 6px 0 0; padding-left: 8px; border-left: 3px solid var(--t-dot);
-  font-size: 13.5px; line-height: 1.6; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.kk-pcard--none .kk-pcard__note { border-left-color: var(--wood); }
-
-/* Footer: who/when quiet; actions are text buttons */
-.kk-pcard__foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; min-width: 0; }
-.kk-pcard__who { display: flex; gap: 6px; margin: 0; min-width: 0; font-size: 11px; color: var(--muted); white-space: nowrap; }
-.kk-pcard__who > span { flex-shrink: 0; }
-.kk-pcard__who > .kk-pcard__name { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.kk-pcard__actions { display: flex; flex-shrink: 0; gap: 2px; margin-right: -6px; }
 .kk-act {
   display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 8px; white-space: nowrap;
-  border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
+  border: 0; border-radius: 6px; background: none; color: #6b6458; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
 }
-.kk-act:hover { background: rgba(138, 117, 99, .1); }
+.kk-act:hover { background: rgba(138, 117, 99, .12); }
 .kk-act:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
 .kk-act.is-on, .kk-act--go { color: var(--green); }
