@@ -11,21 +11,14 @@ import { normalizeType } from '../../lib/sakeType'
 import { cleanLabel } from '../../lib/labels'
 import { pressable } from '../../lib/a11y'
 import { forwardFrom, relativeTime, useWishes } from '../../lib/plaza'
-import { tierFor, tanukiSrc, plateSrc, stampSrc } from '../../lib/plazaTier'
-import { normalizeRegion } from '../../lib/region'
+import { tierFor, tanukiSrc } from '../../lib/plazaTier'
+import PlazaStamp from '../../components/plaza/PlazaStamp'
 import '../journal/ledger.css'
 import './plaza.css'
 
 const PAGE = 20
 const COLS = 'id,user_id,product_id,brand,name,brewery,region,type,rating,notes,aroma_tags,taste_tags,photo_url,thumb_url,photo_crop,contributor_name,created_at,tasted_at'
 const shortRegion = r => (r || '').replace(/[都道府県]$/, '') || r
-
-const Ico = ({ d }) => <svg className="kk-pcard__ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
-const ICON = {
-  who: <><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>,
-  brewery: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /><path d="M10 20v-5h4v5" /></>,
-  region: <><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>,
-}
 
 // Five dots in the tier colour; 0.5 steps show a half dot.
 function Dots({ rating }) {
@@ -178,55 +171,56 @@ export default function Plaza({ session }) {
             const who = e.contributor_name || L('匿名', '匿名', 'Someone')
             const title = [e.brand, e.name].filter(Boolean).join(' ')
             const wished = wishes.has(e.id)
-            // Guests never see ratings, so they never see the rating colour, stamp or scene either.
+            // Guests never see ratings, so they never see the rating colour or scene either.
             const tier = isGuest ? null : tierFor(e.rating)
             // Tanuki scene only on cards that carry weight: 5.0/4.5, 近い好み, and the first card.
             const scene = !!tier && (tier.id === 'treasure' || tier.id === 'again' || tab === 'near' || i === 0)
-            const region = [shortRegion(normalizeRegion(e.region)), e.type && tagLabel(e.type, 'type')].filter(Boolean).join(' · ')
             return (
               <li key={e.id}>
-                <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}
-                  style={{ backgroundImage: `url(${plateSrc(tier)})` }}
-                  aria-label={tier ? L(`${title}・評価 ${formatRating(e.rating)}・${tier.ja}`, `${title}・評分 ${formatRating(e.rating)}・${tier.zh}`, `${title} · rated ${formatRating(e.rating)} · ${tier.en}`) : title}>
+                <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}>
                   {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" width="256" height="256" loading="lazy" />}
-                  {tier && <img className="kk-pcard__stamp" src={stampSrc(tier)} alt="" width="192" height="192" loading="lazy" title={L(tier.ja, tier.zh, tier.en)} />}
-                  <div className="kk-pcard__grid" {...pressable(() => open(e), title)}>
-                    <div className="kk-pcard__bottle" aria-hidden="true">
-                      <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="100%" />
+                  <div className="kk-pcard__paper">
+                    <div className="kk-pcard__bottle" aria-hidden="true" onClick={() => open(e)}>
+                      <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
                     </div>
-                    {tier && (
-                      <p className="kk-pcard__score">
-                        <span className="kk-pcard__num">{formatRating(e.rating)}</span>
-                        <Dots rating={e.rating} />
-                      </p>
-                    )}
-                    <div className="kk-pcard__info">
-                      <p className={`kk-reason kk-reason--${reason.kind}`}>
-                        <span className="kk-reason__label">{reason.label}</span>
-                        {reason.detail && <span className="kk-reason__detail">{reason.detail}</span>}
-                      </p>
-                      <h2 className="kk-pcard__title">{title}</h2>
-                      <ul className="kk-pcard__rows">
-                        <li><Ico d={ICON.who} /><span className="kk-pcard__name">{isGuest ? relativeTime(e.created_at, lang) : `${who} · ${relativeTime(e.created_at, lang)}`}</span></li>
-                        {e.brewery && <li><Ico d={ICON.brewery} /><span>{e.brewery}</span></li>}
-                        {region && <li><Ico d={ICON.region} /><span>{region}</span></li>}
-                      </ul>
+                    <div className="kk-pcard__body">
+                      <div className="kk-pcard__main" {...pressable(() => open(e), title)}>
+                        {tier && (
+                          <p className="kk-pcard__score" title={L(tier.ja, tier.zh, tier.en)} aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
+                            <span className="kk-pcard__num">{formatRating(e.rating)}</span>
+                            <Dots rating={e.rating} />
+                            <PlazaStamp kind={tier.stamp} />
+                          </p>
+                        )}
+                        <p className={`kk-reason kk-reason--${reason.kind}`}>
+                          <span className="kk-reason__label">{reason.label}</span>
+                          {reason.detail && <span className="kk-reason__detail">{reason.detail}</span>}
+                        </p>
+                        <h2 className="kk-pcard__title">{title}</h2>
+                        <p className="kk-pcard__meta">{[e.brewery, shortRegion(e.region), e.type && tagLabel(e.type, 'type')].filter(Boolean).join(' · ')}</p>
+                        {!isGuest && e.notes && <p className="kk-pcard__note">{e.notes}</p>}
+                      </div>
+                      <div className="kk-pcard__foot">
+                        <p className="kk-pcard__who">
+                          {!isGuest && <><span className="kk-pcard__name">{who}</span><span aria-hidden="true">·</span></>}
+                          <span>{relativeTime(e.created_at, lang)}</span>
+                        </p>
+                        <div className="kk-pcard__actions">
+                          {isGuest ? (
+                            <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
+                          ) : (<>
+                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
+                              {L('飲みたい', '想喝', 'Want to try')}
+                            </button>
+                            <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                              {L('自分も記録', '我也記錄', 'Record it too')}
+                            </button>
+                          </>)}
+                        </div>
+                      </div>
                     </div>
-                    {!isGuest && e.notes && <p className="kk-pcard__note">{e.notes}</p>}
-                  </div>
-                  <div className="kk-pcard__actions">
-                    {isGuest ? (
-                      <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
-                    ) : (<>
-                      <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
-                        {L('飲みたい', '想喝', 'Want to try')}
-                      </button>
-                      <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-                        {L('自分も記録', '我也記錄', 'Record it too')}
-                      </button>
-                    </>)}
                   </div>
                 </article>
               </li>

@@ -18,7 +18,3 @@ export function tierFor(rating) {
 
 // Transparent 256×256 tanuki from the designer (CLAUDE_PLAZA_TANUKI_ASSETS_REPLY); paws rest at ~74% height.
 export const tanukiSrc = tier => `/plaza/tanuki-${tier.id}.webp`
-
-// Designer asset pack v3 (CLAUDE_PLAZA_V3_ASSET_PACK_REPLY): hand-painted card plate + hi-fi stamp per tier.
-export const plateSrc = tier => `/plaza/plate-${tier ? tier.id : 'plain'}.webp`
-export const stampSrc = tier => `/plaza/stamp-${tier.id}.webp`
