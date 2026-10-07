@@ -325,6 +325,7 @@ export default function Journal({ session }) {
   const [saveError, setSaveError] = useState('')
   const [editStatus, setEditStatus] = useState('published')
   const [toast, setToast] = useState(null)
+  const [autoSaved, setAutoSaved] = useState(false)
   const clearToast = useCallback(() => setToast(null), [])
   const [brandMap, setBrandMap] = useState({})
 
@@ -336,7 +337,9 @@ export default function Journal({ session }) {
     clearTimeout(draftTimerRef.current)
     draftTimerRef.current = setTimeout(() => {
       saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
-      if (form.brand?.trim() || form.name?.trim()) setHasDraft(true)
+      const kept = !!(form.brand?.trim() || form.name?.trim())
+      if (kept) setHasDraft(true)
+      setAutoSaved(kept)
     }, 1000)
     return () => clearTimeout(draftTimerRef.current)
   }, [form, formTags, aromaTags, tasteTags, formDates, methodTags, sheet, editId])
@@ -501,7 +504,6 @@ export default function Journal({ session }) {
     resetFormUi(e.status || 'published')
     setSheet('form')
   }
-  const formHasContent = !!(form.brand.trim() || form.name.trim() || form.notes.trim() || form.rating > 0 || photoPreview || photoPreview2 || aromaTags.length || tasteTags.length)
   const resetForm = () => {
     setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name || defaultName })
     setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); setFormDates([TODAY()])
@@ -511,7 +513,7 @@ export default function Journal({ session }) {
   const cleanJa = label => (label || '').replace(/（.*?）/g, '')
 
   const resetFormUi = status => {
-    setFeelTab('aroma'); setFormErrors({}); setSaveError(''); setEditStatus(status)
+    setFeelTab('aroma'); setFormErrors({}); setSaveError(''); setEditStatus(status); setAutoSaved(false)
   }
 
   const close = () => {
@@ -883,14 +885,15 @@ export default function Journal({ session }) {
       <Sheet
         open={sheet === 'form'}
         onClose={close}
+        className="kk-panel--full"
         label={editId ? t('form.editEntry') : t('form.newEntry')}
         header={<>
           <button type="button" className="kk-icon-btn" onClick={close} aria-label={L3('閉じる', '關閉', 'Close')}><CloseIcon /></button>
           <h2 className="kk-panel__title">{editId ? t('form.editEntry') : t('form.newEntry')}</h2>
           {editId && editStatus === 'draft'
             ? <span className="kk-status kk-status--draft">{L3('下書き', '草稿', 'Draft')}</span>
-            : !editId && !forwardSource && formHasContent
-              ? <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" style={{ padding: '0 4px' }} onClick={resetForm}>{L3('クリア', '清除', 'Clear')}</button>
+            : !editId && autoSaved
+              ? <span className="kk-save-state" title={L3('入力内容はこの端末に自動で残ります', '輸入內容會自動保留在這台裝置', 'Your input is kept on this device automatically')}>{L3('保存済み', '已暫存', 'Saved')}</span>
               : <span className="kk-panel__head-spacer" />}
         </>}
         footer={<>
@@ -921,7 +924,7 @@ export default function Journal({ session }) {
               <div className="kk-note-card__mark" aria-hidden="true">札</div>
               <div>
                 <strong>{L3('前回の続きがあります', '有上次未完成的記錄', 'Picking up where you left off')}</strong>
-                <div className="kk-helper">{L3('下書きは「下書き」ボタンでいつでも残せます。', '隨時可以按「存草稿」保留。', 'Use “Draft” to keep it for later.')}</div>
+                <div className="kk-helper">{L3('写真だけの下書きも、このまま保存できます。', '只有照片的草稿也可以直接保存。', 'Even a photo-only draft can be saved as is.')}</div>
               </div>
               <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={resetForm}>{L3('破棄', '放棄', 'Discard')}</button>
             </div>
@@ -996,7 +999,7 @@ export default function Journal({ session }) {
             {form.name_reading && <p className="kk-helper" style={{ margin: '-6px 0 10px' }}>{form.name_reading}</p>}
             <div className="kk-row2">
               <div className="kk-field">
-                <label className="kk-field__label" htmlFor="kk-field-brewery">{t('form.brewery')}</label>
+                <label className="kk-field__label" htmlFor="kk-field-brewery">{L3('酒造', '酒造', 'Brewery')}</label>
                 <BreweryInput id="kk-field-brewery" className="kk-input" value={form.brewery} onChange={v => f('brewery', v)}
                   onRegionFill={v => f('region', v)} placeholder={t('form.breweryPH')} />
               </div>

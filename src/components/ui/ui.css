@@ -58,6 +58,14 @@
 }
 .kk-panel__foot > .kk-btn { flex: 1; }
 
+/* Full-screen flow on phones (新しい記録): no backdrop strip, safe-area aware header. */
+@media (max-width: 719px) {
+  .kk-panel--sheet.kk-panel--full { height: 100svh; height: 100dvh; max-height: none; border-radius: 0; box-shadow: none; }
+  .kk-panel--full .kk-panel__head { padding-top: env(safe-area-inset-top, 0px); min-height: calc(58px + env(safe-area-inset-top, 0px)); }
+}
+.kk-save-state { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.kk-save-state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green-2); }
+
 @keyframes kk-fade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes kk-rise { from { transform: translateY(24px); opacity: .6 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) {
