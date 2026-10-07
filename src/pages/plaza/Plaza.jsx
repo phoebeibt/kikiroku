@@ -88,7 +88,7 @@ export default function Plaza({ session }) {
     }
     if (tab === 'top') return { kind: 'top', label: L('評価上位', '高評分', 'Top rated') }
     return { kind: 'new', label: L('新着', '最新公開', 'Newly shared') }
-  }, [profile, tab, isGuest, lang]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile, tab, isGuest, lang, rawTag]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchPage = useCallback(async (page, replace) => {
     setLoading(true)
@@ -173,8 +173,10 @@ export default function Plaza({ session }) {
             const wished = wishes.has(e.id)
             // Guests never see ratings, so they never see the rating colour or scene either.
             const tier = isGuest ? null : tierFor(e.rating)
-            // Tanuki scene only on cards that carry weight: 5.0/4.5, 近い好み, and the first card.
-            const scene = !!tier && (tier.id === 'treasure' || tier.id === 'again' || tab === 'near' || i === 0)
+            // Tanuki marks where a rating band starts: a run of same-tier cards shows it on the first
+            // card only; a card whose tier differs from the previous card shows its own (user rule 2026-10-07).
+            const prevTier = i > 0 && !isGuest ? tierFor(rows[i - 1].rating) : null
+            const scene = !!tier && tier.id !== prevTier?.id
             return (
               <li key={e.id}>
                 <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}>
