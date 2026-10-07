@@ -1,0 +1,25 @@
+/* ログイン */
+.kk-login { min-height: 100svh; background: var(--paper); padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(24px + var(--safe-b)); }
+.kk-login__top { max-width: 420px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.kk-login__name { font-size: 17px; font-weight: 900; letter-spacing: .01em; }
+.kk-login__body { max-width: 380px; margin: 0 auto; padding-top: clamp(16px, 6vh, 56px); display: grid; gap: 14px; text-align: center; }
+.kk-login__icon { width: 96px; height: 96px; margin: 0 auto 4px; border-radius: 24px; box-shadow: 0 14px 30px rgba(47, 91, 75, .2); }
+.kk-login h1 { margin: 0; font-size: 22px; line-height: 1.3; }
+.kk-login__lead { margin: 0 0 4px; color: var(--muted); font-size: 13.5px; line-height: 1.7; }
+.kk-login__lead span { display: inline-block; }
+.kk-login__tabs { display: flex !important; }
+.kk-login__tabs button { flex: 1; min-height: 38px; font-size: 14px; }
+.kk-login__form { display: grid; gap: 12px; text-align: left; }
+.kk-login__field { display: grid; gap: 5px; }
+.kk-login__field > span { font-size: 12px; font-weight: 800; color: var(--muted); }
+.kk-login__field small { font-size: 11.5px; color: var(--muted); }
+.kk-login__field .kk-input { width: 100%; min-height: 46px; font-size: 16px; }
+.kk-login__code { font-family: ui-monospace, Menlo, monospace; letter-spacing: .1em; border-color: var(--green-bd) !important; background: var(--green-bg) !important; }
+.kk-login__form .kk-btn { min-height: 48px; margin-top: 2px; }
+.kk-login__err { margin: 0; padding: 9px 12px; border-radius: 8px; background: var(--danger-bg); color: var(--danger); font-size: 13px; font-weight: 700; line-height: 1.5; }
+.kk-login__small { margin: 0; text-align: center; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.kk-login__small a { color: var(--green); }
+.kk-login__link { justify-self: center; min-height: 40px; padding: 0 8px; border: 0; background: none; color: var(--green); font: inherit; font-size: 13.5px; font-weight: 800; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; }
+.kk-login__browse { margin-top: 6px; color: var(--muted); }
+.kk-login__done { display: grid; gap: 12px; }
+.kk-login__done p { margin: 0; padding: 12px; border-radius: 10px; background: var(--green-bg); color: var(--green); font-size: 14px; line-height: 1.7; font-weight: 700; }
