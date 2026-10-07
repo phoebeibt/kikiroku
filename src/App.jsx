@@ -14,6 +14,8 @@ const Wiki = lazy(() => import('./pages/Wiki'))
 const Profile = lazy(() => import('./pages/Profile'))
 const EntryDetail = lazy(() => import('./pages/EntryDetail'))
 const SakeDetail = lazy(() => import('./pages/SakeDetail'))
+const ProductDetail = lazy(() => import('./pages/wiki/ProductDetail'))
+const BreweryDetail = lazy(() => import('./pages/wiki/BreweryDetail'))
 const Terms = lazy(() => import('./pages/Terms'))
 
 // Neutral loading fallback — avoids flash of theme-inconsistent background.
@@ -43,6 +45,8 @@ export default function App() {
           <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/journal/:id" element={<SakeDetail session={session} />} />
           <Route path="/wiki" element={<Wiki session={session} />} />
+          <Route path="/wiki/sake/:id" element={<ProductDetail session={session} />} />
+          <Route path="/wiki/brewery/:id" element={<BreweryDetail session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/entry/:id" element={<EntryDetail session={session} />} />
           <Route path="/" element={<Plaza session={session} />} />

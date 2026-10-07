@@ -341,6 +341,7 @@ export default function Journal({ session }) {
   const pendingEditIdRef = useRef(null)
   const editReturnRef = useRef(null)
   const [initialRegion, setInitialRegion] = useState(null)
+  const [initialQuery, setInitialQuery] = useState(null)
   useEffect(() => {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
@@ -399,6 +400,14 @@ export default function Journal({ session }) {
     }
     if (location.state?.region) {
       setInitialRegion(location.state.region)
+      navigate('/journal', { replace: true, state: {} })
+    }
+    if (location.state?.query) {
+      setInitialQuery({ q: location.state.query, at: Date.now() })
+      navigate('/journal', { replace: true, state: {} })
+    }
+    if (location.state?.query) {
+      setInitialQuery({ q: location.state.query, at: Date.now() })
       navigate('/journal', { replace: true, state: {} })
     }
     if (location.state?.toast === 'deleted') {
@@ -817,7 +826,7 @@ export default function Journal({ session }) {
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
           onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
-          initialRegion={initialRegion}
+          initialRegion={initialRegion} initialQuery={initialQuery}
           onAdd={openAdd} hasDraft={hasDraft}
           wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
         />

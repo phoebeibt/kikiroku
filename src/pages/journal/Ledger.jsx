@@ -50,7 +50,7 @@ const SORTS = {
   brewery: (a, b) => (a.brewery || '￿').localeCompare(b.brewery || '￿', 'ja'),
 }
 
-export default function Ledger({ initialRegion, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
+export default function Ledger({ initialRegion, initialQuery, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
   const { lang, changeLang } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const tagLabel = (id, cat) => cleanLabel(rawTagLabel(id, cat))
@@ -68,6 +68,10 @@ export default function Ledger({ initialRegion, entries, loading, tagLabel: rawT
   useEffect(() => {
     if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [initialRegion] }) // eslint-disable-line react-hooks/set-state-in-effect
   }, [initialRegion])
+  // Arriving from 事典 (e.g. 酒造の詳細 → この酒造の記録) pre-fills the search.
+  useEffect(() => {
+    if (initialQuery?.q) setQuery(initialQuery.q) // eslint-disable-line react-hooks/set-state-in-effect
+  }, [initialQuery])
 
   useEffect(() => { writePref(VIEW_KEY, density) }, [density])
   useEffect(() => { writePref(SORT_KEY, sort) }, [sort])

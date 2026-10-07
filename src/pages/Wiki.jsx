@@ -5,15 +5,15 @@ import { WikiText } from '../components/WikiTooltip'
 import { useWiki } from '../contexts/WikiContext'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
+import LangButton from '../components/LangButton'
+import SakeShelf from './wiki/SakeShelf'
+import './journal/ledger.css'
+import './sakeDetail.css'
+import './wiki/wiki.css'
 
 const EDITOR_LANGS = ['ja', 'zh', 'en']
 const EDITOR_LANG_LABEL = { ja: '日本語', zh: '中文', en: 'English' }
 
-const TITLE = { ja: '日本酒用語集', zh: '日本酒術語辭典', en: 'Sake Glossary' }
-const SUB   = { ja: 'よく使われる日本酒の用語と解説', zh: '常見日本酒術語與說明', en: 'Common sake terminology explained' }
-
-const BREW_TITLE = { ja: '酒蔵一覧', zh: '酒廠列表', en: 'Brewery Directory' }
-const BREW_SUB   = { ja: '全国の酒蔵と銘柄', zh: '全國酒廠與銘柄', en: 'Breweries & brands across Japan' }
 
 const editorFieldKey = (lang) => lang === 'zh' ? 'zhtw' : lang
 
@@ -88,7 +88,7 @@ const s = {
   }),
   main: { maxWidth: 760, margin: '0 auto', padding: '0 16px 60px' },
   search: { width: '100%', padding: '10px 16px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--surface-card)', color: 'var(--text)', fontSize: 14, outline: 'none', marginBottom: 20, boxSizing: 'border-box' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 12 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(330px, 100%), 1fr))', gap: 12 },
   card: { background: 'var(--surface-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px 18px', position: 'relative' },
   cardTitle: { fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--text)', marginBottom: 3 },
   cardAlt: { fontSize: 10, color: 'var(--sub)', letterSpacing: '.04em', marginBottom: 8 },
@@ -204,178 +204,8 @@ function ArticleCard({ article, lang, isEditor, onSaved }) {
 // ── Brewery Directory ──────────────────────────────────────────────────────────
 
 // Click to reveal reading: furigana in Japanese, romaji in Chinese/English
-function BrandChip({ brand, lang }) {
-  const [revealed, setRevealed] = useState(false)
-  const showFuri = lang === 'ja'
-  const reading = showFuri ? brand.furigana : brand.romaji
-
-  return (
-    <button
-      onClick={() => setRevealed(r => !r)}
-      title={reading || undefined}
-      style={{
-        background: revealed ? 'var(--accent-bg, rgba(124,58,40,.07))' : 'none',
-        border: '1px solid var(--border)', borderRadius: 8,
-        padding: '3px 9px', cursor: reading ? 'pointer' : 'default',
-        fontFamily: 'var(--font-sans)', color: 'var(--text)',
-        display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 1,
-      }}>
-      {showFuri && revealed && reading ? (
-        <ruby style={{ fontSize: 14 }}>
-          {brand.name}
-          <rt style={{ fontSize: '0.5em', color: 'var(--sub)', letterSpacing: '.03em' }}>{reading}</rt>
-        </ruby>
-      ) : (
-        <span style={{ fontSize: 13 }}>{brand.name}</span>
-      )}
-      {!showFuri && revealed && reading && (
-        <span style={{ fontSize: 10, color: 'var(--sub)', letterSpacing: '.04em' }}>{reading}</span>
-      )}
-    </button>
-  )
-}
-
-function IwcTimeline({ awards, lang }) {
-  if (!awards || awards.length === 0) return null
-
-  // Collect unique years per tier
-  const goldYears  = [...new Set(awards.filter(a =>  a.is_gold).map(a => a.year))].sort((a, b) => a - b)
-  const silverYears = [...new Set(awards.filter(a => !a.is_gold).map(a => a.year))].sort((a, b) => a - b)
-
-  const YearChip = ({ year, gold }) => (
-    <span style={{
-      fontSize: 10, padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap',
-      fontVariantNumeric: 'tabular-nums',
-      background: gold ? 'rgba(180,140,0,.12)' : 'var(--bg)',
-      color:      gold ? '#8A6C00' : 'var(--sub)',
-      border:     `1px solid ${gold ? 'rgba(180,140,0,.35)' : 'var(--border)'}`,
-    }}>
-      {gold ? '★' : '○'} {year}
-    </span>
-  )
-
-  const goldLabel   = lang === 'ja' ? 'Gold / Trophy' : lang === 'zh' ? 'Gold / Trophy' : 'Gold / Trophy'
-  const silverLabel = lang === 'ja' ? 'Silver / Bronze' : lang === 'zh' ? 'Silver / Bronze' : 'Silver / Bronze'
-
-  return (
-    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {goldYears.length > 0 && (
-        <div>
-          <div style={{ fontSize: 9, color: '#8A6C00', letterSpacing: '.08em', marginBottom: 5 }}>IWC {goldLabel}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {goldYears.map(y => <YearChip key={y} year={y} gold />)}
-          </div>
-        </div>
-      )}
-      {silverYears.length > 0 && (
-        <div>
-          <div style={{ fontSize: 9, color: 'var(--sub)', letterSpacing: '.08em', marginBottom: 5 }}>IWC {silverLabel}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {silverYears.map(y => <YearChip key={y} year={y} gold={false} />)}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function BreweryRow({ brewery, lang, iwcSummary = [] }) {
-  const [open, setOpen] = useState(false)
-  const [brands, setBrands] = useState(null)
-  const [awards, setAwards] = useState(null)
-
-  // Normalize brewery name to a short keyword (strip corporate suffixes)
-  const brewKw = brewery.name
-    .replace(/(株式会社|有限会社|合資会社|合名会社|㈱|㈲|合同会社)/g, '')
-    .trim().split(/[\s　]+/)[0]
-
-  const toggle = async () => {
-    if (!open && brands === null) {
-      // Awards: FK lookup first (indexed, precise). Fallback to name search
-      // for breweries whose award rows weren't linked during Phase 1 backfill.
-      const [brandsRes, primaryAwards] = await Promise.all([
-        supabase.from('sake_brands').select('id,name,furigana,romaji')
-          .eq('brewery_id', brewery.id).order('name'),
-        supabase.from('sake_awards').select('year,brand_name,is_gold')
-          .eq('brewery_id', brewery.id)
-          .order('year', { ascending: false }).limit(200),
-      ])
-      let awardsData = primaryAwards.data || []
-      if (awardsData.length === 0) {
-        const searchKw = brewKw.length >= 2 ? brewKw : brewery.name
-        const { data } = await supabase.from('sake_awards')
-          .select('year,brand_name,is_gold')
-          .ilike('brewery_name', `%${searchKw}%`)
-          .order('year', { ascending: false }).limit(200)
-        awardsData = data || []
-      }
-      setBrands(brandsRes.data || [])
-      setAwards(awardsData)
-    }
-    setOpen(o => !o)
-  }
-  // Pre-compute from summary (available before click); switch to precise count after load
-  const preMatch = brewKw.length >= 2
-    ? iwcSummary.find(d => d.name.includes(brewKw))
-    : null
-  const goldCount  = awards
-    ? [...new Set(awards.filter(a =>  a.is_gold).map(a => a.year))].length
-    : (preMatch?.hasGold ? 1 : 0)
-  const silverOnly = awards
-    ? (goldCount === 0 && awards.some(a => !a.is_gold))
-    : (!preMatch?.hasGold && preMatch?.hasSilver)
-
-  return (
-    <div style={{ borderBottom: '1px solid var(--border)' }}>
-      <button
-        onClick={toggle}
-        style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '10px 12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--text)', flex: 1, minWidth: 0 }}>
-          <RubyName name={brewery.name} furigana={brewery.furigana} />
-        </span>
-        {brewery.romaji && (
-          <span style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.04em', flexShrink: 0 }}>{brewery.romaji}</span>
-        )}
-        {goldCount > 0 && (
-          <span style={{ fontSize: 10, color: '#8A6C00', background: 'rgba(180,140,0,.10)', border: '1px solid rgba(180,140,0,.28)', borderRadius: 8, padding: '1px 7px', flexShrink: 0 }}>
-            ★ ×{goldCount}
-          </span>
-        )}
-        {silverOnly && (
-          <span style={{ fontSize: 10, color: 'var(--sub)', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '1px 7px', flexShrink: 0 }}>
-            ○ IWC
-          </span>
-        )}
-        <span style={{ fontSize: 11, color: 'var(--sub)', flexShrink: 0, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div style={{ padding: '2px 14px 12px 20px' }}>
-          {brands === null ? (
-            <div style={{ fontSize: 12, color: 'var(--sub)', padding: '4px 0' }}>…</div>
-          ) : (
-            <>
-              {brands.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px' }}>
-                  {brands.map(b => (
-                    <BrandChip key={b.id} brand={b} lang={lang} />
-                  ))}
-                </div>
-              )}
-              {brands.length === 0 && (
-                <div style={{ fontSize: 12, color: 'var(--sub)', paddingBottom: 4 }}>
-                  {lang === 'ja' ? '銘柄なし' : lang === 'zh' ? '無銘柄' : 'No brands'}
-                </div>
-              )}
-              <IwcTimeline awards={awards} lang={lang} />
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function BreweryDirectory({ lang, initialQ = '' }) {
+  const navigate = useNavigate()
   const [breweries, setBreweries] = useState(null)
   const [q, setQ] = useState(initialQ)
   const [openAreas, setOpenAreas] = useState(new Set())
@@ -453,11 +283,11 @@ function BreweryDirectory({ lang, initialQ = '' }) {
     })
   }
 
-  const searchPlaceholder = lang === 'ja' ? '蔵名・読み・ローマ字で検索…' : lang === 'zh' ? '搜索酒廠名稱…' : 'Search brewery name, reading…'
+  const searchPlaceholder = lang === 'ja' ? '蔵名・読み・ローマ字で検索' : lang === 'zh' ? '搜尋酒造名稱・讀音' : 'Search brewery name or reading'
   const loadingText = lang === 'ja' ? '読み込み中…' : lang === 'zh' ? '載入中…' : 'Loading…'
 
   if (breweries === null) {
-    return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sub)', fontSize: 14 }}>{loadingText}</div>
+    return <div className="kk-empty kk-empty--quiet">{loadingText}</div>
   }
 
   const areas = Object.keys(grouped || {}).sort((a, b) => {
@@ -465,46 +295,51 @@ function BreweryDirectory({ lang, initialQ = '' }) {
     return a.localeCompare(b, 'ja')
   })
   const totalShown = areas.reduce((n, a) => n + grouped[a].length, 0)
+  const iwcFor = b => {
+    const kw = b.name.replace(/(株式会社|有限会社|合資会社|合名会社|㈱|㈲|合同会社)/g, '').trim().split(/[\s\u3000]+/)[0]
+    return kw.length >= 2 ? iwcSummary.find(d => d.name.includes(kw)) : null
+  }
 
   return (
     <div>
-      <input
-        style={s.search}
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        placeholder={searchPlaceholder}
-      />
-      {q && (
-        <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 14, marginTop: -10 }}>
-          {lang === 'ja' ? `${totalShown} 件` : lang === 'zh' ? `共 ${totalShown} 間` : `${totalShown} results`}
-        </div>
-      )}
+      <div className="kk-search" role="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+        <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} />
+        {q && <button type="button" className="kk-search__clear" onClick={() => setQ('')} aria-label="×">×</button>}
+      </div>
+      {q && <h2 className="kk-wiki__sec">{lang === 'ja' ? '検索結果' : lang === 'zh' ? '搜尋結果' : 'Results'}<small>{totalShown}</small></h2>}
       {areas.map(area => {
         const list = grouped[area]
         const isOpen = openAreas.has(area)
         return (
-          <div key={area} style={{ marginBottom: 8 }}>
-            <button
-              onClick={() => toggleArea(area)}
-              style={{
-                width: '100%', background: 'var(--surface-card)', border: '1px solid var(--border)',
-                borderRadius: isOpen ? '12px 12px 0 0' : 12, cursor: 'pointer',
-                padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--accent)', flex: 1, textAlign: 'left' }}>{areaLabel(area, lang)}</span>
-              <span style={{ fontSize: 11, color: 'var(--sub)' }}>
-                {lang === 'ja' ? `${list.length}蔵` : lang === 'zh' ? `${list.length}廠` : `${list.length}`}
-              </span>
-              <span style={{ fontSize: 11, color: 'var(--sub)', marginLeft: 2 }}>{isOpen ? '▲' : '▼'}</span>
+          <section key={area} className="kk-area">
+            <button type="button" className="kk-area__head" aria-expanded={isOpen} onClick={() => toggleArea(area)}>
+              {areaLabel(area, lang)}
+              <span>{lang === 'ja' ? `${list.length}蔵` : lang === 'zh' ? `${list.length} 家` : list.length} {isOpen ? '▴' : '▾'}</span>
             </button>
             {isOpen && (
-              <div style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px', background: 'var(--surface-card)', overflow: 'hidden' }}>
-                {list.map(b => (
-                  <BreweryRow key={b.id} brewery={b} lang={lang} iwcSummary={iwcSummary} />
-                ))}
-              </div>
+              <ul className="kk-shelf">
+                {list.map(b => {
+                  const iwc = iwcFor(b)
+                  return (
+                    <li key={b.id}>
+                      <button type="button" className="kk-shelf__item" onClick={() => navigate(`/wiki/brewery/${b.id}`)}>
+                        <span className="kk-shelf__main">
+                          <span className="kk-shelf__title"><RubyName name={b.name} furigana={lang === 'ja' ? b.furigana : null} /></span>
+                          {lang !== 'ja' && b.romaji && <span className="kk-shelf__meta">{b.romaji}</span>}
+                        </span>
+                        <span className="kk-shelf__side">
+                          {iwc?.hasGold && <span className="kk-iwc">IWC ★</span>}
+                          {!iwc?.hasGold && iwc?.hasSilver && <span className="kk-iwc kk-iwc--silver">IWC</span>}
+                          <span className="kk-shelf__chev" aria-hidden="true">›</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
-          </div>
+          </section>
         )
       })}
     </div>
@@ -585,7 +420,7 @@ function FlatDirectory({ items, lang }) {
                 {groupLabel(g, lang).toUpperCase()}
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 10 }}>
               {groupItems.map(item => (
                 <FlatItemCard key={item.id} item={item} lang={lang} />
               ))}
@@ -600,30 +435,26 @@ function FlatDirectory({ items, lang }) {
 // ── Main Wiki page ─────────────────────────────────────────────────────────────
 
 const TAB_META = {
-  glossary:  { ja: '用語集',   zh: '術語辭典', en: 'Glossary',   title: TITLE,      sub: SUB },
-  breweries: { ja: '酒蔵一覧', zh: '酒廠列表', en: 'Breweries',  title: BREW_TITLE, sub: BREW_SUB },
-  rice:      { ja: '酒米',     zh: '酒米',     en: 'Sake Rice',
-    title: { ja: '酒米品種一覧', zh: '酒米品種一覧', en: 'Sake Rice Varieties' },
-    sub:   { ja: '酒造好適米の品種と産地', zh: '釀酒專用米的品種與產地', en: 'Brewing rice varieties and origins' } },
-  yeast:     { ja: '酵母',     zh: '酵母',     en: 'Yeast',
-    title: { ja: '酵母一覧', zh: '酵母一覧', en: 'Sake Yeasts' },
-    sub:   { ja: '協会酵母と地域酵母の種類', zh: '協會酵母與地域酵母種類', en: 'Kyokai and regional yeast strains' } },
+  sake:      { ja: '酒款', zh: '酒款', en: 'Sakes' },
+  breweries: { ja: '酒造', zh: '酒造', en: 'Breweries' },
+  glossary:  { ja: '用語', zh: '用語', en: 'Terms' },
+  materials: { ja: '原料', zh: '原料', en: 'Rice & yeast' },
 }
+// Older links (WikiTooltip, bookmarks) still say rice / yeast.
+const TAB_ALIAS = { rice: 'materials', yeast: 'materials' }
+const tabFrom = t => (TAB_META[t] ? t : TAB_ALIAS[t] || null)
 
 export default function Wiki({ session }) {
-  const { lang } = useLang()
+  const { lang, changeLang } = useLang()
   const { articles, reload } = useWiki()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState(() => {
-    const t = searchParams.get('tab')
-    return TAB_META[t] ? t : 'glossary'
-  })
+  const [tab, setTab] = useState(() => tabFrom(searchParams.get('tab')) || 'sake')
   // Sync tab when URL params change (e.g., Wiki popup deep-link to another tab)
   useEffect(() => {
-    const t = searchParams.get('tab')
-    if (TAB_META[t] && t !== tab) setTab(t)
+    const t = tabFrom(searchParams.get('tab'))
+    if (t && t !== tab) setTab(t)
   }, [searchParams])
   const breweryQ = searchParams.get('q') || ''
   const isEditor = session?.user?.user_metadata?.is_editor === true
@@ -654,46 +485,52 @@ export default function Wiki({ session }) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const meta = TAB_META[tab] || TAB_META.glossary
+  const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
 
   return (
-    <div style={s.page}>
-      <Nav session={session} />
-      <div style={s.hero}>
-        <div style={s.heroTitle}>{meta.title[lang]}</div>
-        <div style={s.heroSub}>{meta.sub[lang]}</div>
-      </div>
-      <div style={{ ...s.tabs, flexWrap: 'wrap', gap: 6 }}>
-        {Object.entries(TAB_META).map(([id, m]) => (
-          <button key={id} style={s.tab(tab === id)} onClick={() => {
-            setTab(id)
-            // Clear any lingering #term-id hash so the new tab starts at the top
-            navigate(`/wiki?tab=${id}`, { replace: true })
-            window.scrollTo({ top: 0 })
-          }}>
-            {m[lang] || m.ja}
-          </button>
-        ))}
-      </div>
-      <div style={{ ...s.main, marginTop: 20 }}>
+    <div className="kk-wiki-page">
+      <Nav session={session} topbar={false} />
+      <div className="kk-wiki">
+        <header className="kk-ledger__head">
+          <h1 className="kk-ledger__title">{L('事典', '事典', 'Library')}</h1>
+          <div className="kk-ledger__head-actions">
+            <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />
+          </div>
+        </header>
+        <div className="kk-seg" role="tablist" aria-label={L('事典の分類', '事典分類', 'Sections')}>
+          {Object.entries(TAB_META).map(([id, m]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'is-active' : ''} onClick={() => {
+              setTab(id)
+              // Clear any lingering #term-id hash so the new tab starts at the top
+              navigate(`/wiki?tab=${id}`, { replace: true })
+              window.scrollTo({ top: 0 })
+            }}>
+              {m[lang] || m.ja}
+            </button>
+          ))}
+        </div>
+        {tab === 'sake'      && <SakeShelf lang={lang} isGuest={!session} />}
         {tab === 'breweries' && <BreweryDirectory lang={lang} initialQ={breweryQ} />}
-        {tab === 'rice'      && <FlatDirectory items={riceItems} lang={lang} />}
-        {tab === 'yeast'     && <FlatDirectory items={yeastItems} lang={lang} />}
+        {tab === 'materials' && (
+          <div className="kk-wiki__legacy">
+            <h2 className="kk-wiki__sec">{L('酒米', '酒米', 'Sake rice')}<small>{riceItems.length}</small></h2>
+            <FlatDirectory items={riceItems} lang={lang} />
+            <h2 className="kk-wiki__sec" style={{ marginTop: 28 }}>{L('酵母', '酵母', 'Yeast')}<small>{yeastItems.length}</small></h2>
+            <FlatDirectory items={yeastItems} lang={lang} />
+          </div>
+        )}
         {tab === 'glossary'  && (
           <>
-            <input style={s.search} value={q} onChange={e => setQ(e.target.value)}
-              placeholder={lang === 'en' ? 'Search terms…' : lang === 'zh' ? '搜索術語…' : '用語を検索…'} />
+            <div className="kk-search" role="search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input type="search" value={q} onChange={e => setQ(e.target.value)} aria-label={L('用語を検索', '搜尋用語', 'Search terms')}
+                placeholder={L('用語を検索', '搜尋用語', 'Search terms')} />
+              {q && <button type="button" className="kk-search__clear" onClick={() => setQ('')} aria-label="×">×</button>}
+            </div>
             {!q && glossaryByCat.length > 1 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18, marginTop: -8 }}>
+              <div className="kk-wiki__chips">
                 {glossaryByCat.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => scrollToCat(cat.id)}
-                    style={{
-                      fontSize: 12, padding: '4px 12px', borderRadius: 16,
-                      border: '1px solid var(--border)', background: 'var(--surface-card)',
-                      color: 'var(--sub)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                    }}>
+                  <button key={cat.id} type="button" className="kk-chip" onClick={() => scrollToCat(cat.id)}>
                     {cat.label[lang] || cat.label.ja}
                     <span style={{ marginLeft: 6, opacity: 0.6 }}>{cat.items.length}</span>
                   </button>
@@ -701,16 +538,12 @@ export default function Wiki({ session }) {
               </div>
             )}
             {q && (
-              <div style={{ fontSize: 12, color: 'var(--sub)', marginBottom: 14, marginTop: -10 }}>
-                {lang === 'ja' ? `${glossaryItems.length} 件` : lang === 'zh' ? `共 ${glossaryItems.length} 條` : `${glossaryItems.length} results`}
-              </div>
+              <h2 className="kk-wiki__sec">{L('検索結果', '搜尋結果', 'Results')}<small>{glossaryItems.length}</small></h2>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {glossaryByCat.map(cat => (
                 <div key={cat.id} id={`gloss-cat-${cat.id}`} style={{ scrollMarginTop: 20 }}>
-                  <div style={{ fontSize: 10, letterSpacing: '.08em', color: 'var(--sub)', marginBottom: 10, fontWeight: 500 }}>
-                    {(cat.label[lang] || cat.label.ja).toUpperCase()}
-                  </div>
+                  <h2 className="kk-wiki__sec">{cat.label[lang] || cat.label.ja}<small>{cat.items.length}</small></h2>
                   <div style={s.grid}>
                     {cat.items.map(article => (
                       <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />
