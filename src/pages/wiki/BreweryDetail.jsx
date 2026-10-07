@@ -137,7 +137,7 @@ export default function BreweryDetail({ session }) {
           <>
             <h2 className="kk-wiki__sec">{L('あなたの記録', '你的記錄', 'Your records')}<small>{mineCount}</small></h2>
             {mineCount > 0 ? (
-              <button type="button" className="kk-btn kk-btn--block" onClick={() => navigate('/journal', { state: { query: brewery.name } })}>
+              <button type="button" className="kk-btn kk-btn--block" onClick={() => navigate('/journal', { state: { brewery: brewery.name } })}>
                 {L(`マイ帳で ${brewery.name} の記録を見る`, `在マイ帳查看 ${brewery.name} 的記錄`, `See them in your shelf`)}
               </button>
             ) : (

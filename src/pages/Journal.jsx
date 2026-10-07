@@ -30,6 +30,7 @@ const EMPTY_FORM = {
   name_reading: '',
   is_public: false, contributor_name: '',
   photo_crop: null,
+  product_id: null, // sake_products row picked from autocomplete / 事典 (cleared when the name is retyped)
 }
 
 
@@ -341,7 +342,7 @@ export default function Journal({ session }) {
   const pendingEditIdRef = useRef(null)
   const editReturnRef = useRef(null)
   const [initialRegion, setInitialRegion] = useState(null)
-  const [initialQuery, setInitialQuery] = useState(null)
+  const [initialBrewery, setInitialBrewery] = useState(null)
   useEffect(() => {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
@@ -402,12 +403,8 @@ export default function Journal({ session }) {
       setInitialRegion(location.state.region)
       navigate('/journal', { replace: true, state: {} })
     }
-    if (location.state?.query) {
-      setInitialQuery({ q: location.state.query, at: Date.now() })
-      navigate('/journal', { replace: true, state: {} })
-    }
-    if (location.state?.query) {
-      setInitialQuery({ q: location.state.query, at: Date.now() })
+    if (location.state?.brewery) {
+      setInitialBrewery({ name: location.state.brewery, at: Date.now() })
       navigate('/journal', { replace: true, state: {} })
     }
     if (location.state?.toast === 'deleted') {
@@ -509,6 +506,7 @@ export default function Journal({ session }) {
       brand: fwd.brand || '', name: fwd.name || '', brewery: fwd.brewery || '', region: fwd.region || '', type: normalizeType(fwd.type),
       alcohol: fwd.alcohol || '', rice: fwd.rice || '', polishing: fwd.polishing || '',
       smv: fwd.smv || '', acidity: fwd.acidity || '', yeast: fwd.yeast || '',
+      product_id: fwd.product_id || null,
       contributor_name: defaultName,
     })
     setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
@@ -533,6 +531,7 @@ export default function Journal({ session }) {
       name_reading: e.name_reading || '',
       is_public: e.is_public ?? false, contributor_name: e.contributor_name || '',
       photo_crop: e.photo_crop || null,
+      product_id: e.product_id || null,
     })
     setFormTags(e.tags || [])
     setAromaTags(e.aroma_tags || [])
@@ -562,9 +561,9 @@ export default function Journal({ session }) {
     const picked = pendingBrandRef.current
     pendingBrandRef.current = null
     setForm(p => {
-      if (picked) return { ...p, brand: picked, name: text }          // autocomplete resolved the brand
-      if (p.brand && text.startsWith(p.brand)) return { ...p, name: text.slice(p.brand.length).trim() }
-      return { ...p, brand: '', name: text }
+      if (picked) return { ...p, brand: picked, name: text, product_id: null }          // autocomplete resolved the brand
+      if (p.brand && text.startsWith(p.brand)) return { ...p, name: text.slice(p.brand.length).trim(), product_id: null }
+      return { ...p, brand: '', name: text, product_id: null }
     })
   }
   // On blur, peel a known 銘柄 off the front (longest match in sake_brands), then infer the brewery.
@@ -701,20 +700,19 @@ export default function Journal({ session }) {
         photo_crop: photo_url ? (form.photo_crop || null) : null,
         contributor_name: !isDraft && form.is_public ? (form.contributor_name.trim() || defaultName) : null,
       }
-      const { error: writeErr } = editId
-        ? await supabase.from('sake_entries').update(payload).eq('id', editId)
-        : await supabase.from('sake_entries').insert(payload)
+      const { data: saved, error: writeErr } = editId
+        ? await supabase.from('sake_entries').update(payload).eq('id', editId).select('id').single()
+        : await supabase.from('sake_entries').insert(payload).select('id').single()
       if (writeErr) throw new Error(writeErr.message)
 
-      // Contribute a newly finished sake to the product catalogue if it isn't there yet
-      if (!isDraft && !editId && form.name.trim()) {
+      // Link the record to the catalogue (事典). Reuse a same-name product, or contribute a new one.
+      if (!isDraft && !form.product_id && form.name.trim()) {
         const fullName = [form.brand, form.name].filter(Boolean).join(' ').trim()
-        const { count } = await supabase
-          .from('sake_products')
-          .select('id', { count: 'exact', head: true })
-          .ilike('name', fullName)
-        if (count === 0) {
-          await supabase.from('sake_products').insert({
+        const { data: found } = await supabase
+          .from('sake_products').select('id').ilike('name', fullName).limit(1)
+        let productId = found?.[0]?.id || null
+        if (!productId && !editId) {
+          const { data: made } = await supabase.from('sake_products').insert({
             name:         fullName,
             brewery_name: form.brewery.trim() || null,
             region:       form.region.trim()  || null,
@@ -725,8 +723,10 @@ export default function Journal({ session }) {
             alcohol:      form.alcohol  ? parseFloat(form.alcohol)   : null,
             smv:          form.smv.trim()     || null,
             acidity:      form.acidity  ? parseFloat(form.acidity)   : null,
-          })
+          }).select('id').single()
+          productId = made?.id || null
         }
+        if (productId && saved?.id) await supabase.from('sake_entries').update({ product_id: productId }).eq('id', saved.id)
       }
       clearDraft(); setHasDraft(false)
       setToast(isDraft
@@ -826,7 +826,7 @@ export default function Journal({ session }) {
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
           onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
-          initialRegion={initialRegion} initialQuery={initialQuery}
+          initialRegion={initialRegion} initialBrewery={initialBrewery}
           onAdd={openAdd} hasDraft={hasDraft}
           wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
         />
@@ -1099,6 +1099,7 @@ export default function Journal({ session }) {
                 onBrandFill={v => { pendingBrandRef.current = v }}
                 onProductFill={p => setForm(prev => ({
                   ...prev,
+                  product_id: p.id || null,
                   brewery:   prev.brewery   || p.brewery   || '',
                   region:    prev.region    || p.region    || '',
                   type:      prev.type      || normalizeType(p.type),

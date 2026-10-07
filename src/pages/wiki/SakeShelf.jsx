@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import SakeBottleCrop from '../../components/bottle/SakeBottleCrop'
-import { entryMatchesProduct, loadPublicEntries, normName } from '../../lib/sakeMatch'
+import { entryMatchesProduct, loadPublicEntries, normName, recordedPath } from '../../lib/sakeMatch'
 
 const PAGE = 30
 const TYPES = ['純米大吟醸', '純米吟醸', '特別純米', '純米', '大吟醸', '吟醸', '特別本醸造', '本醸造']
@@ -87,7 +87,7 @@ export default function SakeShelf({ lang, isGuest }) {
           <ul className="kk-shelf">
             {recordedShown.map(({ cover: e, count }) => (
               <li key={e.id}>
-                <button type="button" className="kk-shelf__item" onClick={() => navigate(`/journal/${e.id}`)}>
+                <button type="button" className="kk-shelf__item" onClick={() => navigate(e.product_id ? `/wiki/sake/${e.product_id}` : recordedPath(e))}>
                   <span className="kk-shelf__bottle" aria-hidden="true">
                     <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="72px" />
                   </span>

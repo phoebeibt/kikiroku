@@ -1,24 +1,40 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import Nav from '../../components/Nav'
 import SakeBottleCrop from '../../components/bottle/SakeBottleCrop'
 import { useLang } from '../../contexts/LangContext'
 import { formatRating } from '../../lib/rating'
 import { forwardFrom } from '../../lib/plaza'
-import { entryMatchesProduct, loadPublicEntries } from '../../lib/sakeMatch'
+import { entryFullName, entryMatchesProduct, loadPublicEntries } from '../../lib/sakeMatch'
 import '../sakeDetail.css'
 import './wiki.css'
 
 const dot = d => (d || '').slice(0, 10).replaceAll('-', '.')
 const pct = v => (v == null || v === '' ? null : `${String(v).replace(/%$/, '')}%`)
 
+// For a sake with no catalogue row: take each spec from the newest record that has it.
+function assembleFromRecords(group, brand, name, brewery) {
+  const pick = k => group.find(e => e[k] != null && e[k] !== '')?.[k] ?? null
+  return {
+    id: null, recorded: true, brand, sakeName: name,
+    name: [brand, name].filter(Boolean).join(' '),
+    brewery_name: brewery || pick('brewery'), region: pick('region'), type: pick('type'),
+    polishing: pick('polishing'), alcohol: pick('alcohol'), smv: pick('smv'), acidity: pick('acidity'), rice: pick('rice'), yeast: pick('yeast'),
+  }
+}
+
 /**
  * 事典 › 酒款の詳細. Catalog facts plus the people side: みんなの瓶身 (public records of this
  * sake), your own records (count + link only — private notes stay in マイ帳), and この酒を記録.
+ * `recorded` mode (/wiki/sake/recorded?brand=&name=&brewery=) serves sakes people recorded that the
+ * catalogue doesn't have; if a catalogue row does exist it redirects there.
  */
-export default function ProductDetail({ session }) {
-  const { id } = useParams()
+export default function ProductDetail({ session, recorded = false }) {
+  const params = useParams()
+  const [search] = useSearchParams()
+  const rb = search.get('brand') || '', rn = search.get('name') || '', rbr = search.get('brewery') || ''
+  const id = recorded ? `recorded:${rb}|${rn}|${rbr}` : params.id
   const navigate = useNavigate()
   const { lang } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
@@ -30,25 +46,51 @@ export default function ProductDetail({ session }) {
   const [siblings, setSiblings] = useState([])
 
   useEffect(() => {
-    supabase.from('sake_products').select('*').eq('id', id).maybeSingle()
-      .then(({ data }) => setLoaded({ id, data: data || null }))
-    loadPublicEntries().then(setPublicEntries)
-  }, [id])
+    if (!recorded) {
+      supabase.from('sake_products').select('*').eq('id', id).maybeSingle()
+        .then(({ data }) => setLoaded({ id, data: data || null }))
+      loadPublicEntries().then(setPublicEntries)
+      return
+    }
+    const probe = { brand: rb, name: rn, brewery: rbr }
+    const key = entryFullName(probe)
+    loadPublicEntries().then(async all => {
+      setPublicEntries(all)
+      const group = all.filter(e => entryFullName(e) === key)
+      const linked = group.find(e => e.product_id)?.product_id
+      if (linked) { navigate(`/wiki/sake/${linked}`, { replace: true }); return }
+      if (rbr) {
+        const { data } = await supabase.from('sake_products').select('id,name,brewery_name').eq('brewery_name', rbr).limit(400)
+        const hit = (data || []).find(p => entryMatchesProduct(probe, p))
+        if (hit) { navigate(`/wiki/sake/${hit.id}`, { replace: true }); return }
+      }
+      const assembled = assembleFromRecords(group, rb, rn, rbr)
+      if (assembled.brewery_name) {
+        const { data } = await supabase.from('sake_breweries').select('id').eq('name', assembled.brewery_name).limit(1)
+        assembled.brewery_id = data?.[0]?.id || null
+      }
+      setLoaded({ id, data: group.length || rn ? assembled : null })
+    })
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const recordedKey = product?.recorded ? entryFullName({ brand: product.brand, name: product.sakeName }) : null
+  const matches = e => (!product ? false : recordedKey ? entryFullName(e) === recordedKey : entryMatchesProduct(e, product))
 
   useEffect(() => {
     if (!product) return
     if (product.brewery_name) {
-      supabase.from('sake_products').select('id,name,type,polishing').eq('brewery_name', product.brewery_name).neq('id', product.id).order('name').limit(8)
-        .then(({ data }) => setSiblings(data || []))
+      let q = supabase.from('sake_products').select('id,name,type,polishing').eq('brewery_name', product.brewery_name)
+      if (product.id) q = q.neq('id', product.id)
+      q.order('name').limit(8).then(({ data }) => setSiblings(data || []))
     }
     if (session && product.brewery_name) {
-      supabase.from('sake_entries').select('id,brand,name,brewery,rating,tasted_at,photo_url,thumb_url,photo_crop,status')
+      supabase.from('sake_entries').select('id,product_id,brand,name,brewery,rating,tasted_at,photo_url,thumb_url,photo_crop,status')
         .eq('user_id', session.user.id).eq('brewery', product.brewery_name)
-        .then(({ data }) => setMine((data || []).filter(e => e.status !== 'draft' && entryMatchesProduct(e, product))))
+        .then(({ data }) => setMine((data || []).filter(e => e.status !== 'draft' && matches(e))))
     }
   }, [product, session?.user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const others = useMemo(() => (product ? publicEntries.filter(e => entryMatchesProduct(e, product) && e.user_id !== session?.user?.id) : []), [product, publicEntries, session?.user?.id])
+  const others = product ? publicEntries.filter(e => matches(e) && e.user_id !== session?.user?.id) : []
   const cover = [...mine, ...others].find(e => e.thumb_url || e.photo_url)
 
   if (product === undefined) {
@@ -76,7 +118,7 @@ export default function ProductDetail({ session }) {
 
   const recordIt = () => {
     if (isGuest) { navigate('/login'); return }
-    navigate('/journal', { state: { forward: forwardFrom({ name: product.name, brewery: product.brewery_name, region: product.region, type: product.type, alcohol: product.alcohol, rice: product.rice, polishing: product.polishing, smv: product.smv, acidity: product.acidity, yeast: product.yeast }) } })
+    navigate('/journal', { state: { forward: forwardFrom({ product_id: product.id, brand: product.recorded ? product.brand : '', name: product.recorded ? product.sakeName : product.name, brewery: product.brewery_name, region: product.region, type: product.type, alcohol: product.alcohol, rice: product.rice, polishing: product.polishing, smv: product.smv, acidity: product.acidity, yeast: product.yeast }) } })
   }
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/wiki'))
 

@@ -15,7 +15,7 @@ const REPEAT_TAGS = ['repeat', 'bottle-worthy', 'osusume']
 const RECENT_COUNT = 10
 const DRAFTS_PREVIEW = 3
 const THIS_YEAR = String(new Date().getFullYear())
-const EMPTY_FILTERS = { status: 'all', rating: 'any', period: 'all', from: '', to: '', flavors: [], regions: [] }
+const EMPTY_FILTERS = { status: 'all', rating: 'any', period: 'all', from: '', to: '', flavors: [], regions: [], breweries: [] }
 const VIEW_KEY = 'kk_ledger_density'
 const SORT_KEY = 'kk_ledger_sort'
 
@@ -36,6 +36,7 @@ function passes(e, f) {
   if (f.period === 'year' && !d.startsWith(THIS_YEAR)) return false
   if (f.period === 'range' && ((f.from && d < f.from) || (f.to && d > f.to))) return false
   if (f.regions.length && !f.regions.includes(e.region)) return false
+  if (f.breweries?.length && !f.breweries.includes(e.brewery)) return false
   if (f.flavors.length) {
     const own = new Set([...(e.aroma_tags || []), ...(e.taste_tags || [])])
     if (!f.flavors.some(id => own.has(id))) return false
@@ -50,7 +51,7 @@ const SORTS = {
   brewery: (a, b) => (a.brewery || '￿').localeCompare(b.brewery || '￿', 'ja'),
 }
 
-export default function Ledger({ initialRegion, initialQuery, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
+export default function Ledger({ initialRegion, initialBrewery, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
   const { lang, changeLang } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const tagLabel = (id, cat) => cleanLabel(rawTagLabel(id, cat))
@@ -68,10 +69,10 @@ export default function Ledger({ initialRegion, initialQuery, entries, loading, 
   useEffect(() => {
     if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [initialRegion] }) // eslint-disable-line react-hooks/set-state-in-effect
   }, [initialRegion])
-  // Arriving from 事典 (e.g. 酒造の詳細 → この酒造の記録) pre-fills the search.
+  // Arriving from 事典 › 酒造の詳細 narrows the shelf to exactly that brewery.
   useEffect(() => {
-    if (initialQuery?.q) setQuery(initialQuery.q) // eslint-disable-line react-hooks/set-state-in-effect
-  }, [initialQuery])
+    if (initialBrewery?.name) setFilters({ ...EMPTY_FILTERS, breweries: [initialBrewery.name] }) // eslint-disable-line react-hooks/set-state-in-effect
+  }, [initialBrewery])
 
   useEffect(() => { writePref(VIEW_KEY, density) }, [density])
   useEffect(() => { writePref(SORT_KEY, sort) }, [sort])
@@ -124,7 +125,7 @@ export default function Ledger({ initialRegion, initialQuery, entries, loading, 
     return rows.sort((a, b) => SORTS[sort](a.e, b.e))
   }, [finished, activeCollection?.id, filters, termsKey, ctx, sort]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeFilterCount = (filters.status !== 'all') + (filters.rating !== 'any') + (filters.period !== 'all') + filters.flavors.length + filters.regions.length
+  const activeFilterCount = (filters.status !== 'all') + (filters.rating !== 'any') + (filters.period !== 'all') + filters.flavors.length + filters.regions.length + filters.breweries.length
   const anyNarrowing = !!(terms.length || activeFilterCount || activeCollection)
 
   // Filter options come from the user's own records, so no choice leads to an empty shelf.
@@ -133,6 +134,7 @@ export default function Ledger({ initialRegion, initialQuery, entries, loading, 
     const top = (m, n) => Object.keys(m).sort((a, b) => m[b] - m[a]).slice(0, n)
     return {
       regions: top(count(e => [e.region]), 12),
+      breweries: top(count(e => [e.brewery]), 12),
       flavors: top(count(e => [...(e.aroma_tags || []), ...(e.taste_tags || [])]), 14),
     }
   }, [finished])
@@ -162,6 +164,7 @@ export default function Ledger({ initialRegion, initialQuery, entries, loading, 
     filters.rating !== 'any' && { key: 'ra', label: ratingLabels[filters.rating], clear: () => setFilters(f => ({ ...f, rating: 'any' })) },
     filters.period !== 'all' && { key: 'pe', label: filters.period === 'range' ? rangeLabel(filters) : periodLabels[filters.period], clear: () => setFilters(f => ({ ...f, period: 'all', from: '', to: '' })) },
     ...filters.regions.map(v => ({ key: 're' + v, label: shortRegion(v), clear: () => setFilters(f => ({ ...f, regions: f.regions.filter(x => x !== v) })) })),
+    ...filters.breweries.map(v => ({ key: 'br' + v, label: v, clear: () => setFilters(f => ({ ...f, breweries: f.breweries.filter(x => x !== v) })) })),
     ...filters.flavors.map(v => ({ key: 'fl' + v, label: flavorLabel(v), clear: () => setFilters(f => ({ ...f, flavors: f.flavors.filter(x => x !== v) })) })),
   ].filter(Boolean)
 
@@ -409,6 +412,11 @@ export default function Ledger({ initialRegion, initialQuery, entries, loading, 
         {options.regions.length > 0 && (
           <FilterGroup label={L('産地', '產地', 'Region')} wrap>
             {options.regions.map(r => <Opt key={r} on={draftFilters.regions.includes(r)} onClick={() => toggleIn('regions', r)}>{shortRegion(r)}</Opt>)}
+          </FilterGroup>
+        )}
+        {options.breweries.length > 0 && (
+          <FilterGroup label={L('酒造', '酒造', 'Brewery')} wrap>
+            {[...new Set([...draftFilters.breweries, ...options.breweries])].map(b => <Opt key={b} on={draftFilters.breweries.includes(b)} onClick={() => toggleIn('breweries', b)}>{b}</Opt>)}
           </FilterGroup>
         )}
         {options.flavors.length > 0 && (

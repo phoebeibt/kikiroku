@@ -13,6 +13,7 @@ export const entryFullName = e => normName(`${e.brand || ''}${e.name || ''}`)
 
 export function entryMatchesProduct(entry, product) {
   if (!product?.name) return false
+  if (entry.product_id) return entry.product_id === product.id // linked when recorded (or by the backfill)
   if (product.brewery_name && entry.brewery && entry.brewery !== product.brewery_name) return false
   const p = normName(product.name)
   const full = entryFullName(entry)
@@ -23,7 +24,7 @@ export function entryMatchesProduct(entry, product) {
 }
 
 // Public, published 酒札 — small enough (hundreds) to load once and match client-side.
-const PUBLIC_COLS = 'id,user_id,brand,name,brewery,region,rating,photo_url,thumb_url,photo_crop,contributor_name,created_at'
+const PUBLIC_COLS = 'id,user_id,product_id,brand,name,brewery,region,type,polishing,alcohol,smv,acidity,rice,yeast,rating,photo_url,thumb_url,photo_crop,contributor_name,created_at'
 let publicCache = null
 export function loadPublicEntries() {
   if (!publicCache) {
@@ -39,3 +40,7 @@ export function loadPublicEntries() {
 // The first public bottle photo for a product, if any.
 export const coverFor = (product, publicEntries) =>
   publicEntries.find(e => (e.thumb_url || e.photo_url) && entryMatchesProduct(e, product)) || null
+
+// A recorded sake that has no catalogue row: its 酒款 page is assembled from the public records.
+export const recordedKey = e => entryFullName(e)
+export const recordedPath = e => `/wiki/sake/recorded?${new URLSearchParams({ brand: e.brand || '', name: e.name || '', brewery: e.brewery || '' })}`

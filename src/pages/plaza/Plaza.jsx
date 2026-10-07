@@ -17,7 +17,7 @@ import '../journal/ledger.css'
 import './plaza.css'
 
 const PAGE = 20
-const COLS = 'id,user_id,brand,name,brewery,region,type,rating,notes,aroma_tags,taste_tags,photo_url,thumb_url,photo_crop,contributor_name,created_at,tasted_at'
+const COLS = 'id,user_id,product_id,brand,name,brewery,region,type,rating,notes,aroma_tags,taste_tags,photo_url,thumb_url,photo_crop,contributor_name,created_at,tasted_at'
 const shortRegion = r => (r || '').replace(/[都道府県]$/, '') || r
 
 // Five dots in the tier colour; 0.5 steps show a half dot.

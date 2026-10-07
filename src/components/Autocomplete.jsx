@@ -262,6 +262,8 @@ export function ProductInput({ value, onChange, onProductFill, onBreweryFill, on
     onChange(p.name)
     setOpen(false); setProducts([]); setBrands([])
     onProductFill?.({
+      id:       p.id,
+      name:     p.name,
       brewery:  p.brewery_name,
       region:   p.region,
       type:     p.type,
@@ -395,6 +397,8 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
     }
     onChange(pureName || p.name)
     onProductFill?.({
+      id:       p.id,
+      name:     p.name,
       brewery:  p.brewery_name,
       region:   p.region,
       type:     p.type,

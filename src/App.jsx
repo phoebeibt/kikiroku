@@ -45,6 +45,7 @@ export default function App() {
           <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/journal/:id" element={<SakeDetail session={session} />} />
           <Route path="/wiki" element={<Wiki session={session} />} />
+          <Route path="/wiki/sake/recorded" element={<ProductDetail session={session} recorded />} />
           <Route path="/wiki/sake/:id" element={<ProductDetail session={session} />} />
           <Route path="/wiki/brewery/:id" element={<BreweryDetail session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />

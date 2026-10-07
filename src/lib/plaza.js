@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 
 // The fields 自分も記録 copies into a new record (never notes, rating or photos).
 export const forwardFrom = e => ({
+  product_id: e.product_id || null,
   brand: e.brand, name: e.name, brewery: e.brewery, region: e.region, type: e.type,
   alcohol: e.alcohol, rice: e.rice, polishing: e.polishing, smv: e.smv, acidity: e.acidity, yeast: e.yeast,
 })
