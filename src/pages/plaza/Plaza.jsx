@@ -186,7 +186,7 @@ export default function Plaza({ session }) {
                     <div className="kk-pcard__body">
                       <div className="kk-pcard__main" {...pressable(() => open(e), title)}>
                         {tier && (
-                          <p className="kk-pcard__score" aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
+                          <p className="kk-pcard__score" title={L(tier.ja, tier.zh, tier.en)} aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
                             <span className="kk-pcard__num">{formatRating(e.rating)}</span>
                             <Dots rating={e.rating} />
                             {!scene && <PlazaStamp kind={tier.stamp} />}

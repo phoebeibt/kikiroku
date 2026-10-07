@@ -5,7 +5,7 @@ import { initTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
 import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
-// Eager: initial landing (Display) + Login (tiny)
+// Eager: initial landing (Plaza) + Login (tiny)
 import Login from './pages/Login'
 import Plaza from './pages/plaza/Plaza'
 // Lazy: heavy or rarely-hit routes
