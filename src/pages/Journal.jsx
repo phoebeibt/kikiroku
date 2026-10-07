@@ -323,7 +323,6 @@ export default function Journal({ session }) {
   const [forwardConfirmEntry, setForwardConfirmEntry] = useState(null)
   const FORWARD_SKIP_KEY = 'kikiroku_forward_confirm_skip'
   const [specsOpen, setSpecsOpen] = useState(false)
-  const [feelTab, setFeelTab] = useState('aroma')
   const [formErrors, setFormErrors] = useState({})
   const [saveError, setSaveError] = useState('')
   const [editStatus, setEditStatus] = useState('published')
@@ -593,7 +592,7 @@ export default function Journal({ session }) {
   }
 
   const resetFormUi = status => {
-    setFeelTab('aroma'); setFormErrors({}); setSaveError(''); setEditStatus(status); setAutoSaved(false)
+    setFormErrors({}); setSaveError(''); setEditStatus(status); setAutoSaved(false)
   }
 
   const close = () => {
@@ -1198,36 +1197,24 @@ export default function Journal({ session }) {
           {/* 4 · 感想 */}
           <section className="kk-section" aria-labelledby="kk-sec-feel">
             <h3 className="kk-section__title" id="kk-sec-feel">{L3('感想', '感想', 'Impressions')}</h3>
-            {(() => {
-              const tabs = [
-                ['aroma', t('form.aroma'), aromaTags.length],
-                ['taste', t('form.taste'), tasteTags.length],
-                ['notes', t('form.notes'), (form.notes.trim() ? 1 : 0) + formTags.length],
-              ]
-              return (<>
-                <div className="kk-tabs" role="tablist" aria-label={L3('感想', '感想', 'Impressions')}>
-                  {tabs.map(([id, label, n]) => (
-                    <button key={id} type="button" role="tab" id={`kk-tab-${id}`} aria-controls={`kk-tabpanel-${id}`}
-                      aria-selected={feelTab === id} className={`kk-chip${feelTab === id ? ' is-active' : ''}`}
-                      onClick={() => setFeelTab(id)}>
-                      {label}{n > 0 && id !== 'notes' && <span className="kk-tab__count">{n}</span>}{n > 0 && id === 'notes' && <span aria-hidden="true">✓</span>}
-                    </button>
-                  ))}
-                </div>
-                <div role="tabpanel" id={`kk-tabpanel-${feelTab}`} aria-labelledby={`kk-tab-${feelTab}`}>
-                  {feelTab === 'aroma' && <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />}
-                  {feelTab === 'taste' && <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />}
-                  {feelTab === 'notes' && (<>
-                    <textarea className="kk-textarea" value={form.notes} onChange={e => f('notes', e.target.value)}
-                      placeholder={t('form.notesPH')} aria-label={t('form.notes')} />
-                    <div className="kk-field" style={{ marginTop: 12 }}>
-                      <span className="kk-field__label">{L3('整理', '整理', 'Labels')}</span>
-                      <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
-                    </div>
-                  </>)}
-                </div>
-              </>)
-            })()}
+            {/* All three are always visible: the old 香り/味わい/メモ switch looked like tags and hid the rest. */}
+            <div className="kk-field kk-feel">
+              <span className="kk-field__label">{t('form.aroma')}{aromaTags.length > 0 && <span className="kk-tab__count">{aromaTags.length}</span>}</span>
+              <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />
+            </div>
+            <div className="kk-field kk-feel">
+              <span className="kk-field__label">{t('form.taste')}{tasteTags.length > 0 && <span className="kk-tab__count">{tasteTags.length}</span>}</span>
+              <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />
+            </div>
+            <div className="kk-field kk-feel">
+              <label className="kk-field__label" htmlFor="kk-field-notes">{t('form.notes')}</label>
+              <textarea id="kk-field-notes" className="kk-textarea" value={form.notes} onChange={e => f('notes', e.target.value)}
+                placeholder={t('form.notesPH')} />
+            </div>
+            <div className="kk-field kk-feel">
+              <span className="kk-field__label">{L3('整理', '整理', 'Labels')}</span>
+              <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+            </div>
           </section>
 
           {/* 5 · 規格 (collapsed) */}

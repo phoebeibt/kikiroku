@@ -187,3 +187,7 @@
 .kk-foot-public::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: rgba(138, 117, 99, .55); }
 .kk-foot-public[aria-checked="true"] { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
 .kk-foot-public[aria-checked="true"]::before { background: var(--green); }
+
+/* 感想: 香り / 味わい / メモ / 整理 stacked (no hidden tabs) */
+.kk-feel + .kk-feel { margin-top: 16px; }
+.kk-feel .kk-field__label .kk-tab__count { margin-left: 6px; }
