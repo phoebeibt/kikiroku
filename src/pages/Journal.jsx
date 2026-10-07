@@ -16,6 +16,7 @@ import RatingPicker from '../components/record/RatingPicker'
 import Toast from '../components/ui/Toast'
 import '../components/record/record.css'
 import Ledger from './journal/Ledger'
+import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 
 
 
@@ -770,6 +771,17 @@ export default function Journal({ session }) {
         </>}
       >
         {detail && (<div style={{ position: 'relative', padding: '4px 8px 4px' }}>
+            <div className="kk-bottle-col kk-bottle-col--detail">
+              <div className="kk-bottle-stage">
+                <SakeBottleCrop imageUrl={detail.photo_url} height="168px" alt={[detail.brand, detail.name].filter(Boolean).join(' ')} />
+              </div>
+              {(detail.photo_url || detail.photo_url2) && (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {detail.photo_url && <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={() => setLightbox(detail.photo_url)}>{L3('元の写真を見る', '查看原圖', 'View original photo')}</button>}
+                  {detail.photo_url2 && <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={() => setLightbox(detail.photo_url2)}>{L3('裏ラベル', '背標', 'Back label')}</button>}
+                </div>
+              )}
+            </div>
             {detail.type && <div style={{ fontSize: 10, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 4 }}>{typeLabel(detail.type)}</div>}
             {detail.brand && (lang === 'ja' ? brandMap[detail.brand]?.furigana : brandMap[detail.brand]?.romaji) && (
               <div style={{ fontSize: 11, color: 'var(--sub)', letterSpacing: '.08em', marginBottom: 3 }}>

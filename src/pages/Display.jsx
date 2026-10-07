@@ -13,6 +13,7 @@ import { displayName } from '../lib/localize'
 import { normalizeType } from '../lib/sakeType'
 import { pressable } from '../lib/a11y'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
+import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 
 
 // Strip furigana annotations like「純米大吟醸（じゅんまいだいぎんじょう）」
@@ -1024,9 +1025,16 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             </button>}
 
             <div style={s.detTop}>
-              {session && detail.photo_url
-                ? <img style={s.detPhoto} src={detail.photo_url} alt={detail.name} />
-                : <div style={s.detPhotoPlaceholder}>🍶</div>}
+              <div className="kk-bottle-col">
+                <div className="kk-bottle-stage">
+                  <SakeBottleCrop imageUrl={session ? detail.photo_url : null} height="168px" alt={detail.name || ''} />
+                </div>
+                {session && detail.photo_url && (
+                  <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={() => setLightboxImg(detail.photo_url)}>
+                    {lang === 'ja' ? '元の写真を見る' : lang === 'zh' ? '查看原圖' : 'View original photo'}
+                  </button>
+                )}
+              </div>
               <div style={s.detRight}>
                 <MarkSVGAbs />
                 {/* 銘柄 · 类型（同一行）*/}

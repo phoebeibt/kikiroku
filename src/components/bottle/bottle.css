@@ -1,0 +1,40 @@
+/* 一升瓶 outline: slim neck, sloped shoulders, straight body, heavy base. */
+.kk-bottle {
+  display: inline-block; aspect-ratio: 1 / 2.75; flex-shrink: 0;
+  /* Outline + soft lift that follows the clipped shape (filters sit outside clip-path). */
+  filter: drop-shadow(0 0 .5px rgba(58, 51, 45, .45)) drop-shadow(0 3px 4px rgba(46, 38, 28, .16));
+}
+.kk-bottle__mask {
+  display: block; width: 100%; height: 100%; overflow: hidden; position: relative;
+  clip-path: polygon(
+    40% 0, 60% 0,
+    61% 8%, 65% 9%,
+    65% 22%, 70% 31%,
+    83% 43%, 89% 55%,
+    90% 96%, 84% 100%,
+    16% 100%, 10% 96%,
+    11% 55%, 17% 43%,
+    30% 31%, 35% 22%,
+    35% 9%, 39% 8%
+  );
+  background: var(--cream);
+}
+.kk-bottle__mask img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Fallback: deep-green bottle with a pale label */
+.kk-bottle__mask.is-empty { background: linear-gradient(90deg, #2a5243 0%, #2f5b4b 45%, #3a6b59 70%, #2f5b4b 100%); }
+.kk-bottle__label {
+  position: absolute; left: 22%; right: 22%; top: 58%; height: 22%;
+  border-radius: 2px; background: rgba(255, 253, 248, .55);
+}
+
+/* Detail views: the bottle stands on a 木札 stage; the original photo is one tap away. */
+.kk-bottle-col { width: 140px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.kk-bottle-col--detail { width: auto; margin: 0 auto 14px; }
+.kk-bottle-stage {
+  width: 140px; height: 186px; border-radius: 10px;
+  display: grid; place-items: end center; padding-bottom: 8px;
+  background:
+    linear-gradient(160deg, rgba(217, 190, 140, .62), rgba(248, 245, 238, .72)),
+    repeating-linear-gradient(90deg, rgba(138, 117, 99, .1) 0 1px, transparent 1px 14px);
+}

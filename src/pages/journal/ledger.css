@@ -72,19 +72,12 @@
 .kk-card:active { transform: scale(.995); }
 .kk-card.is-draft { border-left-color: var(--line); border-style: dashed solid dashed solid; }
 .kk-card__photo {
-  width: 64px; height: 84px; border-radius: 7px; overflow: hidden;
-  background: linear-gradient(160deg, rgba(217, 190, 140, .78), rgba(248, 245, 238, .72));
-  display: grid; place-items: center; color: rgba(58, 51, 45, .35); font-weight: 800; font-size: 15px;
-}
-.kk-card__photo img { width: 100%; height: 100%; object-fit: cover; }
-.kk-card__photo:has(.kk-card__bottle) {
+  width: 64px; height: 96px; border-radius: 7px; overflow: hidden;
+  display: grid; place-items: end center; padding-bottom: 5px;
   background:
-    linear-gradient(160deg, rgba(217, 190, 140, .78), rgba(248, 245, 238, .72)),
-    repeating-linear-gradient(90deg, rgba(138, 117, 99, .12) 0 1px, transparent 1px 12px);
+    linear-gradient(160deg, rgba(217, 190, 140, .62), rgba(248, 245, 238, .72)),
+    repeating-linear-gradient(90deg, rgba(138, 117, 99, .1) 0 1px, transparent 1px 12px);
 }
-.kk-card__bottle { width: 100%; height: 100%; display: block; }
-.kk-card__bottle path, .kk-card__bottle rect { fill: rgba(47, 91, 75, .85); }
-.kk-card__bottle .kk-card__bottle-label { fill: rgba(255, 253, 248, .55); }
 .kk-card__body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .kk-card__title { font-size: 15px; font-weight: 800; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .kk-card__meta { color: var(--muted); font-size: 12px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
