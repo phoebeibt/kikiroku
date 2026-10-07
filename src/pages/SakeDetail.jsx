@@ -123,6 +123,7 @@ export default function SakeDetail({ session }) {
       const { generateShareCard, canvasToBlob } = await import('../lib/shareCard.js')
       const canvas = await generateShareCard({
         ...entry,
+        type: typeName, // stored as an id (e.g. tokubetsu-junmai) since the type clean-up
         aroma_tags_labels: entry.aroma_tags?.map(x => tagLabel(x, 'aroma')),
         taste_tags_labels: entry.taste_tags?.map(x => tagLabel(x, 'taste')),
         tags_labels: entry.tags?.map(x => tagLabel(x, 'flavor')),

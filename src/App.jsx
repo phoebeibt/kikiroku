@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { initTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
@@ -12,12 +12,13 @@ import Plaza from './pages/plaza/Plaza'
 const Journal = lazy(() => import('./pages/Journal'))
 const Wiki = lazy(() => import('./pages/Wiki'))
 const Profile = lazy(() => import('./pages/Profile'))
-const EntryDetail = lazy(() => import('./pages/EntryDetail'))
 const SakeDetail = lazy(() => import('./pages/SakeDetail'))
 const ProductDetail = lazy(() => import('./pages/wiki/ProductDetail'))
 const BreweryDetail = lazy(() => import('./pages/wiki/BreweryDetail'))
 const RegionPage = lazy(() => import('./pages/wiki/RegionPage'))
 const Terms = lazy(() => import('./pages/Terms'))
+
+const EntryRedirect = () => { const { id } = useParams(); return <Navigate to={`/journal/${id}`} replace /> }
 
 // Neutral loading fallback — avoids flash of theme-inconsistent background.
 const RouteFallback = () => (
@@ -51,7 +52,8 @@ export default function App() {
           <Route path="/wiki/brewery/:id" element={<BreweryDetail session={session} />} />
           <Route path="/region/:name" element={<RegionPage session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
-          <Route path="/entry/:id" element={<EntryDetail session={session} />} />
+          {/* Old share links (/entry/:id) now open the redesigned 酒詳情, which also serves guests. */}
+          <Route path="/entry/:id" element={<EntryRedirect />} />
           <Route path="/" element={<Plaza session={session} />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />

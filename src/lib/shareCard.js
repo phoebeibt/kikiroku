@@ -340,7 +340,7 @@ export async function generateShareCard(entry, lang = 'ja', theme = 'fukahi') {
   ctx.font = '300 26px "Noto Serif JP"'
   ctx.fillStyle = SUB
   ctx.globalAlpha = 0.65
-  ctx.fillText('酒記録 Kikiroku  ·  kikiroku.com', PAD + 40, FOOTER_Y + 10)
+  ctx.fillText('Kikiroku · 日本酒の記録帳  ·  kikiroku.com', PAD + 40, FOOTER_Y + 10)
   ctx.globalAlpha = 1
 
   return canvas
