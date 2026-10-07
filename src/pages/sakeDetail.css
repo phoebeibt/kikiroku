@@ -105,3 +105,15 @@
 .kk-action-list li + li { border-top: 1px solid var(--line); }
 .kk-action-list button { width: 100%; min-height: 50px; padding: 0 16px; border: 0; background: var(--paper-2); color: var(--ink); font-size: 15px; font-weight: 700; text-align: left; }
 .kk-action-list__danger button { color: var(--danger); }
+
+/* Folded reference blocks (スペック) */
+.kk-detail-block--fold { padding-top: 4px; }
+.kk-fold {
+  width: 100%; min-height: 44px; padding: 0; display: flex; align-items: center; gap: 10px;
+  border: 0; background: none; color: var(--muted); text-align: left;
+}
+.kk-fold > span:first-child { font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.kk-fold__summary { flex: 1; min-width: 0; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kk-fold__chev { flex-shrink: 0; transition: transform .2s; }
+.kk-fold[aria-expanded="true"] .kk-fold__chev { transform: rotate(180deg); }
+.kk-fold + .kk-specs { margin-top: 4px; }

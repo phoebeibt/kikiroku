@@ -42,6 +42,8 @@ export default function SakeDetail({ session }) {
   const [lightbox, setLightbox] = useState(null)
   const [adjusting, setAdjusting] = useState(false)
   const [toast, setToast] = useState(null)
+  const [specsOpen, setSpecsOpen] = useState(false)
+  const [datesOpen, setDatesOpen] = useState(false)
   const menuBtnRef = useRef(null)
 
   const isOwner = !!(session && entry && entry.user_id === session.user.id)
@@ -220,7 +222,9 @@ export default function SakeDetail({ session }) {
           {dates.length > 0 && (
             <p className="kk-plaque__dates">
               {L('飲んだ日', '飲用日', 'Tasted')} {dot(dates[0])}
-              {dates.length > 1 && <span> · {L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}</span>}
+              {dates.length > 1 && (<> · <button type="button" className="kk-link" aria-expanded={datesOpen} aria-controls="kk-all-dates" onClick={() => setDatesOpen(o => !o)}>
+                {L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}
+              </button></>)}
             </p>
           )}
 
@@ -235,19 +239,26 @@ export default function SakeDetail({ session }) {
           {tagsBlock(L('整理', '整理', 'Labels'), entry.tags, 'flavor', true)}
           {tagsBlock(L('製法・状態', '製法・狀態', 'Method'), entry.method_tags, 'method', true)}
 
+          {/* Reference data stays folded: the page leads with the memory, not a data sheet. */}
           {specs.length > 0 && (
-            <section className="kk-detail-block">
-              <h2>{L('スペック', '規格', 'Specs')}</h2>
-              <dl className="kk-specs">
-                {specs.map(([k, v, wiki]) => (
-                  <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>
-                ))}
-              </dl>
+            <section className="kk-detail-block kk-detail-block--fold">
+              <button type="button" className="kk-fold" aria-expanded={specsOpen} aria-controls="kk-specs" onClick={() => setSpecsOpen(o => !o)}>
+                <span>{L('スペック', '規格', 'Specs')}</span>
+                <span className="kk-fold__summary">{specs.slice(0, 3).map(([, v]) => v).join(' · ')}</span>
+                <Chevron />
+              </button>
+              {specsOpen && (
+                <dl className="kk-specs" id="kk-specs">
+                  {specs.map(([k, v, wiki]) => (
+                    <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>
+                  ))}
+                </dl>
+              )}
             </section>
           )}
 
-          {dates.length > 1 && (
-            <section className="kk-detail-block">
+          {dates.length > 1 && datesOpen && (
+            <section className="kk-detail-block" id="kk-all-dates">
               <h2>{L('飲んだ日', '飲用日', 'Dates tasted')}</h2>
               <ul className="kk-dates-list">{dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}</ul>
             </section>
@@ -342,6 +353,9 @@ export default function SakeDetail({ session }) {
 
 function BackIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+}
+function Chevron() {
+  return <svg className="kk-fold__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
 }
 function MoreIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
