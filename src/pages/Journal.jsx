@@ -717,7 +717,7 @@ export default function Journal({ session }) {
 
   return (
     <div style={s.page}>
-      <Nav session={session} />
+      <Nav session={session} topbar={false} />
       {wishlistMode ? (
         <div className="kk-ledger">
           <div className="kk-ledger__head">

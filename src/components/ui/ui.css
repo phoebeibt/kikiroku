@@ -114,6 +114,7 @@
   font-size: 10px; font-weight: 800; white-space: nowrap;
 }
 .kk-status--public { background: var(--green-bg); color: var(--green); }
+.kk-status--private { background: rgba(138, 117, 99, .14); color: #5f5246; }
 .kk-status--draft  { background: var(--wood-bg); color: #66543a; }
 
 /* ── Confirm dialog content ──────────────────────── */

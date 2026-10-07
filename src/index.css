@@ -31,7 +31,7 @@
   --radius-sm: 7px;
   --radius:    10px;
   --radius-lg: 14px;
-  --nav-h:     64px;
+  --nav-h:     72px;
   --topbar-h:  52px;
   --safe-b:    env(safe-area-inset-bottom, 0px);
 
