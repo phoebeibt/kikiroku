@@ -7,7 +7,7 @@ import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
 // Eager: initial landing (Display) + Login (tiny)
 import Login from './pages/Login'
-import Display from './pages/Display'
+import Plaza from './pages/plaza/Plaza'
 // Lazy: heavy or rarely-hit routes
 const Journal = lazy(() => import('./pages/Journal'))
 const Wiki = lazy(() => import('./pages/Wiki'))
@@ -45,7 +45,7 @@ export default function App() {
           <Route path="/wiki" element={<Wiki session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/entry/:id" element={<EntryDetail session={session} />} />
-          <Route path="/" element={<Display session={session} />} />
+          <Route path="/" element={<Plaza session={session} />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

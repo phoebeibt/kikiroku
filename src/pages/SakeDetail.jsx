@@ -13,6 +13,8 @@ import { useTagResolver } from '../contexts/TagsContext'
 import { formatRating } from '../lib/rating'
 import { normalizeType } from '../lib/sakeType'
 import { cleanLabel } from '../lib/labels'
+import { forwardFrom, useWishes } from '../lib/plaza'
+import './plaza/plaza.css'
 import './sakeDetail.css'
 
 const dot = d => (d || '').replaceAll('-', '.')
@@ -47,6 +49,9 @@ export default function SakeDetail({ session }) {
   const menuBtnRef = useRef(null)
 
   const isOwner = !!(session && entry && entry.user_id === session.user.id)
+  // Guests see the factual 酒札 only (Phase 7 rule): no photo, rating, notes, tags, dates or name.
+  const isGuest = !session
+  const { wishes, toggle: toggleWish } = useWishes(session)
 
   // A new record always starts at the top (the ledger may have been scrolled).
   useEffect(() => { window.scrollTo(0, 0); setView('bottle') }, [id]) // eslint-disable-line react-hooks/set-state-in-effect
@@ -175,7 +180,7 @@ export default function SakeDetail({ session }) {
       <main className="kk-detail">
         {/* Hero: bottle by default, original photo one tap away */}
         <section className="kk-detail-hero" aria-label={L('写真', '照片', 'Photo')}>
-          {entry.photo_url && (
+          {!isGuest && entry.photo_url && (
             <div className="kk-seg" role="tablist" aria-label={L('表示', '顯示', 'View')}>
               {[['bottle', L('瓶身', '瓶身', 'Bottle')], ['photo', L('原図', '原圖', 'Photo')], entry.photo_url2 && ['back', L('裏ラベル', '背標', 'Back')]].filter(Boolean).map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} className={view === k ? 'is-active' : ''} onClick={() => setView(k)}>{label}</button>
@@ -185,7 +190,7 @@ export default function SakeDetail({ session }) {
           {view === 'bottle' ? (
             <div className="kk-detail-hero__stage">
               <span className="kk-detail-hero__halo" aria-hidden="true" />
-              <SakeBottleCrop imageUrl={entry.photo_url} crop={entry.photo_crop} height="84%" alt={title} />
+              <SakeBottleCrop imageUrl={isGuest ? null : entry.photo_url} crop={entry.photo_crop} height="84%" alt={title} />
             </div>
           ) : (
             <button type="button" className="kk-detail-hero__photo" onClick={() => setLightbox(photo)} aria-label={L('写真を拡大', '放大照片', 'Enlarge photo')}>
@@ -201,6 +206,12 @@ export default function SakeDetail({ session }) {
         <article className="kk-plaque">
           <div className="kk-plaque__head">
             <div className="kk-plaque__titles">
+              {!isOwner && !isGuest && (
+                <p className="kk-plaque-card__who" style={{ marginBottom: 8 }}>
+                  <span className="kk-avatar" aria-hidden="true">{(entry.contributor_name || '?').slice(0, 1)}</span>
+                  <span>{L(`${entry.contributor_name || '匿名'} の公開酒札`, `${entry.contributor_name || '匿名'} 的公開酒札`, `${entry.contributor_name || 'Someone'}’s public tag`)}</span>
+                </p>
+              )}
               {reading && (lang === 'ja' ? reading.furigana : reading.romaji) && (
                 <p className="kk-plaque__reading">{lang === 'ja' ? reading.furigana : reading.romaji}</p>
               )}
@@ -214,6 +225,7 @@ export default function SakeDetail({ session }) {
             <span className="kk-seal" aria-hidden="true">{entry.status === 'draft' ? L('下書', '草稿', 'Draft') : L('記録', '記錄', 'Kept')}</span>
           </div>
 
+          {!isGuest && (<>
           <div className="kk-plaque__rating">
             {Number(entry.rating) > 0
               ? <><span className="kk-score kk-score--lg">{formatRating(entry.rating)}</span><Stars rating={entry.rating} size={13} /></>
@@ -237,6 +249,7 @@ export default function SakeDetail({ session }) {
           {tagsBlock(L('香り', '香氣', 'Aroma'), entry.aroma_tags, 'aroma')}
           {tagsBlock(L('味わい', '味道', 'Taste'), entry.taste_tags, 'taste')}
           {tagsBlock(L('整理', '整理', 'Labels'), entry.tags, 'flavor', true)}
+          </>)}
           {tagsBlock(L('製法・状態', '製法・狀態', 'Method'), entry.method_tags, 'method', true)}
 
           {/* Reference data stays folded: the page leads with the memory, not a data sheet. */}
@@ -257,7 +270,7 @@ export default function SakeDetail({ session }) {
             </section>
           )}
 
-          {dates.length > 1 && datesOpen && (
+          {!isGuest && dates.length > 1 && datesOpen && (
             <section className="kk-detail-block" id="kk-all-dates">
               <h2>{L('飲んだ日', '飲用日', 'Dates tasted')}</h2>
               <ul className="kk-dates-list">{dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}</ul>
@@ -267,6 +280,20 @@ export default function SakeDetail({ session }) {
           {isOwner && (
             <div className="kk-plaque__actions">
               <button type="button" className="kk-btn kk-btn--primary" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>
+            </div>
+          )}
+          {!isOwner && !isGuest && (
+            <div className="kk-plaque__actions kk-plaque__actions--pair">
+              <button type="button" className={`kk-btn${wishes.has(entry.id) ? ' is-on' : ''}`} aria-pressed={wishes.has(entry.id)} onClick={() => toggleWish(entry.id)}>
+                {wishes.has(entry.id) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
+              </button>
+              <button type="button" className="kk-btn kk-btn--primary" onClick={() => navigate('/journal', { state: { forward: forwardFrom(entry) } })}>{L('自分も記録', '我也記錄', 'Record it too')}</button>
+            </div>
+          )}
+          {isGuest && (
+            <div className="kk-plaque__actions">
+              <p className="kk-helper" style={{ margin: '0 0 8px', textAlign: 'center' }}>{L('写真・評価・メモはログインすると見られます。', '登入後可以看到照片、評分和筆記。', 'Sign in to see photos, ratings and notes.')}</p>
+              <button type="button" className="kk-btn kk-btn--primary" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>
             </div>
           )}
         </article>
@@ -282,9 +309,9 @@ export default function SakeDetail({ session }) {
               {others.map(o => (
                 <li key={o.id}>
                   <button type="button" className="kk-others__item" onClick={() => navigate(`/journal/${o.id}`)}>
-                    <span className="kk-others__stage"><SakeBottleCrop imageUrl={o.thumb_url || o.photo_url} crop={o.photo_crop} height="86px" /></span>
-                    <span className="kk-others__who">{o.contributor_name || L('匿名', '匿名', 'Anonymous')}</span>
-                    {Number(o.rating) > 0 && <span className="kk-score">{formatRating(o.rating)}</span>}
+                    <span className="kk-others__stage"><SakeBottleCrop imageUrl={isGuest ? null : (o.thumb_url || o.photo_url)} crop={o.photo_crop} height="86px" /></span>
+                    {!isGuest && <span className="kk-others__who">{o.contributor_name || L('匿名', '匿名', 'Anonymous')}</span>}
+                    {!isGuest && Number(o.rating) > 0 && <span className="kk-score">{formatRating(o.rating)}</span>}
                   </button>
                 </li>
               ))}

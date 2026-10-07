@@ -505,7 +505,7 @@ export default function Journal({ session }) {
     setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
     setFormDates([TODAY()])
     setEditId(null); setDraftRestored(false)
-    setForwardSource(fwd.name || '')
+    setForwardSource([fwd.brand, fwd.name].filter(Boolean).join(' '))
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
     setSpecsOpen(!!(fwd.type || fwd.rice || fwd.yeast || fwd.polishing || fwd.alcohol || fwd.smv || fwd.acidity))

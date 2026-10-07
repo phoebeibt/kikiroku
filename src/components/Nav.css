@@ -78,3 +78,4 @@
 /* #root is height:100%, so its padding never reaches overflowing content;
    a trailing block inside it does extend the scroll area. */
 body:has(.kk-bottom-nav) #root::after { content: ""; display: block; height: calc(var(--nav-h) + var(--safe-b) + 16px); }
+.kk-lang__btn { font-size: 13px; font-weight: 800; }

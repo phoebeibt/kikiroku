@@ -10,6 +10,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
+// Shared 酒札 UI styles are global: any route can be the first one loaded
+// (e.g. opening /journal/:id or / directly), so none may depend on another page's chunk.
+import './components/ui/ui.css'
+import './components/record/record.css'
+import './pages/journal/ledger.css'
+import './components/bottle/bottle.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

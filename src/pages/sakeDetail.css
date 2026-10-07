@@ -117,3 +117,6 @@
 .kk-fold__chev { flex-shrink: 0; transition: transform .2s; }
 .kk-fold[aria-expanded="true"] .kk-fold__chev { transform: rotate(180deg); }
 .kk-fold + .kk-specs { margin-top: 4px; }
+
+.kk-plaque__actions--pair { grid-template-columns: 1fr 1.4fr; gap: 8px; }
+.kk-plaque__actions .kk-btn.is-on { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }

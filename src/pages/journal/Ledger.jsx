@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import Sheet from '../../components/ui/Sheet'
 import Stars from '../../components/Stars'
 import SakeBottleCrop from '../../components/bottle/SakeBottleCrop'
@@ -8,6 +8,7 @@ import { matchEntry, splitTerms } from '../../lib/ledgerSearch'
 import { useTags } from '../../contexts/TagsContext'
 import { useLang } from '../../contexts/LangContext'
 import { cleanLabel } from '../../lib/labels'
+import LangButton from '../../components/LangButton'
 import './ledger.css'
 
 const REPEAT_TAGS = ['repeat', 'bottle-worthy', 'osusume']
@@ -17,7 +18,6 @@ const THIS_YEAR = String(new Date().getFullYear())
 const EMPTY_FILTERS = { status: 'all', rating: 'any', period: 'all', from: '', to: '', flavors: [], regions: [] }
 const VIEW_KEY = 'kk_ledger_density'
 const SORT_KEY = 'kk_ledger_sort'
-const LANGS = [{ code: 'ja', label: '日', name: '日本語' }, { code: 'zh', label: '中', name: '中文' }, { code: 'en', label: 'EN', name: 'English' }]
 
 const readPref = (k, fallback) => { try { return localStorage.getItem(k) || fallback } catch { return fallback } }
 const writePref = (k, v) => { try { localStorage.setItem(k, v) } catch { /* storage blocked */ } }
@@ -429,35 +429,4 @@ function FilterGroup({ label, children, wrap, columns = 4 }) {
 
 function Opt({ on, onClick, children }) {
   return <button type="button" className={`kk-fopt${on ? ' is-active' : ''}`} aria-pressed={on} onClick={onClick}>{children}</button>
-}
-
-// Temporary home for the language switch until プロフ is rebuilt.
-function LangButton({ lang, onChange, label }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open) return
-    const onDown = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    const onKey = e => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('pointerdown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey) }
-  }, [open])
-  const current = LANGS.find(l => l.code === lang) || LANGS[0]
-  return (
-    <div className="kk-lang" ref={ref}>
-      <button type="button" className="kk-icon-btn kk-lang__btn" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open} aria-label={`${label}: ${current.name}`}>
-        {current.label}
-      </button>
-      {open && (
-        <ul className="kk-lang__menu" role="listbox" aria-label={label}>
-          {LANGS.map(l => (
-            <li key={l.code}>
-              <button type="button" role="option" aria-selected={l.code === lang} className={l.code === lang ? 'is-active' : ''} onClick={() => { onChange(l.code); setOpen(false) }}>{l.name}</button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
 }
