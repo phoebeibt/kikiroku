@@ -17,6 +17,7 @@ const SakeDetail = lazy(() => import('./pages/SakeDetail'))
 const ProductDetail = lazy(() => import('./pages/wiki/ProductDetail'))
 const BreweryDetail = lazy(() => import('./pages/wiki/BreweryDetail'))
 const RegionPage = lazy(() => import('./pages/wiki/RegionPage'))
+const BatchBottleCrop = lazy(() => import('./pages/tools/BatchBottleCrop'))
 const Terms = lazy(() => import('./pages/Terms'))
 
 // Neutral loading fallback — avoids flash of theme-inconsistent background.
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/wiki/sake/:id" element={<ProductDetail session={session} />} />
           <Route path="/wiki/brewery/:id" element={<BreweryDetail session={session} />} />
           <Route path="/region/:name" element={<RegionPage session={session} />} />
+          <Route path="/tools/bottles" element={<BatchBottleCrop session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/entry/:id" element={<EntryDetail session={session} />} />
           <Route path="/" element={<Plaza session={session} />} />

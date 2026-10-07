@@ -12,7 +12,7 @@ import './editor.css'
  * so what is saved here is exactly what lists show.
  * Mount it per photo (key={src}) so it starts from that photo's `initial` crop.
  */
-export default function BottleCropEditor({ open, src, initial, onSave, onSkip, onClose, lang = 'ja', sideLabel }) {
+export default function BottleCropEditor({ open, src, initial, onSave, onSkip, onClose, lang = 'ja', sideLabel, title, extraActions, saving = false }) {
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const [crop, setCrop] = useState(() => normalizeCrop(initial))
   const [nat, setNat] = useState(null)        // natural image size
@@ -82,7 +82,7 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
     <Sheet open={open} onClose={onClose} className="kk-panel--full kk-crop-editor" label={L('瓶身を合わせる', '對齊瓶身', 'Align the bottle')}
       header={<>
         <button type="button" className="kk-icon-btn" onClick={onClose} aria-label={L('閉じる', '關閉', 'Close')}><CloseIcon /></button>
-        <h2 className="kk-panel__title">{L('ラベルを撮る', '拍酒標', 'Photograph the label')}</h2>
+        <h2 className="kk-panel__title">{title || L('ラベルを撮る', '拍酒標', 'Photograph the label')}</h2>
         <span className="kk-crop-editor__side">{sideLabel || L('正面', '正面', 'Front')}</span>
       </>}
       footer={<div className="kk-crop-editor__foot">
@@ -96,8 +96,9 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
           <input type="range" min={MIN_SCALE} max={MAX_SCALE} step="0.01" value={crop.scale} onChange={e => set(c => ({ ...c, scale: Number(e.target.value) }))} />
         </label>
         <div className="kk-crop-editor__actions">
-          {onSkip && <button type="button" className="kk-btn kk-btn--ghost" onClick={onSkip}>{L('スキップ', '略過', 'Skip')}</button>}
-          <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => onSave(crop)}>{L('この位置で保存', '以這個位置保存', 'Use this position')}</button>
+          {extraActions}
+          {onSkip && <button type="button" className="kk-btn kk-btn--ghost" onClick={onSkip} disabled={saving}>{L('スキップ', '略過', 'Skip')}</button>}
+          <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => onSave(crop)} disabled={saving}>{saving ? L('保存中…', '儲存中…', 'Saving…') : L('この位置で保存', '以這個位置保存', 'Use this position')}</button>
         </div>
       </div>}
     >
