@@ -87,9 +87,3 @@
   .kk-seg__n { margin-left: 3px; }
 }
 
-/* Temporary batch bottle tool: overview grid */
-.kk-crop-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 10px 6px; }
-.kk-crop-grid button { position: relative; width: 100%; display: grid; place-items: end center; padding: 4px 0; border: 0; border-radius: 6px; background: none; cursor: pointer; }
-.kk-crop-grid button:hover { background: rgba(217, 190, 140, .18); }
-.kk-crop-grid button:focus-visible { outline: 2px solid var(--green); }
-.kk-crop-grid__dot { position: absolute; top: 2px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--seal); }

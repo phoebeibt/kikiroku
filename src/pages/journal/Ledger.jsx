@@ -219,13 +219,6 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
         </dl>
       )}
 
-      {/* TEMPORARY (2026-10-07): entry to the batch bottle-fitting tool while older photos lack a crop */}
-      {!anyNarrowing && finished.some(e => e.photo_url && !e.photo_crop) && (
-        <Link className="kk-tool-link" to="/tools/bottles">
-          {L(`瓶身が未調整の写真 ${finished.filter(e => e.photo_url && !e.photo_crop).length} 枚 · まとめて調整`, `${finished.filter(e => e.photo_url && !e.photo_crop).length} 張照片的瓶身未調整 · 批量調整`, `${finished.filter(e => e.photo_url && !e.photo_crop).length} photos not fitted · fit them now`)} ›
-        </Link>
-      )}
-
       {!anyNarrowing && (drafts.length > 0 || hasDraft) && (
         <section className="kk-drafts" aria-labelledby="kk-drafts-title">
           <div className="kk-drafts__head">
