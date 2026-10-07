@@ -11,12 +11,24 @@ import { normalizeType } from '../../lib/sakeType'
 import { cleanLabel } from '../../lib/labels'
 import { pressable } from '../../lib/a11y'
 import { forwardFrom, relativeTime, useWishes } from '../../lib/plaza'
+import { tierFor, tanukiSrc } from '../../lib/plazaTier'
+import PlazaStamp from '../../components/plaza/PlazaStamp'
 import '../journal/ledger.css'
 import './plaza.css'
 
 const PAGE = 20
 const COLS = 'id,user_id,brand,name,brewery,region,type,rating,notes,aroma_tags,taste_tags,photo_url,thumb_url,photo_crop,contributor_name,created_at,tasted_at'
 const shortRegion = r => (r || '').replace(/[都道府県]$/, '') || r
+
+// Five dots in the tier colour; 0.5 steps show a half dot.
+function Dots({ rating }) {
+  const r = Number(rating) || 0
+  return (
+    <span className="kk-pdots" aria-hidden="true">
+      {[1, 2, 3, 4, 5].map(i => <i key={i} className={r >= i ? 'is-full' : r >= i - 0.5 ? 'is-half' : ''} />)}
+    </span>
+  )
+}
 
 /**
  * 廣場 — a quiet reading space for 酒札 people chose to share.
@@ -154,56 +166,63 @@ export default function Plaza({ session }) {
         )}
 
         <ul className="kk-feed" aria-busy={loading}>
-          {rows.map(e => {
+          {rows.map((e, i) => {
             const reason = reasonFor(e)
             const who = e.contributor_name || L('匿名', '匿名', 'Someone')
             const title = [e.brand, e.name].filter(Boolean).join(' ')
             const wished = wishes.has(e.id)
-            const rated = !isGuest && Number(e.rating) > 0
+            // Guests never see ratings, so they never see the rating colour or scene either.
+            const tier = isGuest ? null : tierFor(e.rating)
+            // Tanuki scene only on cards that carry weight: 5.0/4.5, 近い好み, and the first card.
+            const scene = !!tier && (tier.id === 'treasure' || tier.id === 'again' || tab === 'near' || i === 0)
             return (
               <li key={e.id}>
-                <article className="kk-plaque-card">
-                  <div className="kk-plaque-card__bottle" aria-hidden="true" onClick={() => open(e)}>
-                    <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
-                  </div>
-                  <div className="kk-plaque-card__body">
-                    <div className="kk-plaque-card__main" {...pressable(() => open(e), title)}>
-                      <p className={`kk-reason kk-reason--${reason.kind}`}>
-                        <span className="kk-reason__label">{reason.label}</span>
-                        {reason.detail && <span className="kk-reason__detail">{reason.detail}</span>}
-                      </p>
-                      <div className="kk-plaque-card__head">
-                        <h2 className="kk-plaque-card__title">{title}</h2>
-                        {rated && (
-                          <p className="kk-plaque-card__rating" aria-label={L(`評価 ${formatRating(e.rating)}`, `評分 ${formatRating(e.rating)}`, `Rated ${formatRating(e.rating)}`)}>
-                            <span className="kk-score">{formatRating(e.rating)}</span>
+                <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}>
+                  {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" width="64" height="64" loading="lazy" />}
+                  <div className="kk-pcard__paper">
+                    <div className="kk-pcard__bottle" aria-hidden="true" onClick={() => open(e)}>
+                      <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
+                    </div>
+                    <div className="kk-pcard__body">
+                      <div className="kk-pcard__main" {...pressable(() => open(e), title)}>
+                        {tier && (
+                          <p className="kk-pcard__score" aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
+                            <span className="kk-pcard__num">{formatRating(e.rating)}</span>
+                            <Dots rating={e.rating} />
+                            {!scene && <PlazaStamp kind={tier.stamp} />}
                           </p>
                         )}
+                        <p className={`kk-reason kk-reason--${reason.kind}`}>
+                          <span className="kk-reason__label">{reason.label}</span>
+                          {reason.detail && <span className="kk-reason__detail">{reason.detail}</span>}
+                        </p>
+                        <h2 className="kk-pcard__title">{title}</h2>
+                        <p className="kk-pcard__meta">{[e.brewery, shortRegion(e.region), e.type && tagLabel(e.type, 'type')].filter(Boolean).join(' · ')}</p>
+                        {!isGuest && e.notes && <p className="kk-pcard__note">{e.notes}</p>}
                       </div>
-                      <p className="kk-plaque-card__meta">{[e.brewery, shortRegion(e.region), e.type && tagLabel(e.type, 'type')].filter(Boolean).join(' · ')}</p>
-                      {!isGuest && e.notes && <p className="kk-plaque-card__note">{e.notes}</p>}
-                    </div>
-                  <div className="kk-plaque-card__foot">
-                    <p className="kk-plaque-card__who">
-                      {!isGuest && <><span className="kk-plaque-card__name">{who}</span><span aria-hidden="true">·</span></>}
-                      <span>{relativeTime(e.created_at, lang)}</span>
-                    </p>
-                    <div className="kk-plaque-card__actions">
-                      {isGuest ? (
-                        <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
-                      ) : (<>
-                        <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
-                          {L('飲みたい', '想喝', 'Want to try')}
-                        </button>
-                        <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-                          {L('自分も記録', '我也記錄', 'Record it too')}
-                        </button>
-                      </>)}
+                      <div className="kk-pcard__foot">
+                        <p className="kk-pcard__who">
+                          {!isGuest && <><span className="kk-pcard__name">{who}</span><span aria-hidden="true">·</span></>}
+                          <span>{relativeTime(e.created_at, lang)}</span>
+                        </p>
+                        <div className="kk-pcard__actions">
+                          {isGuest ? (
+                            <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
+                          ) : (<>
+                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
+                              {L('飲みたい', '想喝', 'Want to try')}
+                            </button>
+                            <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                              {L('自分も記録', '我也記錄', 'Record it too')}
+                            </button>
+                          </>)}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  </div>
+                  {scene && <span className="kk-pcard__scene-stamp"><PlazaStamp kind={tier.stamp} /></span>}
                 </article>
               </li>
             )
