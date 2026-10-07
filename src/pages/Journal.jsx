@@ -4,29 +4,22 @@ import { supabase } from '../lib/supabase'
 import { uploadPhoto, compressImage } from '../lib/upload'
 import Nav from '../components/Nav'
 import Stars from '../components/Stars'
-import { BreweryInput, BrandInput, RiceInput, NameInput } from '../components/Autocomplete'
+import { BreweryInput, RiceInput, NameInput } from '../components/Autocomplete'
 import TastingTagPicker from '../components/TastingTagPicker'
 import FlavorTagPicker from '../components/FlavorTagPicker'
 import { useLang } from '../contexts/LangContext'
 import { useTags, useTagResolver } from '../contexts/TagsContext'
-import { WikiText, WikiIcon } from '../components/WikiTooltip'
+import { WikiText } from '../components/WikiTooltip'
 import { normalizeType } from '../lib/sakeType'
+import { saveDraftPhotos, loadDraftPhotos, clearDraftPhotos } from '../lib/draftPhotos'
+import { uploadPhotoWithThumb } from '../lib/upload'
+import BottleCropEditor from '../components/bottle/BottleCropEditor'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
 import RatingPicker from '../components/record/RatingPicker'
 import Toast from '../components/ui/Toast'
 import '../components/record/record.css'
 import Ledger from './journal/Ledger'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
-
-
-
-const SpinIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-    style={{ animation: 'spin 1s linear infinite' }}>
-    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-  </svg>
-)
-
 
 const EMPTY_FORM = {
   brand: '', name: '', brewery: '', region: '', type: '',
@@ -36,6 +29,7 @@ const EMPTY_FORM = {
   bottling_date: '',
   name_reading: '',
   is_public: false, contributor_name: '',
+  photo_crop: null,
 }
 
 
@@ -281,12 +275,18 @@ function ForwardConfirmDialog({ entry, lang, onConfirm, onCancel }) {
 
 const TODAY = () => new Date().toISOString().slice(0, 10)
 const DRAFT_KEY = 'kikiroku-draft'
-const saveDraft = (form, tags, aroma, taste, dates, method) => {
-  if (form.brand.trim() || form.name.trim()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste, dates, method }))
-  else localStorage.removeItem(DRAFT_KEY)
+const draftHasContent = (form, aroma = [], taste = [], photos = {}) =>
+  !!(form.brand.trim() || form.name.trim() || form.notes.trim() || form.rating > 0 || aroma.length || taste.length || photos.main || photos.back)
+// Text in localStorage, photos in IndexedDB (lib/draftPhotos). Returns whether anything was kept.
+const saveDraft = (form, tags, aroma, taste, dates, method, photos = {}) => {
+  if (!draftHasContent(form, aroma, taste, photos)) { localStorage.removeItem(DRAFT_KEY); clearDraftPhotos(); return false }
+  localStorage.setItem(DRAFT_KEY, JSON.stringify({ form, tags, aroma, taste, dates, method, hasPhotos: !!(photos.main || photos.back) }))
+  if (photos.main || photos.back) saveDraftPhotos({ main: photos.main || null, back: photos.back || null })
+  else clearDraftPhotos()
+  return true
 }
 const loadDraft = () => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY)) } catch { return null } }
-const clearDraft = () => localStorage.removeItem(DRAFT_KEY)
+const clearDraft = () => { localStorage.removeItem(DRAFT_KEY); clearDraftPhotos() }
 
 export default function Journal({ session }) {
   const { lang, t } = useLang()
@@ -327,6 +327,11 @@ export default function Journal({ session }) {
   const [editStatus, setEditStatus] = useState('published')
   const [toast, setToast] = useState(null)
   const [autoSaved, setAutoSaved] = useState(false)
+  const [datesOpen, setDatesOpen] = useState(false)
+  const [bottleEdit, setBottleEdit] = useState(null)     // { src, initial } while aligning the main photo
+  const [pendingBackSrc, setPendingBackSrc] = useState(null)
+  const [confirmPublic, setConfirmPublic] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const clearToast = useCallback(() => setToast(null), [])
   const [brandMap, setBrandMap] = useState({})
 
@@ -337,13 +342,12 @@ export default function Journal({ session }) {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
     draftTimerRef.current = setTimeout(() => {
-      saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
-      const kept = !!(form.brand?.trim() || form.name?.trim())
-      if (kept) setHasDraft(true)
+      const kept = saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags, { main: photoFile, back: photoFile2 })
+      setHasDraft(kept)
       setAutoSaved(kept)
     }, 1000)
     return () => clearTimeout(draftTimerRef.current)
-  }, [form, formTags, aromaTags, tasteTags, formDates, methodTags, sheet, editId])
+  }, [form, formTags, aromaTags, tasteTags, formDates, methodTags, photoFile, photoFile2, sheet, editId])
 
   // ── Swipe-down to save/dismiss ──────────────────────────────
   const [searchLoading, setSearchLoading] = useState(false)
@@ -451,6 +455,10 @@ export default function Journal({ session }) {
       setMethodTags(draft.method || [])
       setFormDates(draft.dates?.length ? draft.dates : [TODAY()])
       setDraftRestored(true)
+      if (draft.hasPhotos) loadDraftPhotos().then(p => {
+        if (p?.main) { setPhotoFile(p.main); setPhotoPreview(URL.createObjectURL(p.main)) }
+        if (p?.back) { setPhotoFile2(p.back); setPhotoPreview2(URL.createObjectURL(p.back)) }
+      })
     } else {
       setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
       setFormDates([TODAY()])
@@ -459,7 +467,7 @@ export default function Journal({ session }) {
     setEditId(null)
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
-    setSpecsOpen(false)
+    setSpecsOpen(false); setDatesOpen(false)
     resetFormUi('published')
     setSheet('form')
   }
@@ -492,6 +500,7 @@ export default function Journal({ session }) {
       bottling_date: e.bottling_date || '',
       name_reading: e.name_reading || '',
       is_public: e.is_public ?? false, contributor_name: e.contributor_name || '',
+      photo_crop: e.photo_crop || null,
     })
     setFormTags(e.tags || [])
     setAromaTags(e.aroma_tags || [])
@@ -502,6 +511,7 @@ export default function Journal({ session }) {
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
     setSpecsOpen(!!(e.type || e.rice || e.yeast || e.polishing || e.alcohol || e.smv || e.acidity || e.bottling_date))
+    setDatesOpen(false)
     resetFormUi(e.status || 'published')
     setSheet('form')
   }
@@ -513,14 +523,42 @@ export default function Journal({ session }) {
   }
   const cleanJa = label => (label || '').replace(/（.*?）/g, '')
 
+  // One 酒名 field for the user; brand / name stay separate in the data.
+  const pendingBrandRef = useRef(null)
+  const onSakeNameChange = text => {
+    if (formErrors.name) setFormErrors(e => ({ ...e, name: null }))
+    const picked = pendingBrandRef.current
+    pendingBrandRef.current = null
+    setForm(p => {
+      if (picked) return { ...p, brand: picked, name: text }          // autocomplete resolved the brand
+      if (p.brand && text.startsWith(p.brand)) return { ...p, name: text.slice(p.brand.length).trim() }
+      return { ...p, brand: '', name: text }
+    })
+  }
+  // On blur, peel a known 銘柄 off the front (longest match in sake_brands), then infer the brewery.
+  const splitBrandFromName = async () => {
+    const full = [form.brand, form.name].filter(Boolean).join(' ').trim()
+    if (!full || form.brand) { if (form.brand && !form.brewery) inferBreweryFromBrand(); return }
+    const { data } = await supabase.from('sake_brands').select('name').ilike('name', `${full.slice(0, 1)}%`).limit(80)
+    const match = (data || []).filter(b => b.name && full.startsWith(b.name)).sort((a, b) => b.name.length - a.name.length)[0]
+    if (!match) return
+    setForm(p => ({ ...p, brand: match.name, name: full.slice(match.name.length).trim() }))
+  }
+  useEffect(() => { if (form.brand && !form.brewery && sheet === 'form') inferBreweryFromBrand() }, [form.brand]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const askPublic = () => {
+    let ok = false
+    try { ok = localStorage.getItem('kk_public_ok') === '1' } catch { /* storage blocked */ }
+    if (ok) f('is_public', true); else setConfirmPublic(true)
+  }
+
   const resetFormUi = status => {
     setFeelTab('aroma'); setFormErrors({}); setSaveError(''); setEditStatus(status); setAutoSaved(false)
   }
 
   const close = () => {
     if (sheet === 'form' && !editId && !forwardSource) {
-      saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
-      setHasDraft(!!form.name.trim())
+      setHasDraft(saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags, { main: photoFile, back: photoFile2 }))
     }
     setForwardSource(null)
     setSheet(null); setDetail(null)
@@ -536,11 +574,24 @@ export default function Journal({ session }) {
     } catch { return null }
   }
 
+  // A new main photo opens the bottle alignment step (skippable).
+  const takeMainPhoto = async file => {
+    const [blob, date] = await Promise.all([compressImage(file), readExifDate(file)])
+    const url = URL.createObjectURL(blob)
+    setPhotoFile(blob); setPhotoPreview(url)
+    setForm(p => ({ ...p, photo_crop: null }))
+    if (date) setFormDates(prev => [...new Set([date, ...prev])].sort().reverse())
+    setBottleEdit({ src: url, initial: null })
+  }
   const onPhoto = async e => {
     const file = e.target.files[0]; if (!file) return
-    const [blob, date] = await Promise.all([compressImage(file), readExifDate(file)])
-    setPhotoFile(blob); setPhotoPreview(URL.createObjectURL(blob))
-    if (date) setFormDates(prev => [...new Set([date, ...prev])].sort().reverse())
+    e.target.value = ''
+    await takeMainPhoto(file)
+  }
+  const finishBottleEdit = crop => {
+    if (crop) setForm(p => ({ ...p, photo_crop: crop }))
+    setBottleEdit(null)
+    if (pendingBackSrc) { setCropSrc(pendingBackSrc); setPendingBackSrc(null) }
   }
   const onPhoto2 = (e) => {
     const f = e.target.files[0]; if (!f) return
@@ -550,11 +601,10 @@ export default function Journal({ session }) {
   const onPhotoBoth = async e => {
     const files = Array.from(e.target.files)
     if (!files.length) return
-    const [blob1, date] = await Promise.all([compressImage(files[0]), readExifDate(files[0])])
-    setPhotoFile(blob1); setPhotoPreview(URL.createObjectURL(blob1))
-    if (date) setFormDates(prev => [...new Set([date, ...prev])].sort().reverse())
-    if (files[1]) setCropSrc(URL.createObjectURL(files[1]))
     e.target.value = ''
+    // Back label (2nd file) gets its rectangle crop after the bottle step.
+    if (files[1]) setPendingBackSrc(URL.createObjectURL(files[1]))
+    await takeMainPhoto(files[0])
   }
 
   const onCropConfirm = async (croppedBlob) => {
@@ -596,7 +646,9 @@ export default function Journal({ session }) {
       const prev = editId ? entries.find(e => e.id === editId) : null
       let photo_url = prev?.photo_url || null
       let photo_url2 = prev?.photo_url2 || null
-      if (photoFile) photo_url = await uploadPhoto(photoFile, uid)
+      let thumb_url = prev?.thumb_url || null
+      if (photoFile) ({ url: photo_url, thumbUrl: thumb_url } = await uploadPhotoWithThumb(photoFile, uid))
+      if (!photoPreview) { photo_url = null; thumb_url = null }
       if (photoFile2) photo_url2 = await uploadPhoto(photoFile2, uid)
       const sortedDates = [...formDates].filter(Boolean).sort().reverse()
       const tasted_at = sortedDates[0] || TODAY()
@@ -612,7 +664,8 @@ export default function Journal({ session }) {
         aroma_tags: aromaTags.length ? aromaTags : null,
         taste_tags: tasteTags.length ? tasteTags : null,
         method_tags: methodTags.length ? methodTags : null,
-        photo_url, photo_url2, user_id: uid,
+        photo_url, photo_url2, thumb_url, user_id: uid,
+        photo_crop: photo_url ? (form.photo_crop || null) : null,
         contributor_name: !isDraft && form.is_public ? (form.contributor_name.trim() || defaultName) : null,
       }
       const { error: writeErr } = editId
@@ -773,7 +826,7 @@ export default function Journal({ session }) {
         {detail && (<div style={{ position: 'relative', padding: '4px 8px 4px' }}>
             <div className="kk-bottle-col kk-bottle-col--detail">
               <div className="kk-bottle-stage">
-                <SakeBottleCrop imageUrl={detail.photo_url} height="168px" alt={[detail.brand, detail.name].filter(Boolean).join(' ')} />
+                <SakeBottleCrop imageUrl={detail.photo_url} crop={detail.photo_crop} height="168px" alt={[detail.brand, detail.name].filter(Boolean).join(' ')} />
               </div>
               {(detail.photo_url || detail.photo_url2) && (
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -905,15 +958,20 @@ export default function Journal({ session }) {
           {editId && editStatus === 'draft'
             ? <span className="kk-status kk-status--draft">{L3('下書き', '草稿', 'Draft')}</span>
             : !editId && autoSaved
-              ? <span className="kk-save-state" title={L3('入力内容はこの端末に自動で残ります', '輸入內容會自動保留在這台裝置', 'Your input is kept on this device automatically')}>{L3('保存済み', '已暫存', 'Saved')}</span>
+              ? <span className="kk-save-state" title={L3('この端末に保存されています', '已保存在這台裝置', 'Kept on this device')}>{L3('下書き保存済み', '草稿已暫存', 'Draft kept')}</span>
               : <span className="kk-panel__head-spacer" />}
         </>}
         footer={<>
+          <button type="button" role="switch" className="kk-foot-public" aria-checked={!!form.is_public}
+            onClick={() => (form.is_public ? f('is_public', false) : askPublic())}
+            title={L3('廣場への公開', '公開到廣場', 'Share to Discover')}>
+            {form.is_public ? L3('公開する', '公開', 'Public') : L3('非公開', '不公開', 'Private')}
+          </button>
           {(!editId || editStatus === 'draft') && (
             <button type="button" className="kk-btn" onClick={() => save('draft')} disabled={saving}>{L3('下書き', '存草稿', 'Draft')}</button>
           )}
           <button type="button" className="kk-btn kk-btn--primary" onClick={() => save('publish')} disabled={saving}>
-            {saving ? t('saving') : editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('酒札を保存', '保存酒札', 'Save')}
+            {saving ? t('saving') : editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('保存', '保存', 'Save')}
           </button>
         </>}
       >
@@ -938,7 +996,7 @@ export default function Journal({ session }) {
                 <strong>{L3('前回の続きがあります', '有上次未完成的記錄', 'Picking up where you left off')}</strong>
                 <div className="kk-helper">{L3('写真だけの下書きも、このまま保存できます。', '只有照片的草稿也可以直接保存。', 'Even a photo-only draft can be saved as is.')}</div>
               </div>
-              <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={resetForm}>{L3('破棄', '放棄', 'Discard')}</button>
+              <button type="button" className="kk-label-action" style={{ color: 'var(--muted)', fontWeight: 700 }} onClick={() => setConfirmDiscard(true)}>{L3('破棄', '放棄', 'Discard')}</button>
             </div>
           )}
 
@@ -952,20 +1010,35 @@ export default function Journal({ session }) {
                   <span>{L3('表と裏をまとめて選べます · スキップして酒名だけでも保存', '可一次選正面和背標 · 也可以略過，只填酒名', 'Front and back together · or skip and just type the name')}</span>
                 </div>
               </button>
-            ) : (
-              <div className="kk-photos">
-                {[[photoPreview, fileRef, t('form.mainPhoto')], [photoPreview2, fileRef2, L3('裏ラベル', '背標', 'Back label')]].map(([src, ref, tag], i) => (
-                  <div key={i} style={{ position: 'relative' }}>
-                    <button type="button" className="kk-photo" onClick={() => src ? setLightbox(src) : ref.current.click()}
-                      aria-label={src ? `${tag} — ${L3('拡大', '放大', 'Enlarge')}` : `${tag} — ${t('form.tapToAdd')}`}>
-                      {src ? <img src={src} alt="" /> : <span>＋ {tag}</span>}
-                      {src && <span className="kk-photo__tag">{tag}</span>}
-                    </button>
-                    {src && <button type="button" className="kk-photo__swap" onClick={() => ref.current.click()}>{L3('撮り直す', '重拍', 'Retake')}</button>}
-                  </div>
-                ))}
+            ) : (<>
+              <div className="kk-photo-main">
+                <button type="button" className="kk-bottle-stage" onClick={() => photoPreview ? setBottleEdit({ src: photoPreview, initial: form.photo_crop }) : fileRef.current.click()}
+                  aria-label={photoPreview ? L3('瓶身を調整', '調整瓶身', 'Adjust the bottle') : L3('瓶の写真を追加', '新增瓶身照片', 'Add a bottle photo')} style={{ border: 0 }}>
+                  <SakeBottleCrop imageUrl={photoPreview} crop={form.photo_crop} height="136px" />
+                </button>
+                <div className="kk-photo-main__actions">
+                  {photoPreview ? (<>
+                    <button type="button" className="kk-btn kk-btn--sm" onClick={() => setBottleEdit({ src: photoPreview, initial: form.photo_crop })}>{L3('瓶身を調整', '調整瓶身', 'Adjust bottle')}</button>
+                    <button type="button" className="kk-label-action" onClick={() => setLightbox(photoPreview)}>{L3('元の写真を見る', '查看原圖', 'View original')}</button>
+                    <button type="button" className="kk-label-action" onClick={() => fileRef.current.click()}>{L3('撮り直す', '重拍', 'Retake')}</button>
+                  </>) : (
+                    <button type="button" className="kk-btn kk-btn--sm" onClick={() => fileRef.current.click()}>{L3('＋ 瓶の写真', '＋ 瓶身照片', '+ Bottle photo')}</button>
+                  )}
+                </div>
               </div>
-            )}
+              <div className="kk-photo-back">
+                <button type="button" className="kk-photo" onClick={() => photoPreview2 ? setLightbox(photoPreview2) : fileRef2.current.click()}
+                  aria-label={photoPreview2 ? `${L3('裏ラベル', '背標', 'Back label')} — ${L3('拡大', '放大', 'Enlarge')}` : `${L3('裏ラベル', '背標', 'Back label')} — ${t('form.tapToAdd')}`}>
+                  {photoPreview2 ? <img src={photoPreview2} alt="" /> : <span>＋</span>}
+                </button>
+                <div className="kk-helper">
+                  <strong style={{ display: 'block', color: 'var(--ink)', fontSize: 12 }}>{L3('裏ラベル', '背標', 'Back label')}</strong>
+                  {photoPreview2
+                    ? <button type="button" className="kk-label-action" onClick={() => fileRef2.current.click()}>{L3('撮り直す', '重拍', 'Retake')}</button>
+                    : L3('スペック確認用（任意）', '用來確認規格（選填）', 'For checking specs (optional)')}
+                </div>
+              </div>
+            </>)}
             <input ref={fileRefBoth} type="file" accept="image/*" multiple hidden onChange={onPhotoBoth} />
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
             <input ref={fileRef2} type="file" accept="image/*" hidden onChange={onPhoto2} />
@@ -977,38 +1050,41 @@ export default function Journal({ session }) {
               <span>{L3('どのお酒？', '哪一瓶？', 'Which sake?')}</span>
               <span className="kk-required">{L3('保存に必要', '儲存必填', 'Required')}</span>
             </h3>
-            <div className="kk-row2">
-              <div className="kk-field">
-                <label className="kk-field__label" htmlFor="kk-field-brand"><span>{L3('銘柄', '銘柄', 'Brand')} <WikiIcon termId="meigara" /></span></label>
-                <BrandInput id="kk-field-brand" className="kk-input" aria-invalid={!!formErrors.name} value={form.brand}
-                  onChange={v => { f('brand', v); if (formErrors.name) setFormErrors(e => ({ ...e, name: null })) }}
-                  onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                  onBlur={inferBreweryFromBrand} placeholder={t('form.brandPH')} />
-              </div>
-              <div className="kk-field">
-                <label className="kk-field__label" htmlFor="kk-field-name">{L3('酒名', '酒名', 'Name')}</label>
-                <NameInput id="kk-field-name" className="kk-input" aria-invalid={!!formErrors.name} value={form.name}
-                  onChange={v => { f('name', v); if (formErrors.name) setFormErrors(e => ({ ...e, name: null })) }}
-                  brand={form.brand}
-                  onBrandFill={v => f('brand', v)}
-                  onProductFill={p => setForm(prev => ({
-                    ...prev,
-                    brewery:   prev.brewery   || p.brewery   || '',
-                    region:    prev.region    || p.region    || '',
-                    type:      prev.type      || normalizeType(p.type),
-                    rice:      prev.rice      || p.rice      || '',
-                    yeast:     prev.yeast     || p.yeast     || '',
-                    polishing: prev.polishing || p.polishing || '',
-                    alcohol:   prev.alcohol   || p.alcohol   || '',
-                    smv:       prev.smv       || p.smv       || '',
-                    acidity:   prev.acidity   || p.acidity   || '',
-                  }))}
-                  onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                  placeholder={t('form.namePH')} />
-              </div>
+            <div className="kk-field">
+              <span className="kk-field__label">
+                <label htmlFor="kk-field-name">{L3('酒名', '酒名', 'Sake name')}</label>
+                <button type="button" className="kk-label-action" disabled={searchLoading || (!form.brand && !form.name && !form.brewery)} onClick={() => runSearch(form)}>
+                  {searchLoading ? t('ocr.searching') : L3('ネットで補完', '從網路補全', 'Fill from the web')}
+                </button>
+              </span>
+              <NameInput id="kk-field-name" className="kk-input" aria-invalid={!!formErrors.name} aria-describedby="kk-name-meta"
+                value={[form.brand, form.name].filter(Boolean).join(' ')}
+                brand=""
+                onChange={onSakeNameChange}
+                onBrandFill={v => { pendingBrandRef.current = v }}
+                onProductFill={p => setForm(prev => ({
+                  ...prev,
+                  brewery:   prev.brewery   || p.brewery   || '',
+                  region:    prev.region    || p.region    || '',
+                  type:      prev.type      || normalizeType(p.type),
+                  rice:      prev.rice      || p.rice      || '',
+                  yeast:     prev.yeast     || p.yeast     || '',
+                  polishing: prev.polishing || p.polishing || '',
+                  alcohol:   prev.alcohol   || p.alcohol   || '',
+                  smv:       prev.smv       || p.smv       || '',
+                  acidity:   prev.acidity   || p.acidity   || '',
+                }))}
+                onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
+                onBlur={splitBrandFromName}
+                placeholder={L3('十四代 本丸、獺祭 純米大吟醸 45…', '十四代 本丸、獺祭 純米大吟釀 45…', 'Juyondai Honmaru, Dassai 45…')} />
             </div>
             {formErrors.name && <p className="kk-field-error" role="alert" style={{ marginBottom: 10 }}>{formErrors.name}</p>}
-            {form.name_reading && <p className="kk-helper" style={{ margin: '-6px 0 10px' }}>{form.name_reading}</p>}
+            {(form.brand || form.brewery || form.name_reading) && (
+              <p className="kk-name-meta" id="kk-name-meta">
+                {[form.brand && <>{L3('銘柄', '銘柄', 'Brand')}：<b>{form.brand}</b></>, form.brewery && <>{L3('酒造', '酒造', 'Brewery')}：<b>{form.brewery}</b></>, form.name_reading]
+                  .filter(Boolean).map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}
+              </p>
+            )}
             <div className="kk-row2">
               <div className="kk-field">
                 <label className="kk-field__label" htmlFor="kk-field-brewery">{L3('酒造', '酒造', 'Brewery')}</label>
@@ -1028,13 +1104,14 @@ export default function Journal({ session }) {
                 })}
               </div>
             )}
-            <button type="button" className="kk-btn kk-btn--sm" style={{ marginBottom: 12 }}
-              disabled={searchLoading || (!form.brand && !form.name && !form.brewery)} onClick={() => runSearch(form)}>
-              {searchLoading ? <SpinIcon /> : null}
-              {searchLoading ? t('ocr.searching') : L3('ネットで規格を補完', '從網路補全規格', 'Fill specs from the web')}
-            </button>
             <div className="kk-field">
               <span className="kk-field__label" id="kk-dates-label">{L3('飲んだ日', '飲用日', 'Date tasted')}</span>
+              {!datesOpen ? (
+                <button type="button" className="kk-oneline" aria-labelledby="kk-dates-label" aria-expanded="false" onClick={() => setDatesOpen(true)}>
+                  <span>{formDates[0] === TODAY() ? L3('今日', '今天', 'Today') : (formDates[0] || '').replaceAll('-', '.')}{formDates.length > 1 ? L3(` ほか${formDates.length - 1}日`, ` 等 ${formDates.length} 天`, ` +${formDates.length - 1}`) : ''}</span>
+                  <span>{L3('変更', '更改', 'Change')}</span>
+                </button>
+              ) : (
               <div className="kk-dates" role="group" aria-labelledby="kk-dates-label">
                 {formDates.map((d, i) => (
                   <div key={i} className="kk-dates__row">
@@ -1055,6 +1132,7 @@ export default function Journal({ session }) {
                   {L3('＋ 飲んだ日を追加', '＋ 新增飲用日', '+ Add a date')}
                 </button>
               </div>
+              )}
             </div>
           </section>
 
@@ -1078,8 +1156,7 @@ export default function Journal({ session }) {
               const tabs = [
                 ['aroma', t('form.aroma'), aromaTags.length],
                 ['taste', t('form.taste'), tasteTags.length],
-                ['notes', t('form.notes'), form.notes.trim() ? 1 : 0],
-                ['flavor', L3('整理', '整理', 'Labels'), formTags.length],
+                ['notes', t('form.notes'), (form.notes.trim() ? 1 : 0) + formTags.length],
               ]
               return (<>
                 <div className="kk-tabs" role="tablist" aria-label={L3('感想', '感想', 'Impressions')}>
@@ -1094,11 +1171,14 @@ export default function Journal({ session }) {
                 <div role="tabpanel" id={`kk-tabpanel-${feelTab}`} aria-labelledby={`kk-tab-${feelTab}`}>
                   {feelTab === 'aroma' && <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />}
                   {feelTab === 'taste' && <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />}
-                  {feelTab === 'notes' && (
+                  {feelTab === 'notes' && (<>
                     <textarea className="kk-textarea" value={form.notes} onChange={e => f('notes', e.target.value)}
                       placeholder={t('form.notesPH')} aria-label={t('form.notes')} />
-                  )}
-                  {feelTab === 'flavor' && <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />}
+                    <div className="kk-field" style={{ marginTop: 12 }}>
+                      <span className="kk-field__label">{L3('整理', '整理', 'Labels')}</span>
+                      <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+                    </div>
+                  </>)}
                 </div>
               </>)
             })()}
@@ -1163,30 +1243,38 @@ export default function Journal({ session }) {
             )}
           </section>
 
-          {/* 6 · 公開 */}
-          {(
-            <section className="kk-section" aria-labelledby="kk-sec-share">
-              <h3 className="kk-section__title" id="kk-sec-share">{t('form.share')}</h3>
-              <div className="kk-switch-row">
-                <button type="button" role="switch" className="kk-switch" aria-checked={!!form.is_public} aria-labelledby="kk-share-label"
-                  onClick={() => f('is_public', !form.is_public)} />
-                <div>
-                  <strong id="kk-share-label">{L3('廣場に公開する', '公開到廣場', 'Share to Discover')}</strong>
-                  <div className="kk-helper">{L3('初期設定は非公開。下書きは公開されません。', '預設不公開；草稿不會公開。', 'Private by default. Drafts are never shared.')}</div>
-                </div>
-              </div>
-              {form.is_public && (
-                <div className="kk-field" style={{ marginTop: 12 }}>
-                  <label className="kk-field__label" htmlFor="kk-field-contributor">{t('form.displayName')}</label>
-                  <input id="kk-field-contributor" className="kk-input" value={form.contributor_name}
-                    onChange={e => f('contributor_name', e.target.value)} placeholder={defaultName} />
-                </div>
-              )}
-            </section>
-          )}
         </div>
       </Sheet>
       <Toast toast={toast} onDone={clearToast} />
+
+      {bottleEdit && (
+        <BottleCropEditor key={bottleEdit.src} open src={bottleEdit.src} initial={bottleEdit.initial} lang={lang}
+          onSave={crop => finishBottleEdit(crop)} onSkip={() => finishBottleEdit(null)} onClose={() => finishBottleEdit(null)} />
+      )}
+
+      <Sheet open={confirmPublic} onClose={() => setConfirmPublic(false)} variant="dialog" label={L3('廣場に公開されます', '將公開到廣場', 'This will be shared')}>
+        <h2 className="kk-confirm__title">{L3('廣場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
+        <p className="kk-confirm__note">{L3('写真・評価・メモがみんなに見えます。あとで非公開に戻せます。', '照片、評分和筆記會讓大家看到；之後可以改回不公開。', 'Photo, rating and notes become visible. You can make it private again later.')}</p>
+        <div className="kk-field">
+          <label className="kk-field__label" htmlFor="kk-field-contributor">{t('form.displayName')}</label>
+          <input id="kk-field-contributor" className="kk-input" value={form.contributor_name} onChange={e => f('contributor_name', e.target.value)} placeholder={defaultName} />
+        </div>
+        <div className="kk-confirm__actions">
+          <button type="button" className="kk-btn" onClick={() => setConfirmPublic(false)}>{L3('やめる', '取消', 'Cancel')}</button>
+          <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => { f('is_public', true); setConfirmPublic(false); try { localStorage.setItem('kk_public_ok', '1') } catch { /* storage blocked */ } }}>{L3('公開する', '公開', 'Share')}</button>
+        </div>
+      </Sheet>
+
+      <Sheet open={confirmDiscard} onClose={() => setConfirmDiscard(false)} variant="dialog" label={L3('この下書きを破棄しますか？', '要放棄這份草稿嗎？', 'Discard this draft?')}>
+        <h2 className="kk-confirm__title kk-confirm__title--danger">{L3('この下書きを破棄しますか？', '要放棄這份草稿嗎？', 'Discard this draft?')}</h2>
+        <p className="kk-confirm__note">{(photoPreview || photoPreview2)
+          ? L3('入力した内容と写真がこの端末から消えます。', '輸入的內容和照片都會從這台裝置刪除。', 'Your input and photos will be removed from this device.')
+          : L3('入力した内容がこの端末から消えます。', '輸入的內容會從這台裝置刪除。', 'Your input will be removed from this device.')}</p>
+        <div className="kk-confirm__actions">
+          <button type="button" className="kk-btn" data-autofocus onClick={() => setConfirmDiscard(false)}>{L3('残す', '保留', 'Keep')}</button>
+          <button type="button" className="kk-btn kk-btn--danger" onClick={() => { resetForm(); setConfirmDiscard(false) }}>{L3('破棄する', '放棄', 'Discard')}</button>
+        </div>
+      </Sheet>
     </div>
   )
 }

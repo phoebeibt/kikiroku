@@ -1,34 +1,39 @@
-/* 一升瓶 outline: slim neck, sloped shoulders, straight body, heavy base. */
+/* Standard sake-bottle template: slim neck, sloped shoulders, straight body, heavy base. */
 .kk-bottle {
-  display: inline-block; aspect-ratio: 1 / 2.75; flex-shrink: 0;
-  /* Outline + soft lift that follows the clipped shape (filters sit outside clip-path). */
+  display: inline-block; aspect-ratio: 1 / 3.5; flex-shrink: 0;
+  /* Outline + soft lift that follow the clipped shape (filters sit outside clip-path). */
   filter: drop-shadow(0 0 .5px rgba(58, 51, 45, .45)) drop-shadow(0 3px 4px rgba(46, 38, 28, .16));
 }
 .kk-bottle__mask {
   display: block; width: 100%; height: 100%; overflow: hidden; position: relative;
-  clip-path: polygon(
-    40% 0, 60% 0,
-    61% 8%, 65% 9%,
-    65% 22%, 70% 31%,
-    83% 43%, 89% 55%,
-    90% 96%, 84% 100%,
-    16% 100%, 10% 96%,
-    11% 55%, 17% 43%,
-    30% 31%, 35% 22%,
-    35% 9%, 39% 8%
-  );
+  clip-path: polygon(40% 0, 60% 0, 61% 7%, 65% 8%, 65% 21%, 69% 29%, 82% 41%, 88% 53%, 90% 95%, 84% 99%, 16% 99%, 10% 95%, 12% 53%, 18% 41%, 31% 29%, 35% 21%, 35% 8%, 39% 7%);
   background: var(--cream);
 }
-.kk-bottle__mask img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-/* Fallback: deep-green bottle with a pale label */
-.kk-bottle__mask.is-empty { background: linear-gradient(90deg, #2a5243 0%, #2f5b4b 45%, #3a6b59 70%, #2f5b4b 100%); }
-.kk-bottle__label {
-  position: absolute; left: 22%; right: 22%; top: 58%; height: 22%;
-  border-radius: 2px; background: rgba(255, 253, 248, .55);
+.kk-bottle__mask img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transform-origin: 50% 50%; will-change: transform;
 }
 
-/* Detail views: the bottle stands on a 木札 stage; the original photo is one tap away. */
+/* No photo: deep-green glass (palette), with the board's label and cap details. */
+.kk-bottle__mask.is-empty {
+  background:
+    linear-gradient(90deg, rgba(31, 31, 29, .34), transparent 11%, transparent 86%, rgba(31, 31, 29, .36)),
+    linear-gradient(90deg, rgba(255, 253, 248, .22) 0 8%, transparent 9% 100%),
+    linear-gradient(180deg, #4f8a7b, #2f5b4b 62%, #24483b);
+}
+.kk-bottle__label {
+  position: absolute; left: 22%; right: 22%; top: 50%; height: 24%;
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(185, 151, 74, .78), rgba(255, 253, 248, .95)), #fffdf8;
+  box-shadow: inset 0 0 0 1px rgba(138, 117, 99, .1);
+}
+.kk-bottle__cap {
+  position: absolute; left: 38%; right: 38%; top: 0; height: 7%;
+  border-radius: 2px 2px 1px 1px;
+  background: linear-gradient(180deg, rgba(255, 253, 248, .78), rgba(116, 108, 96, .36));
+}
+
+/* Detail views: the bottle stands on a 木札 stage. */
 .kk-bottle-col { width: 140px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .kk-bottle-col--detail { width: auto; margin: 0 auto 14px; }
 .kk-bottle-stage {

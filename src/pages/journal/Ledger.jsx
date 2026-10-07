@@ -333,7 +333,7 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
                 ) : (
                   <div className={`kk-card${isDraft ? ' is-draft' : ''}`} {...pressable(() => onOpen(e), title)}>
                     <div className="kk-card__photo">
-                      <SakeBottleCrop imageUrl={e.photo_url} height="86px" />
+                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="86px" />
                     </div>
                     <div className="kk-card__body">
                       <strong className="kk-card__title">{title}</strong>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTags } from '../contexts/TagsContext'
+import { cleanLabel } from '../lib/labels'
 
 export default function FlavorTagPicker({ selected = [], onChange, lang, t }) {
   const flavorTags = useTags('flavor')
@@ -22,20 +23,12 @@ export default function FlavorTagPicker({ selected = [], onChange, lang, t }) {
   return (
     <div>
       {/* Predefined chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 10 }}>
+      <div className="kk-tagpick" style={{ marginBottom: 10 }}>
         {flavorTags.map(tag => {
           const on = selectedIds.has(tag.id)
           return (
-            <button key={tag.id} type="button" onClick={() => toggle(tag.id)}
-              style={{
-                padding: '6px 13px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-                border: on ? 'none' : '1px solid var(--border)',
-                background: on ? 'var(--accent)' : 'var(--bg)',
-                color: on ? '#fff' : 'var(--sub)',
-                fontFamily: 'var(--font-sans)',
-                transition: 'all .15s',
-              }}>
-              {tag[lang] || tag.ja}
+            <button key={tag.id} type="button" className={`kk-chip kk-chip--outline${on ? ' is-active' : ''}`} aria-pressed={on} onClick={() => toggle(tag.id)}>
+              {cleanLabel(tag[lang] || tag.ja)}
             </button>
           )
         })}

@@ -1027,7 +1027,7 @@ const SpecFigureItem = ({ label, value, suffix, wiki }) => {
             <div style={s.detTop}>
               <div className="kk-bottle-col">
                 <div className="kk-bottle-stage">
-                  <SakeBottleCrop imageUrl={session ? detail.photo_url : null} height="168px" alt={detail.name || ''} />
+                  <SakeBottleCrop imageUrl={session ? detail.photo_url : null} crop={detail.photo_crop} height="168px" alt={detail.name || ''} />
                 </div>
                 {session && detail.photo_url && (
                   <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={() => setLightboxImg(detail.photo_url)}>

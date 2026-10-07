@@ -412,9 +412,10 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
       <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        onBlur={() => {
+        onBlur={e => {
           setTimeout(() => setOpen(false), 150)
           if (brand && value && !hasResultsRef.current) onNoResults?.()
+          inputProps.onBlur?.(e)
         }} />
       {open && products.length > 0 && (
         <div style={dropStyle}>

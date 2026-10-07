@@ -1,38 +1,31 @@
 import { useState } from 'react'
+import { normalizeCrop, cropTransform } from './crop'
 import './bottle.css'
 
 /**
- * Shows a photo cut to the outline of a standard 一升瓶 (≈ 1 : 2.75),
- * so list thumbnails read as "a bottle" rather than a whole bar scene.
+ * A photo seen through the standard sake-bottle template (≈ 1 : 3.5).
+ * The original photo is never altered; `crop` only says how it sits in the template.
  *
- * imageUrl  photo to crop; missing or broken → deep-green bottle silhouette
- * position  where the bottle sits in the photo, as object-position percentages
- *           { x: 0–100, y: 0–100 } (default centre). Stored per record later.
- * scale     zoom ≥ 1 applied around `position`, for manual alignment later.
- * height    rendered height (any CSS length); width follows the aspect ratio.
+ * imageUrl  photo (pass the list thumbnail when there is one); missing/broken → silhouette
+ * crop      { x, y, scale, rotation, maskType } — see ./crop.js. Omitted → centred, ×1.5
+ * height    rendered height (any CSS length); width follows the template ratio
  */
-export default function SakeBottleCrop({ imageUrl, position, scale = 1, height = '100%', alt = '', className = '' }) {
+export default function SakeBottleCrop({ imageUrl, crop, height = '100%', alt = '', className = '' }) {
   const [failed, setFailed] = useState(false)
-  const x = clamp(position?.x ?? 50, 0, 100)
-  const y = clamp(position?.y ?? 50, 0, 100)
-  const s = Math.max(1, Number(scale) || 1)
+  const c = normalizeCrop(crop)
   const showPhoto = imageUrl && !failed
 
   return (
-    <span className={`kk-bottle ${className}`} style={{ height }}>
+    <span className={`kk-bottle ${className}`} style={{ height }} data-mask={c.maskType}>
       <span className={`kk-bottle__mask${showPhoto ? '' : ' is-empty'}`}>
         {showPhoto ? (
-          <img
-            src={imageUrl} alt={alt} loading="lazy" decoding="async" draggable="false"
-            onError={() => setFailed(true)}
-            style={{ objectPosition: `${x}% ${y}%`, transform: s !== 1 ? `scale(${s})` : undefined, transformOrigin: `${x}% ${y}%` }}
-          />
-        ) : (
+          <img src={imageUrl} alt={alt} loading="lazy" decoding="async" draggable="false"
+            onError={() => setFailed(true)} style={{ transform: cropTransform(c) }} />
+        ) : (<>
+          <span className="kk-bottle__cap" aria-hidden="true" />
           <span className="kk-bottle__label" aria-hidden="true" />
-        )}
+        </>)}
       </span>
     </span>
   )
 }
-
-const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, Number(v)))

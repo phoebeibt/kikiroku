@@ -44,3 +44,38 @@ export async function uploadPhoto(blob, userId) {
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   return data.publicUrl
 }
+
+// List thumbnail: ~240px wide JPEG (enough for a 64–80px slot at 3×).
+// Same aspect as the original, so photo_crop params apply to both.
+export const THUMB_WIDTH = 240
+export function makeThumb(blob, width = THUMB_WIDTH) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(blob)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const scale = Math.min(1, width / img.width)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(b => (b ? resolve(b) : reject(new Error('thumb toBlob failed'))), 'image/jpeg', 0.8)
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
+
+// Upload the photo and its thumbnail; returns { url, thumbUrl }.
+// A failed thumbnail never blocks saving the record — lists fall back to the original.
+export async function uploadPhotoWithThumb(blob, userId) {
+  const url = await uploadPhoto(blob, userId)
+  let thumbUrl = null
+  try {
+    const thumb = await makeThumb(blob)
+    const path = `${userId}/thumbs/${Date.now()}.jpg`
+    const { error } = await supabase.storage.from(BUCKET).upload(path, thumb, { contentType: 'image/jpeg', upsert: false })
+    if (!error) thumbUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+  } catch { /* keep going without a thumbnail */ }
+  return { url, thumbUrl }
+}
