@@ -8,7 +8,6 @@ import { matchEntry, splitTerms } from '../../lib/ledgerSearch'
 import { useTags } from '../../contexts/TagsContext'
 import { useLang } from '../../contexts/LangContext'
 import { cleanLabel } from '../../lib/labels'
-import LangButton from '../../components/LangButton'
 import { Link } from 'react-router-dom'
 import { isPrefecture, normalizeRegion, regionPath } from '../../lib/region'
 import './ledger.css'
@@ -53,8 +52,8 @@ const SORTS = {
   brewery: (a, b) => (a.brewery || '￿').localeCompare(b.brewery || '￿', 'ja'),
 }
 
-export default function Ledger({ initialRegion, initialBrewery, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
-  const { lang, changeLang } = useLang()
+export default function Ledger({ initialRegion, initialBrewery, initialView, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
+  const { lang } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const tagLabel = (id, cat) => cleanLabel(rawTagLabel(id, cat))
   const allTags = useTags()
@@ -71,6 +70,20 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
   useEffect(() => {
     if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [normalizeRegion(initialRegion)] }) // eslint-disable-line react-hooks/set-state-in-effect
   }, [initialRegion])
+  // Arriving from プロフ's numbers: a quick shelf, the private filter, or the unfinished list.
+  useEffect(() => {
+    if (!initialView) return
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setQuery('')
+    if (initialView.kind === 'collection') { setFilters(EMPTY_FILTERS); setCollection(initialView.value) }
+    if (initialView.kind === 'private') { setCollection(null); setFilters({ ...EMPTY_FILTERS, status: 'private' }) }
+    if (initialView.kind === 'drafts') {
+      setCollection(null); setFilters(EMPTY_FILTERS); setDraftsOpen(true)
+      requestAnimationFrame(() => document.getElementById('kk-drafts-title')?.scrollIntoView({ block: 'start' }))
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [initialView])
+
   // Arriving from 事典 › 酒造の詳細 narrows the shelf to exactly that brewery.
   useEffect(() => {
     if (initialBrewery?.name) setFilters({ ...EMPTY_FILTERS, breweries: [initialBrewery.name] }) // eslint-disable-line react-hooks/set-state-in-effect
@@ -193,7 +206,6 @@ export default function Ledger({ initialRegion, initialBrewery, entries, loading
       <header className="kk-ledger__head">
         <h1 className="kk-ledger__title">{L('マイ帳', '我的酒帳', 'My Ledger')}</h1>
         <div className="kk-ledger__head-actions">
-          <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />
           <button type="button" className="kk-icon-btn kk-ledger__filter-btn" onClick={openSheet}
             aria-label={L('絞り込み', '篩選', 'Filter') + (activeFilterCount ? ` (${activeFilterCount})` : '')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>

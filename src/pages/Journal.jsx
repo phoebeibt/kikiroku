@@ -344,6 +344,7 @@ export default function Journal({ session }) {
   const editReturnRef = useRef(null)
   const [initialRegion, setInitialRegion] = useState(null)
   const [initialBrewery, setInitialBrewery] = useState(null)
+  const [initialView, setInitialView] = useState(null)
   useEffect(() => {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
@@ -402,6 +403,10 @@ export default function Journal({ session }) {
     }
     if (location.state?.region) {
       setInitialRegion(location.state.region)
+      navigate('/journal', { replace: true, state: {} })
+    }
+    if (location.state?.view) {
+      setInitialView({ ...location.state.view, at: Date.now() })
       navigate('/journal', { replace: true, state: {} })
     }
     if (location.state?.brewery) {
@@ -475,7 +480,10 @@ export default function Journal({ session }) {
     openForward(fwd)
   }
 
-  const defaultName = session.user.user_metadata?.display_name || session.user.email.split('@')[0]
+  const meta = session.user.user_metadata || {}
+  // プロフ › プライバシー: the name shown on public tags and whether new records start public.
+  const defaultName = meta.public_name || meta.display_name || session.user.email.split('@')[0]
+  const defaultPublic = meta.default_public === true
 
   const openAdd = () => {
     const draft = loadDraft()
@@ -490,7 +498,7 @@ export default function Journal({ session }) {
         if (p?.back) { setPhotoFile2(p.back); setPhotoPreview2(URL.createObjectURL(p.back)) }
       })
     } else {
-      setForm({ ...EMPTY_FORM, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
+      setForm({ ...EMPTY_FORM, is_public: defaultPublic, contributor_name: defaultName }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
       setFormDates([TODAY()])
       setDraftRestored(false)
     }
@@ -508,7 +516,7 @@ export default function Journal({ session }) {
       alcohol: fwd.alcohol || '', rice: fwd.rice || '', polishing: fwd.polishing || '',
       smv: fwd.smv || '', acidity: fwd.acidity || '', yeast: fwd.yeast || '',
       product_id: fwd.product_id || null,
-      contributor_name: defaultName,
+      is_public: defaultPublic, contributor_name: defaultName,
     })
     setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([])
     setFormDates([TODAY()])
@@ -548,7 +556,7 @@ export default function Journal({ session }) {
     setSheet('form')
   }
   const resetForm = () => {
-    setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name || defaultName })
+    setForm({ ...EMPTY_FORM, is_public: defaultPublic, contributor_name: form.contributor_name || defaultName })
     setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); setFormDates([TODAY()])
     setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([])
     clearDraft(); setDraftRestored(false); setHasDraft(false); setFormErrors({}); setSaveError('')
@@ -828,7 +836,7 @@ export default function Journal({ session }) {
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
           onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
-          initialRegion={initialRegion} initialBrewery={initialBrewery}
+          initialRegion={initialRegion} initialBrewery={initialBrewery} initialView={initialView}
           onAdd={openAdd} hasDraft={hasDraft}
           wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
         />

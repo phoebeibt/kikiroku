@@ -48,7 +48,8 @@ const LABELS = {
 const RECORD_HINT = { ja: '新しい記録を追加', zh: '新增記錄', en: 'Add a new record' }
 const LANG_HINT = { ja: '表示言語', zh: '介面語言', en: 'Language' }
 
-export default function Nav({ session, topbar = true }) {
+// The old brand bar (logo, language, sign-out) is retired: language and sign-out live in プロフ.
+export default function Nav({ session, topbar = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { lang, changeLang, t } = useLang()

@@ -138,7 +138,8 @@ export default function Plaza({ session }) {
         <header className="kk-ledger__head">
           <h1 className="kk-ledger__title">{L('廣場', '廣場', 'Discover')}</h1>
           <div className="kk-ledger__head-actions">
-            <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />
+            {/* Signed-in users switch language in プロフ; guests have no プロフ, so they keep it here. */}
+            {isGuest && <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />}
             {isGuest && <button type="button" className="kk-btn kk-btn--sm" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>}
             <button type="button" className="kk-icon-btn" onClick={() => setSearchOpen(o => !o)} aria-expanded={searchOpen} aria-controls="kk-plaza-search"
               aria-label={L('廣場を検索', '搜尋廣場', 'Search Discover')}>

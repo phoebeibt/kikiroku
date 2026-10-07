@@ -519,7 +519,8 @@ export default function Wiki({ session }) {
         <header className="kk-ledger__head">
           <h1 className="kk-ledger__title">{L('事典', '事典', 'Library')}</h1>
           <div className="kk-ledger__head-actions">
-            <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />
+            {/* Signed-in users switch language in プロフ; guests have no プロフ, so they keep it here. */}
+            {!session && <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />}
           </div>
         </header>
         <div className="kk-seg" role="tablist" aria-label={L('事典の分類', '事典分類', 'Sections')}>

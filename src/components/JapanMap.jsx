@@ -58,11 +58,10 @@ export default function JapanMap({ regionCounts = {}, selected, onSelect }) {
   for (const [ja, count] of Object.entries(regionCounts)) {
     const code = JA_TO_CODE[ja]
     if (!code || !count) continue
-    const intensity = 0.25 + (count / maxCount) * 0.75
-    const r = Math.round(181 * intensity + 30 * (1 - intensity))
-    const g = Math.round(69  * intensity + 20 * (1 - intensity))
-    const b = Math.round(27  * intensity + 15 * (1 - intensity))
-    cityColors[code] = `rgb(${r},${g},${b})`
+    // 酒札 palette: pale 青緑 for one record → deep 青緑 (#2f5b4b) for the most-recorded prefecture.
+    const t = 0.25 + (count / maxCount) * 0.75
+    const mix = (lo, hi) => Math.round(lo + (hi - lo) * t)
+    cityColors[code] = `rgb(${mix(196, 47)},${mix(219, 91)},${mix(208, 75)})`
   }
 
   // Full map Y: 0–515. Main islands (Hokkaido–Kagoshima) Y: 0–378 = 73.3%.
@@ -79,8 +78,8 @@ export default function JapanMap({ regionCounts = {}, selected, onSelect }) {
           strokeColor="var(--surface-card)"
           strokeWidth={0.8}
           cityColors={cityColors}
-          hoverColor="rgba(181,69,27,.18)"
-          selectColor="rgba(181,69,27,.35)"
+          hoverColor="rgba(79,138,123,.35)"
+          selectColor="rgba(47,91,75,.6)"
           onSelect={code => onSelect?.(code === selected ? null : code)}
         />
       </div>

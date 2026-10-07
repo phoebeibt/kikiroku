@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 const LANGS = [{ code: 'ja', label: '日', name: '日本語' }, { code: 'zh', label: '中', name: '中文' }, { code: 'en', label: 'EN', name: 'English' }]
 
-// Temporary home for the language switch until プロフ is rebuilt.
+// Header language switch for guests (signed-in users switch it in プロフ).
 export default function LangButton({ lang, onChange, label }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
