@@ -14,6 +14,9 @@ import { WikiText, WikiIcon } from '../components/WikiTooltip'
 import { normalizeType } from '../lib/sakeType'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
 import { pressable } from '../lib/a11y'
+import RatingPicker from '../components/record/RatingPicker'
+import Toast from '../components/ui/Toast'
+import '../components/record/record.css'
 
 
 
@@ -24,19 +27,6 @@ const SpinIcon = () => (
   </svg>
 )
 
-function MarkSVG() {
-  return (
-    <svg style={{ position: 'absolute', right: -40, bottom: -40, width: 200, height: 200, opacity: .05, pointerEvents: 'none', zIndex: 0 }}
-      viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(44,44)">
-        <path d="M-15,-37 C-30,-30 -40,-14 -40,4 C-40,22 -32,36 -18,40 C-4,44 14,40 26,28 C36,18 40,2 36,-14 C32,-28 20,-38 4,-40" fill="none" style={{ stroke: 'var(--mark-outer)' }} strokeWidth="1.1" strokeLinecap="round" />
-        <path d="M-10,-27 C-22,-22 -30,-10 -30,4 C-30,18 -22,28 -10,32 C2,36 16,30 24,20 C30,12 30,-2 24,-14 C18,-24 6,-30 -4,-30" fill="none" style={{ stroke: 'var(--mark-outer)' }} strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M-6,-18 C-14,-14 -20,-6 -20,4 C-20,14 -14,20 -4,22 C6,24 16,18 20,10 C22,4 20,-6 14,-12 C8,-18 0,-20 -4,-20" fill="none" style={{ stroke: 'var(--mark-inner)' }} strokeWidth="2" strokeLinecap="round" />
-        <circle r="10" style={{ fill: 'var(--mark-dot)' }} />
-      </g>
-    </svg>
-  )
-}
 
 const EMPTY_FORM = {
   brand: '', name: '', brewery: '', region: '', type: '',
@@ -48,45 +38,7 @@ const EMPTY_FORM = {
   is_public: false, contributor_name: '',
 }
 
-function TagInput({ tags, onChange, t }) {
-  const [input, setInput] = useState('')
-  const add = () => {
-    const v = input.trim()
-    if (v && !tags.includes(v)) onChange([...tags, v])
-    setInput('')
-  }
-  return (
-    <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-        {tags.map(tag => (
-          <span key={tag} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, background: 'var(--accent-bg)', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            {tag}
-            <span onClick={() => onChange(tags.filter(x => x !== tag))} style={{ cursor: 'pointer', fontWeight: 700, fontSize: 11, opacity: .6 }}>×</span>
-          </span>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14, outline: 'none' }}
-          value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add() } }}
-          placeholder={t('form.tagPH')} />
-        <button type="button" onClick={add}
-          style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--accent)', fontSize: 13, cursor: 'pointer' }}>
-          {t('form.tagAdd')}
-        </button>
-      </div>
-    </div>
-  )
-}
 
-function Toggle({ on, onChange }) {
-  return (
-    <div onClick={() => onChange(!on)}
-      style={{ width: 44, height: 26, borderRadius: 13, background: on ? 'var(--accent)' : 'var(--border)', position: 'relative', cursor: 'pointer', transition: 'background .2s', flexShrink: 0 }}>
-      <div style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .18s', boxShadow: '0 1px 3px rgba(0,0,0,.25)' }} />
-    </div>
-  )
-}
 
 const s = {
   page: { minHeight: '100svh', background: 'var(--bg)' },
@@ -372,6 +324,12 @@ export default function Journal({ session }) {
   const [forwardConfirmEntry, setForwardConfirmEntry] = useState(null)
   const FORWARD_SKIP_KEY = 'kikiroku_forward_confirm_skip'
   const [specsOpen, setSpecsOpen] = useState(false)
+  const [feelTab, setFeelTab] = useState('aroma')
+  const [formErrors, setFormErrors] = useState({})
+  const [saveError, setSaveError] = useState('')
+  const [editStatus, setEditStatus] = useState('published')
+  const [toast, setToast] = useState(null)
+  const clearToast = useCallback(() => setToast(null), [])
   const [brandMap, setBrandMap] = useState({})
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('kk_view') || 'grid')
   const [typeFilter, setTypeFilter] = useState('')
@@ -504,11 +462,12 @@ export default function Journal({ session }) {
     return true
   })
 
-  const ratedEntries = entries.filter(e => e.rating)
+  const ratedEntries = entries.filter(e => e.rating && e.status !== 'draft')
   const avgRating = ratedEntries.length ? (ratedEntries.reduce((s, e) => s + e.rating, 0) / ratedEntries.length).toFixed(1) : null
   const breweryCount = entries.reduce((acc, e) => { if (e.brewery) acc[e.brewery] = (acc[e.brewery] || 0) + 1; return acc }, {})
   const topBrewery = Object.keys(breweryCount).sort((a, b) => breweryCount[b] - breweryCount[a])[0]
   const sharedCount = entries.filter(e => e.is_public).length
+  const draftCount = entries.filter(e => e.status === 'draft').length
   const defaultName = session.user.user_metadata?.display_name || session.user.email.split('@')[0]
 
   const openAdd = () => {
@@ -528,6 +487,7 @@ export default function Journal({ session }) {
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
     setSpecsOpen(false)
+    resetFormUi('published')
     setSheet('form')
   }
   const openForward = fwd => {
@@ -545,6 +505,7 @@ export default function Journal({ session }) {
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(null); setPhotoPreview2(null)
     setSpecsOpen(!!(fwd.type || fwd.rice || fwd.yeast || fwd.polishing || fwd.alcohol || fwd.smv || fwd.acidity))
+    resetFormUi('published')
     setSheet('form')
   }
 
@@ -568,8 +529,22 @@ export default function Journal({ session }) {
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
     setSpecsOpen(!!(e.type || e.rice || e.yeast || e.polishing || e.alcohol || e.smv || e.acidity || e.bottling_date))
+    resetFormUi(e.status || 'published')
     setSheet('form')
   }
+  const formHasContent = !!(form.brand.trim() || form.name.trim() || form.notes.trim() || form.rating > 0 || photoPreview || photoPreview2 || aromaTags.length || tasteTags.length)
+  const resetForm = () => {
+    setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name || defaultName })
+    setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); setFormDates([TODAY()])
+    setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([])
+    clearDraft(); setDraftRestored(false); setHasDraft(false); setFormErrors({}); setSaveError('')
+  }
+  const cleanJa = label => (label || '').replace(/（.*?）/g, '')
+
+  const resetFormUi = status => {
+    setFeelTab('aroma'); setFormErrors({}); setSaveError(''); setEditStatus(status)
+  }
+
   const close = () => {
     if (sheet === 'form' && !editId && !forwardSource) {
       saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags)
@@ -618,13 +593,32 @@ export default function Journal({ session }) {
   }
   const onCropCancel = () => { setCropSrc(null) }
 
-  const save = async () => {
-    if (!form.brand.trim() && !form.name.trim()) return
-    setSaving(true)
+  const L3 = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
+
+  // mode 'publish' → a finished 酒札 (needs a name and a rating).
+  // mode 'draft'   → kept on the server as status 'draft', never public, anything goes.
+  const save = async (mode = 'publish') => {
+    const hasName = !!(form.brand.trim() || form.name.trim())
+    const hasAnything = hasName || photoFile || photoFile2 || photoPreview || form.notes.trim() || form.rating > 0 || aromaTags.length || tasteTags.length
+    if (mode === 'publish') {
+      const errs = {}
+      if (!hasName) errs.name = L3('酒名か銘柄を入れてください', '請填寫酒名或銘柄', 'Add a sake name or brand')
+      if (!(form.rating > 0)) errs.rating = L3('評価を選んでください', '請選擇評分', 'Choose a rating')
+      setFormErrors(errs)
+      if (Object.keys(errs).length) {
+        const target = document.getElementById(errs.name ? 'kk-field-brand' : 'kk-field-rating')
+        target?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        target?.focus({ preventScroll: true })
+        return
+      }
+    } else if (!hasAnything) {
+      closeClean(); return
+    }
+    setSaving(true); setSaveError('')
     try {
       // Always fetch a fresh, validated user to avoid stale session issues
       const { data: { user }, error: authErr } = await supabase.auth.getUser()
-      if (authErr || !user) throw new Error('認証エラー。再ログインしてください。')
+      if (authErr || !user) throw new Error(L3('ログインが切れました。再ログインしてください。', '登入已失效，請重新登入。', 'Your session expired. Please sign in again.'))
       const uid = user.id
 
       const prev = editId ? entries.find(e => e.id === editId) : null
@@ -634,48 +628,56 @@ export default function Journal({ session }) {
       if (photoFile2) photo_url2 = await uploadPhoto(photoFile2, uid)
       const sortedDates = [...formDates].filter(Boolean).sort().reverse()
       const tasted_at = sortedDates[0] || TODAY()
+      const isDraft = mode === 'draft'
       const payload = {
         ...form, tasted_at,
+        type: normalizeType(form.type) || null,
+        status: isDraft ? 'draft' : 'published',
+        is_public: isDraft ? false : form.is_public,
         tasted_dates: sortedDates.length ? sortedDates : null,
-        rating: form.rating || null,
+        rating: form.rating > 0 ? form.rating : null,
         tags: formTags.length ? formTags : null,
         aroma_tags: aromaTags.length ? aromaTags : null,
         taste_tags: tasteTags.length ? tasteTags : null,
         method_tags: methodTags.length ? methodTags : null,
         photo_url, photo_url2, user_id: uid,
-        contributor_name: form.is_public ? (form.contributor_name.trim() || defaultName) : null,
+        contributor_name: !isDraft && form.is_public ? (form.contributor_name.trim() || defaultName) : null,
       }
-      if (editId) {
-        await supabase.from('sake_entries').update(payload).eq('id', editId)
-      } else {
-        await supabase.from('sake_entries').insert(payload)
-        // Contribute new sake to the product database if it doesn't exist yet
-        if (form.name.trim()) {
-          const fullName = [form.brand, form.name].filter(Boolean).join(' ').trim()
-          const { count } = await supabase
-            .from('sake_products')
-            .select('id', { count: 'exact', head: true })
-            .ilike('name', fullName)
-          if (count === 0) {
-            await supabase.from('sake_products').insert({
-              name:         fullName,
-              brewery_name: form.brewery.trim() || null,
-              region:       form.region.trim()  || null,
-              type:         normalizeType(form.type) || null,
-              rice:         form.rice.trim()    || null,
-              yeast:        form.yeast.trim()   || null,
-              polishing:    form.polishing ? parseFloat(form.polishing) : null,
-              alcohol:      form.alcohol  ? parseFloat(form.alcohol)   : null,
-              smv:          form.smv.trim()     || null,
-              acidity:      form.acidity  ? parseFloat(form.acidity)   : null,
-            })
-          }
+      const { error: writeErr } = editId
+        ? await supabase.from('sake_entries').update(payload).eq('id', editId)
+        : await supabase.from('sake_entries').insert(payload)
+      if (writeErr) throw new Error(writeErr.message)
+
+      // Contribute a newly finished sake to the product catalogue if it isn't there yet
+      if (!isDraft && !editId && form.name.trim()) {
+        const fullName = [form.brand, form.name].filter(Boolean).join(' ').trim()
+        const { count } = await supabase
+          .from('sake_products')
+          .select('id', { count: 'exact', head: true })
+          .ilike('name', fullName)
+        if (count === 0) {
+          await supabase.from('sake_products').insert({
+            name:         fullName,
+            brewery_name: form.brewery.trim() || null,
+            region:       form.region.trim()  || null,
+            type:         normalizeType(form.type) || null,
+            rice:         form.rice.trim()    || null,
+            yeast:        form.yeast.trim()   || null,
+            polishing:    form.polishing ? parseFloat(form.polishing) : null,
+            alcohol:      form.alcohol  ? parseFloat(form.alcohol)   : null,
+            smv:          form.smv.trim()     || null,
+            acidity:      form.acidity  ? parseFloat(form.acidity)   : null,
+          })
         }
       }
       clearDraft(); setHasDraft(false)
+      setToast(isDraft
+        ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました', '已存為草稿', 'Saved as a draft') }
+        : { id: Date.now(), stamp: L3('保存', '保存', 'Saved'), message: L3('酒札を保存しました', '酒札已保存', 'Sake tag saved') })
       await fetchEntries(); closeClean()
-    } catch (e) { alert(e.message) }
-    finally { setSaving(false) }
+    } catch (e) {
+      setSaveError(L3('保存できませんでした：', '儲存失敗：', 'Could not save: ') + e.message)
+    } finally { setSaving(false) }
   }
 
   const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
@@ -783,10 +785,11 @@ export default function Journal({ session }) {
 
         {entries.length > 0 && (
           <div style={s.statsRow}>
-            <span><span style={s.statNum}>{entries.length}</span> {t('stats.bottles')}</span>
+            <span><span style={s.statNum}>{entries.length - draftCount}</span> {t('stats.bottles')}</span>
             {avgRating && <span>{t('stats.avg')} <span style={s.statNum}>{avgRating}</span> ★</span>}
             {topBrewery && <span>{t('stats.most')} <span style={s.statNum}>{topBrewery}</span></span>}
             {sharedCount > 0 && <span>{t('stats.shared')} <span style={s.statNum}>{sharedCount}</span></span>}
+            {draftCount > 0 && <span>{L3('下書き', '草稿', 'Drafts')} <span style={s.statNum}>{draftCount}</span></span>}
           </div>
         )}
 
@@ -890,8 +893,10 @@ export default function Journal({ session }) {
             <div style={{ ...s.empty, gridColumn: '1/-1' }}>{t('noResults', { q: search })}</div>
           )}
           {filtered.map(e => (
-            <div key={e.id} style={s.card} {...pressable(() => setDetail(e), [e.brand, e.name].filter(Boolean).join(' '))}>
-              {e.is_public && <div style={s.publicBadge}>{t('public')}</div>}
+            <div key={e.id} style={s.card} {...pressable(() => e.status === 'draft' ? openEdit(e) : setDetail(e), [e.brand, e.name].filter(Boolean).join(' ') || L3('名前のない下書き', '未命名草稿', 'Untitled draft'))}>
+              {e.status === 'draft'
+                ? <span className="kk-status kk-status--draft" style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>{L3('下書き', '草稿', 'Draft')}</span>
+                : e.is_public && <div style={s.publicBadge}>{t('public')}</div>}
               {e.photo_url ? <img style={s.cardImg} src={e.photo_url} alt={e.name} /> : <div style={s.cardNo}>🍶</div>}
               <div style={s.cardOverlay} />
               <div style={s.cardBody}>
@@ -1054,294 +1059,299 @@ export default function Journal({ session }) {
         </>)}
       </Sheet>
 
-      {/* Form sheet */}
+      {/* Form sheet — 新しい記録 */}
       <Sheet
         open={sheet === 'form'}
         onClose={close}
-        title={editId ? t('form.editEntry') : t('form.newEntry')}
-        closeLabel={lang === 'ja' ? '閉じる' : lang === 'zh' ? '關閉' : 'Close'}
-        footer={
-          <button type="button" className="kk-btn kk-btn--primary" onClick={save} disabled={saving}>
-            {saving ? t('saving') : t('save')}
+        label={editId ? t('form.editEntry') : t('form.newEntry')}
+        header={<>
+          <button type="button" className="kk-icon-btn" onClick={close} aria-label={L3('閉じる', '關閉', 'Close')}><CloseIcon /></button>
+          <h2 className="kk-panel__title">{editId ? t('form.editEntry') : t('form.newEntry')}</h2>
+          {editId && editStatus === 'draft'
+            ? <span className="kk-status kk-status--draft">{L3('下書き', '草稿', 'Draft')}</span>
+            : !editId && !forwardSource && formHasContent
+              ? <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" style={{ padding: '0 4px' }} onClick={resetForm}>{L3('クリア', '清除', 'Clear')}</button>
+              : <span className="kk-panel__head-spacer" />}
+        </>}
+        footer={<>
+          {(!editId || editStatus === 'draft') && (
+            <button type="button" className="kk-btn" onClick={() => save('draft')} disabled={saving}>{L3('下書き', '存草稿', 'Draft')}</button>
+          )}
+          <button type="button" className="kk-btn kk-btn--primary" onClick={() => save('publish')} disabled={saving}>
+            {saving ? t('saving') : editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('酒札を保存', '保存酒札', 'Save')}
           </button>
-        }
+        </>}
       >
-            <div>
+        <div className="kk-form">
+          <div className="kk-progress" aria-hidden="true">
+            {[!!(photoPreview || photoPreview2), !!(form.brand.trim() || form.name.trim()), form.rating > 0, !!(aromaTags.length || tasteTags.length || form.notes.trim() || formTags.length)]
+              .map((on, i) => <span key={i} className={`kk-progress__step${on ? ' is-on' : ''}`} />)}
+          </div>
 
-              {forwardSource && (
-                <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--sub)' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-                  </svg>
-                  <span>{lang === 'ja' ? `「${forwardSource}」をもとに記録中` : lang === 'zh' ? `基於「${forwardSource}」記錄` : `Based on "${forwardSource}"`}</span>
-                </div>
-              )}
+          {saveError && <div className="kk-banner kk-banner--error" role="alert">{saveError}</div>}
 
-              {draftRestored && (
-                <div style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent)', borderRadius: 10, padding: '10px 14px', marginBottom: 4, marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
-                  <span style={{ color: 'var(--accent)' }}>{lang === 'ja' ? '草稿を復元しました' : lang === 'zh' ? '已恢復草稿' : 'Draft restored'}</span>
-                  <button onClick={() => { setForm(EMPTY_FORM); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
-                    style={{ background: 'none', border: 'none', color: 'var(--sub)', fontSize: 12, cursor: 'pointer' }}>
-                    {lang === 'ja' ? '破棄' : lang === 'zh' ? '放棄草稿' : 'Discard'}
-                  </button>
-                </div>
-              )}
+          {forwardSource && (
+            <div className="kk-banner kk-banner--info">
+              {L3(`「${forwardSource}」をもとに記録中`, `基於「${forwardSource}」記錄`, `Based on "${forwardSource}"`)}
+            </div>
+          )}
 
-              {/* Photos */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.photos')}</div>
-                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 0', borderRadius: 10, border: '1.5px dashed var(--border)', color: 'var(--sub)', fontSize: 13, cursor: 'pointer', background: 'var(--bg)', marginBottom: 10, boxSizing: 'border-box' }}>
-                  <span>📷</span>{t('form.selectBoth')}
-                  <input ref={fileRefBoth} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={onPhotoBoth} />
-                </label>
-                <div style={s.row2}>
-                  <div>
-                    <div style={s.label}>{t('form.mainPhoto')}</div>
-                    <div style={s.photoBox} onClick={() => photoPreview ? setLightbox(photoPreview) : fileRef.current.click()}>
-                      {photoPreview
-                        ? <>
-                            <img style={s.photoImg} src={photoPreview} alt="" />
-                            <button type="button" onClick={e => { e.stopPropagation(); fileRef.current.click() }}
-                              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.45)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, padding: '3px 8px', cursor: 'pointer', zIndex: 1 }}>
-                              {t('form.tapToAdd')}
-                            </button>
-                          </>
-                        : <div style={s.photoLbl}>{t('form.tapToAdd')}</div>}
-                    </div>
-                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto} />
-                  </div>
-                  <div>
-                    <div style={s.label}>{t('form.subPhoto')}</div>
-                    <div style={s.photoBox} onClick={() => photoPreview2 ? setLightbox(photoPreview2) : fileRef2.current.click()}>
-                      {photoPreview2
-                        ? <>
-                            <img style={s.photoImg} src={photoPreview2} alt="" />
-                            <button type="button" onClick={e => { e.stopPropagation(); fileRef2.current.click() }}
-                              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.45)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 11, padding: '3px 8px', cursor: 'pointer', zIndex: 1 }}>
-                              {t('form.tapToAdd')}
-                            </button>
-                          </>
-                        : <div style={s.photoLbl}>{t('form.tapToAdd')}</div>}
-                    </div>
-                    <input ref={fileRef2} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPhoto2} />
-                  </div>
-                </div>
+          {draftRestored && (
+            <div className="kk-note-card">
+              <div className="kk-note-card__mark" aria-hidden="true">札</div>
+              <div>
+                <strong>{L3('前回の続きがあります', '有上次未完成的記錄', 'Picking up where you left off')}</strong>
+                <div className="kk-helper">{L3('下書きは「下書き」ボタンでいつでも残せます。', '隨時可以按「存草稿」保留。', 'Use “Draft” to keep it for later.')}</div>
               </div>
+              <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" onClick={resetForm}>{L3('破棄', '放棄', 'Discard')}</button>
+            </div>
+          )}
 
-              {/* Name / Brewery */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.basic')}</div>
-                <div style={s.field}>
-                  <label style={s.label}>{t('form.brand')}<WikiIcon termId="meigara" /></label>
-                  <BrandInput style={{ ...s.input, maxWidth: 200 }} value={form.brand} onChange={v => f('brand', v)}
-                    onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                    onBlur={inferBreweryFromBrand}
-                    placeholder={t('form.brandPH')} />
+          {/* 1 · 写真 */}
+          <section className="kk-section" aria-labelledby="kk-sec-photo">
+            <h3 className="kk-section__title" id="kk-sec-photo">{t('form.photos')}</h3>
+            {!photoPreview && !photoPreview2 ? (
+              <button type="button" className="kk-upload" onClick={() => fileRefBoth.current.click()}>
+                <div>
+                  <strong>{L3('ラベルを撮る', '拍酒標', 'Photograph the label')}</strong>
+                  <span>{L3('表と裏をまとめて選べます · スキップして酒名だけでも保存', '可一次選正面和背標 · 也可以略過，只填酒名', 'Front and back together · or skip and just type the name')}</span>
                 </div>
-                <div style={s.field}>
-                  <label style={s.label}>{t('form.name')}</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <NameInput style={{ ...s.input, flex: 1 }} value={form.name} onChange={v => f('name', v)}
-                      brand={form.brand}
-                      onBrandFill={v => f('brand', v)}
-                      onProductFill={p => setForm(prev => ({
-                        ...prev,
-                        brewery:   prev.brewery   || p.brewery   || '',
-                        region:    prev.region    || p.region    || '',
-                        type:      prev.type      || normalizeType(p.type),
-                        rice:      prev.rice      || p.rice      || '',
-                        yeast:     prev.yeast     || p.yeast     || '',
-                        polishing: prev.polishing || p.polishing || '',
-                        alcohol:   prev.alcohol   || p.alcohol   || '',
-                        smv:       prev.smv       || p.smv       || '',
-                        acidity:   prev.acidity   || p.acidity   || '',
-                      }))}
-                      onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
-                      placeholder={t('form.namePH')} />
-                    <button type="button"
-                      disabled={searchLoading || (!form.brand && !form.name && !form.brewery)}
-                      onClick={() => runSearch(form)}
-                      title={t('ocr.searching')}
-                      style={{ flexShrink: 0, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: searchLoading ? 'var(--accent-bg)' : 'var(--surface)', color: searchLoading ? 'var(--accent)' : 'var(--sub)', fontSize: 12, cursor: (searchLoading || (!form.brand && !form.name && !form.brewery)) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
-                      {searchLoading ? <SpinIcon /> : '🔍'}{t('form.webSearch')}
+              </button>
+            ) : (
+              <div className="kk-photos">
+                {[[photoPreview, fileRef, t('form.mainPhoto')], [photoPreview2, fileRef2, L3('裏ラベル', '背標', 'Back label')]].map(([src, ref, tag], i) => (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <button type="button" className="kk-photo" onClick={() => src ? setLightbox(src) : ref.current.click()}
+                      aria-label={src ? `${tag} — ${L3('拡大', '放大', 'Enlarge')}` : `${tag} — ${t('form.tapToAdd')}`}>
+                      {src ? <img src={src} alt="" /> : <span>＋ {tag}</span>}
+                      {src && <span className="kk-photo__tag">{tag}</span>}
                     </button>
+                    {src && <button type="button" className="kk-photo__swap" onClick={() => ref.current.click()}>{L3('撮り直す', '重拍', 'Retake')}</button>}
                   </div>
-                  {form.name_reading && <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 3, letterSpacing: '.04em' }}>{form.name_reading}</div>}
-                </div>
-                <div style={s.row2}>
-                  <div style={s.field}>
-                    <label style={s.label}>{t('form.brewery')}</label>
-                    <BreweryInput style={s.input} value={form.brewery} onChange={v => f('brewery', v)}
-                      onRegionFill={v => f('region', v)} placeholder={t('form.breweryPH')} />
-                  </div>
-                  <div style={s.field}>
-                    <label style={s.label}>{t('form.region')}</label>
-                    <input style={s.input} value={form.region} onChange={e => f('region', e.target.value)} placeholder={t('form.regionPH')} />
-                  </div>
-                </div>
-                <div style={s.field}>
-                  <label style={s.label}>{t('form.date')}</label>
-                  {formDates.map((d, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                      {i === 0 && formDates.length > 1 && (
-                        <span style={{ fontSize: 9, color: 'var(--accent)', letterSpacing: '.04em', flexShrink: 0 }}>
-                          {lang === 'zh' ? '最近' : lang === 'ja' ? '最近' : 'Latest'}
-                        </span>
-                      )}
-                      <input
-                        style={{ ...s.input, flex: 1, minWidth: 0, colorScheme: 'light' }}
-                        type="date" value={d}
-                        onChange={e => {
-                          const val = e.target.value
-                          setFormDates(prev => [...prev.slice(0, i), val, ...prev.slice(i + 1)].filter(Boolean).sort().reverse())
-                        }}
-                      />
-                      {formDates.length > 1 && (
-                        <button type="button" onClick={() => setFormDates(prev => prev.filter((_, idx) => idx !== i))}
-                          style={{ flexShrink: 0, width: 32, height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sans)' }}>
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                    <button type="button"
-                      onClick={() => setFormDates(prev => [...new Set([...prev, TODAY()])].sort().reverse())}
-                      style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: '1px dashed var(--border)', background: 'none', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-                      {lang === 'zh' ? '＋ 新增飲用日' : lang === 'ja' ? '＋ 飲用日を追加' : '+ Add date'}
-                    </button>
-                    <button type="button"
-                      onClick={() => { setForm({ ...EMPTY_FORM, contributor_name: form.contributor_name }); setFormTags([]); setAromaTags([]); setTasteTags([]); setMethodTags([]); setFormDates([TODAY()]); setPhotoFile(null); setPhotoFile2(null); setPhotoPreview(null); setPhotoPreview2(null); setAwardYears([]); clearDraft(); setDraftRestored(false); setHasDraft(false) }}
-                      style={{ flexShrink: 0, padding: '0 13px', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--sub)', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>
-                      {lang === 'ja' ? 'リセット' : lang === 'zh' ? '重置' : 'Reset'}
-                    </button>
-                  </div>
-                </div>
-                {awardYears.length > 0 && (
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 4 }}>
-                    {awardYears.map((a, i) => {
-                      const isSC = a.year_code?.startsWith('SC_')
-                      const isIWC = a.year_code?.startsWith('IWC_')
-                      const prefix = isSC ? 'SC' : isIWC ? 'IWC' : '鑑'
-                      return (
-                        <span key={i} title={a.brand_name} style={{ fontSize: 10, padding: '2px 9px', borderRadius: 12, background: 'rgba(180,140,0,.10)', color: '#8A6C00', border: '1px solid rgba(180,140,0,.25)', whiteSpace: 'nowrap' }}>
-                          ★ {prefix} {a.year}
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
+                ))}
               </div>
+            )}
+            <input ref={fileRefBoth} type="file" accept="image/*" multiple hidden onChange={onPhotoBoth} />
+            <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPhoto} />
+            <input ref={fileRef2} type="file" accept="image/*" hidden onChange={onPhoto2} />
+          </section>
 
-              {/* Rating */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.rating')}</div>
-                <div style={s.ratingRow}>
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button key={n} type="button" style={s.ratingDot(form.rating >= n)}
-                      onClick={() => f('rating', form.rating === n ? 0 : n)}>{n}</button>
-                  ))}
-                </div>
+          {/* 2 · 酒名 */}
+          <section className="kk-section" aria-labelledby="kk-sec-basic">
+            <h3 className="kk-section__title" id="kk-sec-basic">
+              <span>{L3('どのお酒？', '哪一瓶？', 'Which sake?')}</span>
+              <span className="kk-required">{L3('保存に必要', '儲存必填', 'Required')}</span>
+            </h3>
+            <div className="kk-row2">
+              <div className="kk-field">
+                <label className="kk-field__label" htmlFor="kk-field-brand"><span>{L3('銘柄', '銘柄', 'Brand')} <WikiIcon termId="meigara" /></span></label>
+                <BrandInput id="kk-field-brand" className="kk-input" aria-invalid={!!formErrors.name} value={form.brand}
+                  onChange={v => { f('brand', v); if (formErrors.name) setFormErrors(e => ({ ...e, name: null })) }}
+                  onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
+                  onBlur={inferBreweryFromBrand} placeholder={t('form.brandPH')} />
               </div>
-
-              {/* Tasting notes */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.tasting')}</div>
-                <div style={s.field}>
-                  <label style={s.label}>{t('form.aroma')}</label>
-                  <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />
-                </div>
-                <div style={{ ...s.field, marginTop: 14 }}>
-                  <label style={s.label}>{t('form.taste')}</label>
-                  <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />
-                </div>
-                <div style={{ ...s.field, marginTop: 14 }}>
-                  <label style={s.label}>{t('form.notes')}</label>
-                  <textarea style={s.textarea} value={form.notes} onChange={e => f('notes', e.target.value)} placeholder={t('form.notesPH')} />
-                </div>
+              <div className="kk-field">
+                <label className="kk-field__label" htmlFor="kk-field-name">{L3('酒名', '酒名', 'Name')}</label>
+                <NameInput id="kk-field-name" className="kk-input" aria-invalid={!!formErrors.name} value={form.name}
+                  onChange={v => { f('name', v); if (formErrors.name) setFormErrors(e => ({ ...e, name: null })) }}
+                  brand={form.brand}
+                  onBrandFill={v => f('brand', v)}
+                  onProductFill={p => setForm(prev => ({
+                    ...prev,
+                    brewery:   prev.brewery   || p.brewery   || '',
+                    region:    prev.region    || p.region    || '',
+                    type:      prev.type      || normalizeType(p.type),
+                    rice:      prev.rice      || p.rice      || '',
+                    yeast:     prev.yeast     || p.yeast     || '',
+                    polishing: prev.polishing || p.polishing || '',
+                    alcohol:   prev.alcohol   || p.alcohol   || '',
+                    smv:       prev.smv       || p.smv       || '',
+                    acidity:   prev.acidity   || p.acidity   || '',
+                  }))}
+                  onBreweryFill={v => f('brewery', v)} onRegionFill={v => f('region', v)}
+                  placeholder={t('form.namePH')} />
               </div>
-
-              {/* Flavor tags */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.flavorTags')}</div>
-                <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+            </div>
+            {formErrors.name && <p className="kk-field-error" role="alert" style={{ marginBottom: 10 }}>{formErrors.name}</p>}
+            {form.name_reading && <p className="kk-helper" style={{ margin: '-6px 0 10px' }}>{form.name_reading}</p>}
+            <div className="kk-row2">
+              <div className="kk-field">
+                <label className="kk-field__label" htmlFor="kk-field-brewery">{t('form.brewery')}</label>
+                <BreweryInput id="kk-field-brewery" className="kk-input" value={form.brewery} onChange={v => f('brewery', v)}
+                  onRegionFill={v => f('region', v)} placeholder={t('form.breweryPH')} />
               </div>
-
-              {/* Method tags */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.methodTags')}</div>
-                <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} />
+              <div className="kk-field">
+                <label className="kk-field__label" htmlFor="kk-field-region">{t('form.region')}</label>
+                <input id="kk-field-region" className="kk-input" value={form.region} onChange={e => f('region', e.target.value)} placeholder={t('form.regionPH')} />
               </div>
-
-              {/* Specs — search auto-fills here */}
-              {(() => {
-                const hasSpecs = !!(form.type || form.rice || form.yeast || form.polishing || form.alcohol || form.smv || form.acidity || form.bottling_date)
-                return (
-                  <div style={s.sec}>
-                    <button type="button" onClick={() => setSpecsOpen(o => !o)}
-                      style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: specsOpen ? 12 : 0, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
-                      <span style={{ flex: 1, fontSize: 11, color: 'var(--sub)', letterSpacing: '.08em', textAlign: 'left' }}>{t('form.specs')}</span>
-                      {hasSpecs && !specsOpen && (
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', flexShrink: 0 }} />
-                      )}
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--sub)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                        style={{ flexShrink: 0, transition: 'transform .2s', transform: specsOpen ? 'rotate(180deg)' : 'none' }}>
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </button>
-                    {specsOpen && (
-                      <>
-                        <div style={s.row2}>
-                          <div style={s.field}>
-                            <label style={s.label}>{t('form.type')}</label>
-                            <select style={s.select} value={form.type} onChange={e => f('type', e.target.value)}>
-                              <option value="">{t('form.typeSelect')}</option>
-                              {sakeTypes.map(tp => (
-                                <option key={tp.id} value={tp.id}>
-                                  {lang === 'ja' ? tp.ja : `${tp.ja} · ${tp[lang] || tp.en}`}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div style={s.field}><label style={s.label}>{t('form.bottling')}</label><input style={s.input} type="text" maxLength="7" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} placeholder="yyyy-mm" /></div>
-                        </div>
-                        <div style={s.row2}>
-                          <div style={s.field}><label style={s.label}>{t('form.rice')}</label><RiceInput style={s.input} value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} /></div>
-                          <div style={s.field}><label style={s.label}>{t('form.yeast')}</label><input style={s.input} value={form.yeast} onChange={e => f('yeast', e.target.value)} /></div>
-                        </div>
-                        <div style={s.row4}>
-                          <div style={s.field}><label style={s.label}>{t('form.polishing')}</label><input style={s.input} value={form.polishing} onChange={e => f('polishing', e.target.value)} placeholder="60%" /></div>
-                          <div style={s.field}><label style={s.label}>{t('form.alcohol')}</label><input style={s.input} value={form.alcohol} onChange={e => f('alcohol', e.target.value)} placeholder="15%" /></div>
-                          <div style={s.field}><label style={s.label}>{t('form.smv')}</label><input style={s.input} value={form.smv} onChange={e => f('smv', e.target.value)} placeholder="+1" /></div>
-                          <div style={s.field}><label style={s.label}>{t('form.acidity')}</label><input style={s.input} value={form.acidity} onChange={e => f('acidity', e.target.value)} placeholder="1.5" /></div>
-                        </div>
-                      </>
+            </div>
+            {awardYears.length > 0 && (
+              <div className="kk-awards">
+                {awardYears.map((a, i) => {
+                  const prefix = a.year_code?.startsWith('SC_') ? 'SC' : a.year_code?.startsWith('IWC_') ? 'IWC' : '鑑'
+                  return <span key={i} title={a.brand_name}>★ {prefix} {a.year}</span>
+                })}
+              </div>
+            )}
+            <button type="button" className="kk-btn kk-btn--sm" style={{ marginBottom: 12 }}
+              disabled={searchLoading || (!form.brand && !form.name && !form.brewery)} onClick={() => runSearch(form)}>
+              {searchLoading ? <SpinIcon /> : null}
+              {searchLoading ? t('ocr.searching') : L3('ネットで規格を補完', '從網路補全規格', 'Fill specs from the web')}
+            </button>
+            <div className="kk-field">
+              <span className="kk-field__label" id="kk-dates-label">{L3('飲んだ日', '飲用日', 'Date tasted')}</span>
+              <div className="kk-dates" role="group" aria-labelledby="kk-dates-label">
+                {formDates.map((d, i) => (
+                  <div key={i} className="kk-dates__row">
+                    {i === 0 && formDates.length > 1 && <span className="kk-dates__latest">{L3('最近', '最近', 'Latest')}</span>}
+                    <input className="kk-input" type="date" value={d} aria-label={`${L3('飲んだ日', '飲用日', 'Date tasted')} ${i + 1}`}
+                      onChange={e => {
+                        const val = e.target.value
+                        setFormDates(prev => [...prev.slice(0, i), val, ...prev.slice(i + 1)].filter(Boolean).sort().reverse())
+                      }} />
+                    {formDates.length > 1 && (
+                      <button type="button" className="kk-icon-btn" onClick={() => setFormDates(prev => prev.filter((_, idx) => idx !== i))}
+                        aria-label={L3('この日付を削除', '刪除這個日期', 'Remove this date')}><CloseIcon size={14} /></button>
                     )}
                   </div>
-                )
-              })()}
+                ))}
+                <button type="button" className="kk-btn kk-btn--ghost kk-btn--sm" style={{ justifySelf: 'start', padding: 0 }}
+                  onClick={() => setFormDates(prev => [...new Set([...prev, TODAY()])].sort().reverse())}>
+                  {L3('＋ 飲んだ日を追加', '＋ 新增飲用日', '+ Add a date')}
+                </button>
+              </div>
+            </div>
+          </section>
 
-              {/* Share */}
-              <div style={s.sec}>
-                <div style={s.secLabel}>{t('form.share')}</div>
-                <div style={s.shareRow}>
-                  <Toggle on={form.is_public} onChange={v => f('is_public', v)} />
-                  <div style={s.shareText}>
-                    <div style={s.shareLabel}>{t('form.shareLabel')}</div>
-                    <div style={s.shareDesc}>{t('form.shareDesc')}</div>
+          {/* 3 · 私の評価 */}
+          <section className="kk-section" aria-labelledby="kk-sec-rating">
+            <h3 className="kk-section__title" id="kk-sec-rating">
+              <span>{L3('私の評価', '我的評分', 'My rating')}</span>
+              <span className="kk-required">{L3('保存に必要', '儲存必填', 'Required')}</span>
+            </h3>
+            <RatingPicker id="kk-field-rating" value={form.rating} label={L3('私の評価', '我的評分', 'My rating')} invalid={!!formErrors.rating}
+              onChange={v => { f('rating', v); if (formErrors.rating) setFormErrors(e => ({ ...e, rating: null })) }} />
+            {formErrors.rating
+              ? <p className="kk-field-error" role="alert" style={{ marginTop: 6 }}>{formErrors.rating}</p>
+              : <p className="kk-form-hint">{L3('酒名と評価だけで保存できます。迷ったら「下書き」へ。', '只要酒名和評分就能保存。還沒想好就先存草稿。', 'A name and a rating are enough. Not sure yet? Save a draft.')}</p>}
+          </section>
+
+          {/* 4 · 感想 */}
+          <section className="kk-section" aria-labelledby="kk-sec-feel">
+            <h3 className="kk-section__title" id="kk-sec-feel">{L3('感想', '感想', 'Impressions')}</h3>
+            {(() => {
+              const tabs = [
+                ['aroma', t('form.aroma'), aromaTags.length],
+                ['taste', t('form.taste'), tasteTags.length],
+                ['notes', t('form.notes'), form.notes.trim() ? 1 : 0],
+                ['flavor', L3('整理', '整理', 'Labels'), formTags.length],
+              ]
+              return (<>
+                <div className="kk-tabs" role="tablist" aria-label={L3('感想', '感想', 'Impressions')}>
+                  {tabs.map(([id, label, n]) => (
+                    <button key={id} type="button" role="tab" id={`kk-tab-${id}`} aria-controls={`kk-tabpanel-${id}`}
+                      aria-selected={feelTab === id} className={`kk-chip${feelTab === id ? ' is-active' : ''}`}
+                      onClick={() => setFeelTab(id)}>
+                      {label}{n > 0 && id !== 'notes' && <span className="kk-tab__count">{n}</span>}{n > 0 && id === 'notes' && <span aria-hidden="true">✓</span>}
+                    </button>
+                  ))}
+                </div>
+                <div role="tabpanel" id={`kk-tabpanel-${feelTab}`} aria-labelledby={`kk-tab-${feelTab}`}>
+                  {feelTab === 'aroma' && <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />}
+                  {feelTab === 'taste' && <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />}
+                  {feelTab === 'notes' && (
+                    <textarea className="kk-textarea" value={form.notes} onChange={e => f('notes', e.target.value)}
+                      placeholder={t('form.notesPH')} aria-label={t('form.notes')} />
+                  )}
+                  {feelTab === 'flavor' && <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />}
+                </div>
+              </>)
+            })()}
+          </section>
+
+          {/* 5 · 規格 (collapsed) */}
+          <section className="kk-section" style={{ paddingTop: 4 }}>
+            {(() => {
+              const summary = [typeLabel(form.type), form.polishing && `${L3('精米', '精米', 'Polish')} ${form.polishing}`, form.alcohol, form.rice, form.yeast]
+                .filter(Boolean).map(v => String(v)).join(' · ')
+              const n = methodTags.length
+              return (
+                <button type="button" className="kk-disclosure" aria-expanded={specsOpen} aria-controls="kk-specs" onClick={() => setSpecsOpen(o => !o)}>
+                  <span className="kk-disclosure__text">
+                    <span className="kk-disclosure__title">{L3('精米歩合・原料米など', '精米步合・原料米等', 'Polishing, rice & more')}</span>
+                    <span className="kk-disclosure__summary">{summary || (n ? `${t('form.methodTags')} ${n}` : L3('任意 · 補完ボタンで自動入力されます', '選填 · 可用補全按鈕自動帶入', 'Optional · the fill button can complete these'))}</span>
+                  </span>
+                  <svg className="kk-disclosure__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+              )
+            })()}
+            {specsOpen && (
+              <div className="kk-disclosure-panel" id="kk-specs">
+                <div className="kk-row2">
+                  <div className="kk-field">
+                    <label className="kk-field__label" htmlFor="kk-field-type">{t('form.type')}</label>
+                    <select id="kk-field-type" className="kk-select" value={form.type} onChange={e => f('type', e.target.value)}>
+                      <option value="">{t('form.typeSelect')}</option>
+                      {sakeTypes.map(tp => (
+                        <option key={tp.id} value={tp.id}>{lang === 'ja' ? cleanJa(tp.ja) : `${cleanJa(tp.ja)} · ${tp[lang] || tp.en}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="kk-field">
+                    <label className="kk-field__label" htmlFor="kk-field-bottling">{t('form.bottling')}</label>
+                    <input id="kk-field-bottling" className="kk-input" type="text" inputMode="numeric" maxLength="7" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} placeholder="yyyy-mm" />
                   </div>
                 </div>
-                {form.is_public && (
-                  <div style={{ ...s.field, marginTop: 12 }}>
-                    <label style={s.label}>{t('form.displayName')}</label>
-                    <input style={s.input} value={form.contributor_name}
-                      onChange={e => f('contributor_name', e.target.value)} placeholder={defaultName} />
+                <div className="kk-row2">
+                  <div className="kk-field">
+                    <label className="kk-field__label" htmlFor="kk-field-rice">{t('form.rice')}</label>
+                    <RiceInput id="kk-field-rice" className="kk-input" value={form.rice} onChange={v => f('rice', v)} placeholder={t('form.ricePH')} />
                   </div>
-                )}
+                  <div className="kk-field">
+                    <label className="kk-field__label" htmlFor="kk-field-yeast">{t('form.yeast')}</label>
+                    <input id="kk-field-yeast" className="kk-input" value={form.yeast} onChange={e => f('yeast', e.target.value)} />
+                  </div>
+                </div>
+                <div className="kk-row4">
+                  {[['polishing', '60%', 'decimal'], ['alcohol', '15%', 'decimal'], ['smv', '+1', 'text'], ['acidity', '1.5', 'decimal']].map(([k, ph, mode]) => (
+                    <div key={k} className="kk-field">
+                      <label className="kk-field__label" htmlFor={`kk-field-${k}`}>{t(`form.${k}`)}</label>
+                      <input id={`kk-field-${k}`} className="kk-input" inputMode={mode} value={form[k]} onChange={e => f(k, e.target.value)} placeholder={ph} />
+                    </div>
+                  ))}
+                </div>
+                <div className="kk-field">
+                  <span className="kk-field__label">{t('form.methodTags')}</span>
+                  <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} />
+                </div>
               </div>
+            )}
+          </section>
 
-            </div>
+          {/* 6 · 公開 */}
+          {(
+            <section className="kk-section" aria-labelledby="kk-sec-share">
+              <h3 className="kk-section__title" id="kk-sec-share">{t('form.share')}</h3>
+              <div className="kk-switch-row">
+                <button type="button" role="switch" className="kk-switch" aria-checked={!!form.is_public} aria-labelledby="kk-share-label"
+                  onClick={() => f('is_public', !form.is_public)} />
+                <div>
+                  <strong id="kk-share-label">{L3('廣場に公開する', '公開到廣場', 'Share to Discover')}</strong>
+                  <div className="kk-helper">{L3('初期設定は非公開。下書きは公開されません。', '預設不公開；草稿不會公開。', 'Private by default. Drafts are never shared.')}</div>
+                </div>
+              </div>
+              {form.is_public && (
+                <div className="kk-field" style={{ marginTop: 12 }}>
+                  <label className="kk-field__label" htmlFor="kk-field-contributor">{t('form.displayName')}</label>
+                  <input id="kk-field-contributor" className="kk-input" value={form.contributor_name}
+                    onChange={e => f('contributor_name', e.target.value)} placeholder={defaultName} />
+                </div>
+              )}
+            </section>
+          )}
+        </div>
       </Sheet>
+      <Toast toast={toast} onDone={clearToast} />
     </div>
   )
 }

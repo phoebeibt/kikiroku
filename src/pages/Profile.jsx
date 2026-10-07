@@ -67,10 +67,12 @@ export default function Profile({ session }) {
     setDisplayName(meta.display_name || meta.full_name || '')
 
     supabase.from('sake_entries')
-      .select('id, rating, is_public, type, region, aroma_tags, taste_tags, brand, name, brewery', { count: 'exact' })
+      .select('id, rating, is_public, type, region, aroma_tags, taste_tags, brand, name, brewery, status')
       .eq('user_id', session.user.id)
-      .then(({ data, count }) => {
-        const entries = data || []
+      .then(({ data }) => {
+        // Drafts are unfinished 酒札 — keep them out of the stats.
+        const entries = (data || []).filter(e => e.status !== 'draft')
+        const count = entries.length
         const withRating = entries.filter(e => e.rating != null)
         const avg = withRating.length ? withRating.reduce((s, e) => s + e.rating, 0) / withRating.length : null
         const shared = entries.filter(e => e.is_public).length

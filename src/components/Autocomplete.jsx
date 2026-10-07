@@ -114,7 +114,7 @@ function DropdownList({ items, onSelect, inputRef }) {
 }
 
 // Brewery autocomplete — also returns the region when selected
-export function BreweryInput({ value, onChange, onRegionFill, style, placeholder }) {
+export function BreweryInput({ value, onChange, onRegionFill, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef()
   const results = useAutocomplete('sake_breweries', 'name', value, open, ['name_zh', 'name_en', 'furigana', 'romaji'])
@@ -134,7 +134,7 @@ export function BreweryInput({ value, onChange, onRegionFill, style, placeholder
 
   return (
     <div style={{ position: 'relative' }}>
-      <input ref={inputRef} style={style} value={value} placeholder={placeholder}
+      <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)} />
@@ -144,7 +144,7 @@ export function BreweryInput({ value, onChange, onRegionFill, style, placeholder
 }
 
 // Brand (銘柄) autocomplete — fills brewery and region on select or blur
-export function BrandInput({ value, onChange, onBreweryFill, onRegionFill, onBlur, style, placeholder }) {
+export function BrandInput({ value, onChange, onBreweryFill, onRegionFill, onBlur, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef()
   const results = useAutocomplete('sake_brands', 'name', value, open, ['name_zh', 'name_en', 'furigana', 'romaji'])
@@ -177,7 +177,7 @@ export function BrandInput({ value, onChange, onBreweryFill, onRegionFill, onBlu
 
   return (
     <div style={{ position: 'relative' }}>
-      <input ref={inputRef} style={style} value={value} placeholder={placeholder}
+      <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={handleBlur} />
@@ -188,7 +188,7 @@ export function BrandInput({ value, onChange, onBreweryFill, onRegionFill, onBlu
 
 // Product autocomplete — searches sake_products, falls back to sake_brands
 // onProductFill receives the full product object when selected from sake_products
-export function ProductInput({ value, onChange, onProductFill, onBreweryFill, onRegionFill, onBlur, style, placeholder }) {
+export function ProductInput({ value, onChange, onProductFill, onBreweryFill, onRegionFill, onBlur, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const [products, setProducts] = useState([])
   const [brands, setBrands] = useState([])
@@ -289,7 +289,7 @@ export function ProductInput({ value, onChange, onProductFill, onBreweryFill, on
 
   return (
     <div style={{ position: 'relative' }}>
-      <input ref={inputRef} style={style} value={value} placeholder={placeholder}
+      <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={() => { setTimeout(() => setOpen(false), 150); onBlur?.() }} />
@@ -334,7 +334,7 @@ export function ProductInput({ value, onChange, onProductFill, onBreweryFill, on
 }
 
 // Name (品名) autocomplete — searches sake_products with brand prefix, strips brand on select
-export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, onBreweryFill, onRegionFill, onNoResults, style, placeholder }) {
+export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, onBreweryFill, onRegionFill, onNoResults, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const [products, setProducts] = useState([])
   const [goldBrands, setGoldBrands] = useState(new Set())
@@ -409,7 +409,7 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
 
   return (
     <div style={{ position: 'relative' }}>
-      <input ref={inputRef} style={style} value={value} placeholder={placeholder}
+      <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={() => {
@@ -444,7 +444,7 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
 }
 
 // Rice autocomplete
-export function RiceInput({ value, onChange, style, placeholder }) {
+export function RiceInput({ value, onChange, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef()
   const results = useAutocomplete('sake_rice', 'name', value, open)
@@ -453,7 +453,7 @@ export function RiceInput({ value, onChange, style, placeholder }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      <input ref={inputRef} style={style} value={value} placeholder={placeholder}
+      <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)} />

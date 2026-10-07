@@ -1,0 +1,151 @@
+/* 新しい記録 — form pieces */
+
+.kk-form { display: grid; gap: 6px; }
+
+/* Progress: which parts of the 酒札 are filled in (not a wizard). */
+.kk-progress { display: flex; gap: 4px; margin: 0 0 12px; }
+.kk-progress__step { flex: 1; height: 5px; border-radius: 999px; background: #e7dfd1; transition: background .2s; }
+.kk-progress__step.is-on { background: var(--green); }
+
+.kk-note-card {
+  display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center;
+  padding: 10px; margin-bottom: 12px;
+  border-radius: 10px; border: 1px solid rgba(185, 151, 74, .24);
+  background: rgba(217, 190, 140, .2);
+}
+.kk-note-card__mark {
+  width: 38px; height: 38px; display: grid; place-items: center;
+  border-radius: 9px; background: var(--wood); color: var(--brown); font-weight: 900;
+}
+.kk-note-card strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.kk-helper { color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+/* Photo */
+.kk-upload {
+  width: 100%; min-height: 150px; padding: 18px;
+  display: grid; place-items: center; text-align: center; gap: 4px;
+  border: 1.5px dashed rgba(79, 138, 123, .45); border-radius: 12px;
+  background: rgba(79, 138, 123, .08); color: var(--green);
+  cursor: pointer;
+}
+.kk-upload strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.kk-upload span { font-size: 12px; color: var(--green-2); }
+.kk-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kk-photo {
+  position: relative; aspect-ratio: 4 / 3; overflow: hidden;
+  border-radius: 10px; border: 1px dashed var(--line); background: var(--paper);
+  display: grid; place-items: center; color: var(--muted); font-size: 12px; font-weight: 700;
+  cursor: pointer; padding: 0;
+}
+.kk-photo img { width: 100%; height: 100%; object-fit: cover; }
+.kk-photo__tag {
+  position: absolute; left: 6px; top: 6px; padding: 2px 7px; border-radius: 999px;
+  background: rgba(31, 28, 24, .55); color: #fffdf8; font-size: 10px; font-weight: 800;
+}
+.kk-photo__swap {
+  position: absolute; right: 6px; bottom: 6px; padding: 3px 8px; border-radius: 7px; border: 0;
+  background: rgba(31, 28, 24, .55); color: #fffdf8; font-size: 11px; font-weight: 700;
+}
+
+/* Sections & fields */
+.kk-section { padding: 16px 0 6px; border-top: 1px solid var(--line); }
+.kk-section:first-of-type { border-top: 0; padding-top: 0; }
+.kk-section__title {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin: 0 0 10px; font-size: 13px; font-weight: 800; color: var(--ink);
+}
+.kk-field { display: grid; gap: 6px; margin-bottom: 12px; min-width: 0; }
+.kk-field__label {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  color: var(--muted); font-size: 12px; font-weight: 800;
+}
+.kk-required { color: var(--seal); font-size: 11px; font-weight: 900; }
+.kk-input, .kk-select, .kk-textarea {
+  width: 100%; min-height: 44px; padding: 0 12px;
+  border-radius: 9px; border: 1px solid var(--line);
+  background: var(--paper-2); color: var(--ink);
+  font-size: 16px; /* ≥16px keeps iOS from zooming */
+  font-weight: 600; outline: none;
+}
+.kk-input:focus, .kk-select:focus, .kk-textarea:focus { border-color: var(--green-2); box-shadow: 0 0 0 3px var(--green-bg); }
+.kk-input[aria-invalid="true"] { border-color: var(--danger); }
+.kk-textarea { min-height: 110px; padding: 10px 12px; line-height: 1.6; resize: vertical; font-weight: 400; }
+.kk-select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 17px) 19px, calc(100% - 12px) 19px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 28px; }
+.kk-field-error { margin: -2px 0 0; color: var(--danger); font-size: 12px; font-weight: 700; }
+.kk-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kk-row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 380px) { .kk-row4 { grid-template-columns: 1fr 1fr; } }
+.kk-inline { display: flex; gap: 6px; align-items: center; }
+.kk-inline > .kk-input { flex: 1; min-width: 0; }
+
+.kk-form-hint { margin: 2px 0 6px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+/* Rating */
+.kk-rating {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2);
+  outline: none;
+}
+.kk-rating:focus-visible { border-color: var(--green-2); box-shadow: 0 0 0 3px var(--green-bg); }
+.kk-rating.is-invalid { border-color: var(--danger); }
+.kk-rating__dots { display: flex; gap: 6px; }
+.kk-rating__dot {
+  position: relative; width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid rgba(185, 151, 74, .55); background: transparent;
+}
+.kk-rating__dot.is-full { background: var(--gold); border-color: var(--gold); }
+.kk-rating__dot.is-half { background: linear-gradient(90deg, var(--gold) 50%, transparent 50%); border-color: var(--gold); }
+.kk-rating__hit { position: absolute; top: -4px; bottom: -4px; width: 50%; border: 0; background: none; padding: 0; cursor: pointer; }
+.kk-rating__hit--l { left: -3px; }
+.kk-rating__hit--r { right: -3px; }
+.kk-rating__num { min-width: 30px; font-size: 18px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* 感想 tabs */
+.kk-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; scrollbar-width: none; }
+.kk-tabs::-webkit-scrollbar { display: none; }
+.kk-tab__count { min-width: 16px; padding: 0 4px; border-radius: 999px; background: var(--green); color: #fffdf8; font-size: 10px; line-height: 16px; text-align: center; }
+
+/* Collapsed 規格 */
+.kk-disclosure {
+  width: 100%; min-height: 48px; padding: 0;
+  display: flex; align-items: center; gap: 10px;
+  border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  background: none; color: var(--ink); text-align: left;
+}
+.kk-disclosure__text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.kk-disclosure__title { font-size: 13px; font-weight: 800; }
+.kk-disclosure__summary { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-disclosure__chev { flex-shrink: 0; color: var(--muted); transition: transform .2s; }
+.kk-disclosure[aria-expanded="true"] .kk-disclosure__chev { transform: rotate(180deg); }
+.kk-disclosure-panel { padding-top: 14px; }
+
+/* Public */
+.kk-switch-row { display: flex; align-items: flex-start; gap: 12px; }
+.kk-switch {
+  position: relative; flex-shrink: 0; width: 46px; height: 28px; border-radius: 999px; border: 0;
+  background: #d9d0c1; transition: background .2s; padding: 0;
+}
+.kk-switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fffdf8; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .2s;
+}
+.kk-switch[aria-checked="true"] { background: var(--green); }
+.kk-switch[aria-checked="true"]::after { transform: translateX(18px); }
+.kk-switch-row strong { display: block; font-size: 14px; margin-bottom: 2px; }
+
+.kk-banner {
+  display: flex; gap: 8px; align-items: flex-start;
+  padding: 10px 12px; margin-bottom: 12px; border-radius: 9px;
+  font-size: 13px; line-height: 1.5;
+}
+.kk-banner--error { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(185, 71, 59, .28); }
+.kk-banner--info  { background: var(--paper); color: var(--muted); border: 1px solid var(--line); }
+
+.kk-awards { display: flex; gap: 5px; flex-wrap: wrap; margin: -4px 0 12px; }
+.kk-awards span { font-size: 10px; padding: 2px 9px; border-radius: 12px; background: rgba(185, 151, 74, .12); color: #7a6227; border: 1px solid rgba(185, 151, 74, .3); white-space: nowrap; }
+
+.kk-dates { display: grid; gap: 6px; }
+.kk-dates__row { display: flex; gap: 6px; align-items: center; }
+.kk-dates__row .kk-input { flex: 1; min-width: 0; }
+.kk-dates__latest { flex-shrink: 0; font-size: 10px; font-weight: 800; color: var(--green); }
