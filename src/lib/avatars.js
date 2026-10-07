@@ -1,6 +1,6 @@
-// プロフ avatars: 27 tanuki tiles cut from the designer's sheets (expression v1/v2, behaviour scenes).
+// プロフ avatars: 9 tanuki tiles chosen from the designer's sheets (expression v1/v2, behaviour scenes).
 // Stored as user_metadata.avatar = id; files live in /public/avatars/<id>.webp.
-const range = (prefix, n) => Array.from({ length: n }, (_, i) => `${prefix}-${String(i + 1).padStart(2, '0')}`)
-export const AVATARS = [...range('expr', 9), ...range('calm', 6), ...range('scene', 12)]
-export const DEFAULT_AVATAR = 'calm-01'
+// An id that is no longer offered falls back to the default.
+export const AVATARS = ['expr-01', 'expr-04', 'expr-02', 'calm-04', 'scene-01', 'expr-05', 'calm-06', 'scene-04', 'expr-08']
+export const DEFAULT_AVATAR = 'expr-01'
 export const avatarSrc = id => `/avatars/${AVATARS.includes(id) ? id : DEFAULT_AVATAR}.webp`
