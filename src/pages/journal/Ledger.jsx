@@ -50,7 +50,7 @@ const SORTS = {
   brewery: (a, b) => (a.brewery || '￿').localeCompare(b.brewery || '￿', 'ja'),
 }
 
-export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
+export default function Ledger({ initialRegion, entries, loading, tagLabel: rawTagLabel, typeLabel: rawTypeLabel, brandMap, onOpen, onAdd, hasDraft, wishCount, onShowWishlist }) {
   const { lang, changeLang } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const tagLabel = (id, cat) => cleanLabel(rawTagLabel(id, cat))
@@ -63,6 +63,11 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
   const [density, setDensity] = useState(() => readPref(VIEW_KEY, 'card'))
   const [sort, setSort] = useState(() => readPref(SORT_KEY, 'recent'))
   const [draftsOpen, setDraftsOpen] = useState(false)
+
+  // Arriving from a detail page's 産地 link narrows the shelf to that region.
+  useEffect(() => {
+    if (initialRegion) setFilters({ ...EMPTY_FILTERS, regions: [initialRegion] }) // eslint-disable-line react-hooks/set-state-in-effect
+  }, [initialRegion])
 
   useEffect(() => { writePref(VIEW_KEY, density) }, [density])
   useEffect(() => { writePref(SORT_KEY, sort) }, [sort])
@@ -320,6 +325,10 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
               <li key={e.id}>
                 {density === 'table' ? (
                   <div className="kk-row" {...pressable(() => onOpen(e), title)}>
+                    <span className="kk-row__bottle" aria-hidden="true">
+                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="76px" />
+                    </span>
+                    <div className="kk-row__main">
                     <div className="kk-row__line">
                       <strong>{title}</strong>
                       {Number(e.rating) > 0 && <span className="kk-score">{formatRating(e.rating)}</span>}
@@ -329,6 +338,7 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
                       {isDraft ? <span className="kk-status kk-status--draft">{L('下書き', '草稿', 'Draft')}</span> : statusPill(e)}
                     </div>
                     {hitLine}
+                    </div>
                   </div>
                 ) : (
                   <div className={`kk-card${isDraft ? ' is-draft' : ''}`} {...pressable(() => onOpen(e), title)}>

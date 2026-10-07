@@ -338,6 +338,9 @@ export default function Journal({ session }) {
   // ── Auto-save draft (debounced 1s) ──────────────────────────
   const draftTimerRef = useRef()
   const pendingOpenIdRef = useRef(null)
+  const pendingEditIdRef = useRef(null)
+  const editReturnRef = useRef(null)
+  const [initialRegion, setInitialRegion] = useState(null)
   useEffect(() => {
     if (sheet !== 'form' || editId) return
     clearTimeout(draftTimerRef.current)
@@ -387,6 +390,21 @@ export default function Journal({ session }) {
       pendingOpenIdRef.current = location.state.openEntryId
       navigate('/journal', { replace: true, state: {} })
     }
+    if (location.state?.editEntryId) {
+      pendingEditIdRef.current = location.state.editEntryId
+      editReturnRef.current = location.state.returnTo || null
+      navigate('/journal', { replace: true, state: {} })
+      const found = entries.find(e => e.id === location.state.editEntryId)
+      if (found) { openEdit(found); pendingEditIdRef.current = null }
+    }
+    if (location.state?.region) {
+      setInitialRegion(location.state.region)
+      navigate('/journal', { replace: true, state: {} })
+    }
+    if (location.state?.toast === 'deleted') {
+      setToast({ id: Date.now(), tone: 'draft', stamp: L3('削除', '刪除', 'Gone'), message: L3('記録を削除しました', '已刪除記錄', 'Record deleted') })
+      navigate('/journal', { replace: true, state: {} })
+    }
   }, [location.state])
 
   useEffect(() => {
@@ -415,6 +433,11 @@ export default function Journal({ session }) {
       const entry = (data || []).find(e => e.id === pendingOpenIdRef.current)
       if (entry) setDetail(entry)
       pendingOpenIdRef.current = null
+    }
+    if (pendingEditIdRef.current) {
+      const entry = (data || []).find(e => e.id === pendingEditIdRef.current)
+      if (entry) openEdit({ ...entry, type: normalizeType(entry.type) || null })
+      pendingEditIdRef.current = null
     }
   }
 
@@ -557,6 +580,7 @@ export default function Journal({ session }) {
   }
 
   const close = () => {
+    if (editReturnRef.current) { const back = editReturnRef.current; editReturnRef.current = null; setSheet(null); navigate(back, { replace: true }); return }
     if (sheet === 'form' && !editId && !forwardSource) {
       setHasDraft(saveDraft(form, formTags, aromaTags, tasteTags, formDates, methodTags, { main: photoFile, back: photoFile2 }))
     }
@@ -700,6 +724,7 @@ export default function Journal({ session }) {
         ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました', '已存為草稿', 'Saved as a draft') }
         : { id: Date.now(), stamp: L3('保存', '保存', 'Saved'), message: L3('酒札を保存しました', '酒札已保存', 'Sake tag saved') })
       await fetchEntries(); closeClean()
+      if (editReturnRef.current) { const back = editReturnRef.current; editReturnRef.current = null; navigate(back, { replace: true }) }
     } catch (e) {
       setSaveError(L3('保存できませんでした：', '儲存失敗：', 'Could not save: ') + e.message)
     } finally { setSaving(false) }
@@ -791,7 +816,8 @@ export default function Journal({ session }) {
         <Ledger
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
-          onOpen={e => e.status === 'draft' ? openEdit(e) : setDetail(e)}
+          onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
+          initialRegion={initialRegion}
           onAdd={openAdd} hasDraft={hasDraft}
           wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
         />

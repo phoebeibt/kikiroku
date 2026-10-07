@@ -1,0 +1,95 @@
+/* 酒詳情 */
+.kk-detail-page { min-height: 100svh; }
+.kk-detail-top {
+  position: sticky; top: 0; z-index: 30;
+  display: grid; grid-template-columns: 36px 1fr 36px; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  background: rgba(248, 245, 238, .9); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(228, 217, 200, .72);
+}
+.kk-detail-top__title { margin: 0; text-align: center; font-size: 17px; font-weight: 800; }
+.kk-detail { max-width: 640px; margin: 0 auto; padding: 14px 16px 24px; display: grid; gap: 14px; }
+
+/* Hero */
+.kk-detail-hero { position: relative; border-radius: var(--radius-lg); overflow: hidden; }
+.kk-detail-hero__stage {
+  height: 280px; display: grid; place-items: end center; padding-bottom: 18px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(185, 151, 74, .2), transparent 48%),
+    linear-gradient(180deg, rgba(217, 190, 140, .34), rgba(255, 253, 248, .96)),
+    repeating-linear-gradient(90deg, rgba(138, 117, 99, .055) 0 1px, transparent 1px 13px);
+  border: 1px solid rgba(138, 117, 99, .16); border-radius: var(--radius-lg);
+}
+.kk-detail-hero__photo {
+  display: block; width: 100%; height: 280px; padding: 0; border: 0; border-radius: var(--radius-lg);
+  background: #1f1f1d; overflow: hidden; cursor: zoom-in;
+}
+.kk-detail-hero__photo img { width: 100%; height: 100%; object-fit: contain; }
+.kk-detail-hero__privacy { position: absolute; right: 10px; bottom: 10px; }
+.kk-detail-hero { display: grid; gap: 8px; justify-items: center; overflow: visible; }
+.kk-detail-hero > :not(.kk-seg) { justify-self: stretch; }
+.kk-detail-hero__privacy { bottom: 10px; }
+.kk-seg {
+  display: inline-flex; gap: 2px; padding: 3px;
+  border-radius: 10px; background: rgba(255, 253, 248, .92); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+}
+.kk-seg button { min-height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: none; color: var(--muted); font-size: 12px; font-weight: 800; }
+.kk-seg button.is-active { background: var(--green); color: #fffdf8; }
+
+/* 酒札 plaque */
+.kk-plaque {
+  border: 1px solid rgba(138, 117, 99, .16); border-radius: var(--radius); padding: 16px 14px;
+  background:
+    repeating-linear-gradient(90deg, rgba(138, 117, 99, .055) 0 1px, transparent 1px 16px),
+    linear-gradient(180deg, rgba(217, 190, 140, .34), rgba(255, 253, 248, .94) 140px);
+  box-shadow: inset 0 0 0 1px rgba(255, 253, 248, .45);
+}
+.kk-plaque__head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.kk-plaque__titles { min-width: 0; }
+.kk-plaque__reading { margin: 0 0 2px; font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.kk-plaque__title { margin: 0 0 4px; font-size: 22px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.kk-plaque__meta { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.kk-link { border: 0; padding: 0; background: none; color: var(--green); font: inherit; font-weight: 700; text-decoration: underline; text-decoration-color: var(--green-bd); text-underline-offset: 3px; cursor: pointer; }
+.kk-seal {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--seal); color: #fffdf8; font-size: 11px; font-weight: 900; transform: rotate(-6deg);
+  box-shadow: inset 0 0 0 2px rgba(255, 253, 248, .22);
+}
+.kk-plaque__rating { display: flex; align-items: center; gap: 8px; margin: 12px 0 2px; }
+.kk-score--lg { font-size: 20px; }
+.kk-plaque__dates { margin: 0 0 4px; font-size: 12px; color: var(--muted); }
+
+.kk-detail-block { border-top: 1px solid var(--line); padding: 12px 0 2px; margin-top: 10px; }
+.kk-detail-block h2 { margin: 0 0 8px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.kk-detail-note { margin: 0; font-size: 15px; line-height: 1.75; white-space: pre-wrap; }
+.kk-mini-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.kk-mini-tags span { padding: 4px 8px; border-radius: 5px; background: var(--wood-bg); color: #66543a; font-size: 12px; font-weight: 700; }
+.kk-mini-tags span.is-outline { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.kk-specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 0; }
+.kk-specs div { min-width: 0; }
+.kk-specs dt { font-size: 11px; color: var(--muted); font-weight: 700; }
+.kk-specs dd { margin: 2px 0 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.kk-dates-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.kk-dates-list span { margin-left: 4px; font-size: 10px; font-weight: 800; color: var(--green); }
+.kk-plaque__actions { margin-top: 16px; display: grid; }
+
+/* みんなの瓶身 */
+.kk-others { padding: 12px; border-radius: var(--radius); border: 1px solid rgba(138, 117, 99, .16); background: var(--paper-2); }
+.kk-others__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.kk-others__head h2 { margin: 0; font-size: 14px; font-weight: 800; }
+.kk-others__head span { font-size: 11px; color: var(--muted); }
+.kk-others__list { list-style: none; margin: 0; padding: 0 0 4px; display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none; }
+.kk-others__list::-webkit-scrollbar { display: none; }
+.kk-others__item { width: 64px; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--ink); }
+.kk-others__stage {
+  width: 56px; height: 104px; border-radius: 9px; display: grid; place-items: end center; padding-bottom: 6px;
+  background: rgba(217, 190, 140, .16); border: 1px solid rgba(138, 117, 99, .12);
+}
+.kk-others__who { max-width: 64px; font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* … action sheet */
+.kk-action-sheet .kk-panel__body { padding: 8px 12px calc(12px + var(--safe-b)); }
+.kk-action-list { list-style: none; margin: 0 0 8px; padding: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.kk-action-list li + li { border-top: 1px solid var(--line); }
+.kk-action-list button { width: 100%; min-height: 50px; padding: 0 16px; border: 0; background: var(--paper-2); color: var(--ink); font-size: 15px; font-weight: 700; text-align: left; }
+.kk-action-list__danger button { color: var(--danger); }

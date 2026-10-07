@@ -13,6 +13,7 @@ const Journal = lazy(() => import('./pages/Journal'))
 const Wiki = lazy(() => import('./pages/Wiki'))
 const Profile = lazy(() => import('./pages/Profile'))
 const EntryDetail = lazy(() => import('./pages/EntryDetail'))
+const SakeDetail = lazy(() => import('./pages/SakeDetail'))
 const Terms = lazy(() => import('./pages/Terms'))
 
 // Neutral loading fallback — avoids flash of theme-inconsistent background.
@@ -40,6 +41,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
           <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
+          <Route path="/journal/:id" element={<SakeDetail session={session} />} />
           <Route path="/wiki" element={<Wiki session={session} />} />
           <Route path="/profile" element={session ? <Profile session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/entry/:id" element={<EntryDetail session={session} />} />
