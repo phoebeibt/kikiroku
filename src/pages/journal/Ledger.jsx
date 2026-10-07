@@ -332,7 +332,7 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
                 ) : (
                   <div className={`kk-card${isDraft ? ' is-draft' : ''}`} {...pressable(() => onOpen(e), title)}>
                     <div className="kk-card__photo">
-                      {e.photo_url ? <img src={e.photo_url} alt="" loading="lazy" /> : <span aria-hidden="true">{(e.brand || e.name || '札').slice(0, 2)}</span>}
+                      <Thumb src={e.photo_url} />
                     </div>
                     <div className="kk-card__body">
                       <strong className="kk-card__title">{title}</strong>
@@ -403,6 +403,23 @@ export default function Ledger({ entries, loading, tagLabel: rawTagLabel, typeLa
         )}
       </Sheet>
     </div>
+  )
+}
+
+// A broken or missing photo falls back to the bottle, never an empty box.
+function Thumb({ src }) {
+  const [failed, setFailed] = useState(false)
+  return src && !failed ? <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} /> : <BottleSilhouette />
+}
+
+// Placeholder for records without a photo (design board: deep green bottle on 木札).
+function BottleSilhouette() {
+  return (
+    <svg className="kk-card__bottle" viewBox="0 0 64 84" aria-hidden="true">
+      <path d="M27 10h10v13c0 2.5 1.6 4.2 3.6 5.8C44 31.5 46 35 46 40v32a5 5 0 0 1-5 5H23a5 5 0 0 1-5-5V40c0-5 2-8.5 5.4-11.2 2-1.6 3.6-3.3 3.6-5.8z" />
+      <rect x="25.5" y="6" width="13" height="5" rx="1.5" />
+      <rect className="kk-card__bottle-label" x="22" y="46" width="20" height="16" rx="2.5" />
+    </svg>
   )
 }
 
