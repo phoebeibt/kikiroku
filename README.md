@@ -71,11 +71,11 @@ npm run build && npx wrangler pages deploy dist --project-name kikiroku --branch
 | 6 | 産地 `/region/:name` | ✅ 上线（只放客观资料） |
 | 7 | プロフ `/profile` | ✅ 上线（狸猫头像 9 选 1、回顾、设定、导出） |
 | 8 | ログイン `/login` | ✅ 上线 |
-| 9 | 飲みたい | ⏳ 未改版（旧样式，可正常使用） |
-| 10 | ラベル撮影・裁切 | ⏳ 与新增表单共用，待收尾 |
+| 9 | 飲みたい `/wishlist` | 🟡 预览站完成，待用户实测（★優先、メモ、すべて／優先／産地順；资料以事典酒款为准） |
+| 10 | ラベル撮影・裁切 | 🟡 预览站：瓶身编辑器加「水平」微调（±45°）；入口与背标裁切维持现状 |
 | 11 | 編集モード | ⏳ 与新增表单共用，待收尾 |
 
-**之后要做**：⑨〜⑪、分享图重做（0.5 分显示）、电脑版双栏、icon／OG 图；事典「公開酒札にある酒」区块是否保留（待决定）。
+**之后要做**：⑨⑩ 用户实测后合并 main 上线、⑪、背标裁切按钮仍写死中文「取消／確認裁剪」（用户选维持现状）、分享图重做（0.5 分显示）、电脑版双栏、icon／OG 图；事典「公開酒札にある酒」区块是否保留（待决定）。
 
 ### 视觉原则
 
@@ -125,6 +125,7 @@ src/
     Journal.jsx            マイ帳外壳＋新增／编辑表单；存 product_id、产地正规化、プライバシー默认值
     SakeDetail.jsx         酒詳情：瓶身／原図／裏ラベル、…菜单、みんなの瓶身、分享图；他人只读、访客隐藏个人资讯
     plaza/Plaza.jsx        廣場：新着／高評価／近い好み，每张卡都有推荐理由
+    wishlist/Wishlist.jsx  飲みたい（/wishlist）：瓶身、来源、★優先、メモ、記録する／外す
     Wiki.jsx               事典外壳：酒款／産地・酒造／用語（编辑者可直接改三语）／原料
     wiki/SakeShelf.jsx     酒款分页：公開酒札にある酒＋4353 款目录
     wiki/ProductDetail.jsx 酒款详情（/wiki/sake/:id；目录没有的酒用 /wiki/sake/recorded 由公开记录拼出）
@@ -134,11 +135,12 @@ src/
     Login.jsx              ログイン（单一画面，ログイン／新規登録，邀请码）
   lib/
     ledgerSearch.js        マイ帳搜索（三语 tag、片假名转平假名、简体转日文）
-    sakeType.js            酒类型统一成 id（normalizeType）
+    sakeType.js            酒类型统一成 id（normalizeType）；写事典用漢字（typeKanji）
     sakeMatch.js           酒札 ↔ 酒款比对（先看 product_id，再看酒造＋正规化酒名）；公开酒札快取
     region.js              都道府县正规化（高知／高知縣 → 高知県）、regionPath
     plazaTier.js           评分段、狸猫图路径
-    plaza.js               飲みたい、自分も記録（forwardFrom 含 product_id）、相对时间
+    plaza.js               自分も記録（forwardFrom 含 product_id）、相对时间
+    wishes.js              飲みたい（useWishes）、ensureProduct（找同名酒款或新增到事典；新增表单也用）
     avatars.js             プロフ头像清单（9 个）
     exportEntries.js       CSV（带 BOM，tag 转当前语言）／JSON 导出
     draftPhotos.js         草稿照片的 IndexedDB 暂存
@@ -162,6 +164,9 @@ public/
 | `sake_entries.thumb_url` | 列表用的缩图（约 240px 宽，存在 `<uid>/thumbs/`） |
 | `sake_entries.product_id` | 对应 `sake_products.id`（新记录自动带入；旧资料只回填了唯一命中的 10 笔） |
 | `sake_entries.region` / `sake_products.region` | 一律存正式县名（`高知県`），存档时正规化 |
+| `sake_wishes.product_id` | 飲みたい对应的事典酒款（必有）；`entry_id` 只是来源酒札，可空，酒札删除后 wish 仍在 |
+| `sake_wishes.priority` / `note` | ★優先、一句メモ（60 字） |
+| `sake_products.type` | ⚠️ 事典存**漢字**（純米吟醸），和 `sake_entries.type`（id）不同 |
 | `auth.users.user_metadata` | `display_name`、`avatar`（头像 id）、`default_public`、`public_name`（都在プロフ设定） |
 
 迁移档（都已在 SQL Editor 执行过）：
@@ -170,6 +175,7 @@ public/
 - `supabase/migrations/20261007_bottle_crop.sql`
 - `supabase/migrations/20261007_entry_product_id.sql`
 - `supabase/migrations/20261007_region_normalize.sql`
+- `supabase/migrations/20261008_wish_products.sql`（2026-10-08 执行；既有 1 笔 wish 已连到事典）
 
 ## 脚本与备份
 
