@@ -16,6 +16,7 @@ const SakeDetail = lazy(() => import('./pages/SakeDetail'))
 const ProductDetail = lazy(() => import('./pages/wiki/ProductDetail'))
 const BreweryDetail = lazy(() => import('./pages/wiki/BreweryDetail'))
 const RegionPage = lazy(() => import('./pages/wiki/RegionPage'))
+const Wishlist = lazy(() => import('./pages/wishlist/Wishlist'))
 const Terms = lazy(() => import('./pages/Terms'))
 
 const EntryRedirect = () => { const { id } = useParams(); return <Navigate to={`/journal/${id}`} replace /> }
@@ -45,6 +46,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
           <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
+          <Route path="/wishlist" element={session ? <Wishlist session={session} /> : <Navigate to="/login" replace />} />
           <Route path="/journal/:id" element={<SakeDetail session={session} />} />
           <Route path="/wiki" element={<Wiki session={session} />} />
           <Route path="/wiki/sake/recorded" element={<ProductDetail session={session} recorded />} />

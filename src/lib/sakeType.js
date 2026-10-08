@@ -16,6 +16,12 @@ const KANJI_TO_ID = {
 
 export const SAKE_TYPE_IDS = Object.values(KANJI_TO_ID)
 
+// The catalogue (sake_products.type) keeps the kanji form; use this when writing to it.
+export const typeKanji = raw => {
+  const id = normalizeType(raw)
+  return Object.keys(KANJI_TO_ID).find(k => KANJI_TO_ID[k] === id) || null
+}
+
 export function normalizeType(raw) {
   if (!raw) return ''
   const v = String(raw).trim()

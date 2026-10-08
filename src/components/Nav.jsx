@@ -73,7 +73,7 @@ export default function Nav({ session, topbar = false }) {
   const tabs = session
     ? [
         { key: 'discover', to: '/',        icon: <IcoDiscover />, active: path === '/' },
-        { key: 'ledger',   to: '/journal', icon: <IcoLedger />,   active: path === '/journal' && !isRecord },
+        { key: 'ledger',   to: '/journal', icon: <IcoLedger />,   active: (path === '/journal' && !isRecord) || path === '/wishlist' },
         { key: 'record' },
         { key: 'wiki',     to: '/wiki',    icon: <IcoWiki />,     active: path.startsWith('/wiki') || path.startsWith('/region') },
         { key: 'profile',  to: '/profile', icon: <IcoProfile />,  active: path === '/profile' },

@@ -6,6 +6,7 @@ import SakeBottleCrop from '../../components/bottle/SakeBottleCrop'
 import { useLang } from '../../contexts/LangContext'
 import { formatRating } from '../../lib/rating'
 import { forwardFrom } from '../../lib/plaza'
+import { useWishes } from '../../lib/wishes'
 import { entryFullName, entryMatchesProduct, loadPublicEntries } from '../../lib/sakeMatch'
 import '../sakeDetail.css'
 import { isPrefecture, normalizeRegion, regionPath } from '../../lib/region'
@@ -45,6 +46,7 @@ export default function ProductDetail({ session, recorded = false }) {
   const [publicEntries, setPublicEntries] = useState([])
   const [mine, setMine] = useState([])
   const [siblings, setSiblings] = useState([])
+  const { isWishedProduct, toggleWish } = useWishes(session)
 
   useEffect(() => {
     if (!recorded) {
@@ -117,9 +119,16 @@ export default function ProductDetail({ session, recorded = false }) {
     [L('酵母', '酵母', 'Yeast'), product.yeast],
   ].filter(([, v]) => v != null && v !== '')
 
+  const sake = forwardFrom({ product_id: product.id, brand: product.recorded ? product.brand : '', name: product.recorded ? product.sakeName : product.name, brewery: product.brewery_name, region: product.region, type: product.type, alcohol: product.alcohol, rice: product.rice, polishing: product.polishing, smv: product.smv, acidity: product.acidity, yeast: product.yeast })
   const recordIt = () => {
     if (isGuest) { navigate('/login'); return }
-    navigate('/journal', { state: { forward: forwardFrom({ product_id: product.id, brand: product.recorded ? product.brand : '', name: product.recorded ? product.sakeName : product.name, brewery: product.brewery_name, region: product.region, type: product.type, alcohol: product.alcohol, rice: product.rice, polishing: product.polishing, smv: product.smv, acidity: product.acidity, yeast: product.yeast }) } })
+    navigate('/journal', { state: { forward: sake } })
+  }
+  const wished = isWishedProduct(product.id)
+  // A recorded-only sake joins the catalogue when it is wished; move to its real 酒款 page.
+  const wishIt = async () => {
+    const pid = await toggleWish(null, sake)
+    if (pid && !product.id) navigate(`/wiki/sake/${pid}`, { replace: true })
   }
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/wiki'))
 
@@ -217,7 +226,12 @@ export default function ProductDetail({ session, recorded = false }) {
         )}
       </article>
 
-      <div className="kk-wdetail__cta">
+      <div className={`kk-wdetail__cta${isGuest ? '' : ' kk-wdetail__cta--pair'}`}>
+        {!isGuest && (
+          <button type="button" className={`kk-btn${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={wishIt}>
+            {wished ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
+          </button>
+        )}
         <button type="button" className="kk-btn kk-btn--primary" onClick={recordIt}>
           {isGuest ? L('ログインして記録', '登入後記錄', 'Sign in to record') : L('この酒を記録', '記錄這款酒', 'Record this sake')}
         </button>

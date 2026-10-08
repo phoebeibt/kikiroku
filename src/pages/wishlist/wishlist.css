@@ -1,0 +1,37 @@
+/* 飲みたい — same paper card and bottle slot as 廣場, quieter (no rating colour) */
+.kk-wish__title { flex: 1; display: flex; align-items: baseline; gap: 6px; }
+.kk-wish__title small { font-size: 13px; font-weight: 700; color: var(--muted); }
+.kk-wish-page .kk-tabs { margin-bottom: 12px; }
+.kk-wish__sec { display: flex; align-items: baseline; gap: 6px; margin: 14px 2px 6px; font-size: 11px; font-weight: 900; letter-spacing: .06em; color: var(--muted); }
+.kk-wish__sec span { font-weight: 700; opacity: .7; }
+.kk-wish__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.kk-wcard {
+  position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) 32px; gap: 10px; align-items: start;
+  padding: 10px 6px 4px 10px; border-radius: 10px; background: #fffbf2; border: 1px solid rgba(138, 117, 99, .18);
+}
+.kk-wcard__bottle { width: 34px; height: 88px; display: grid; place-items: end center; border-bottom: 2px solid rgba(138, 117, 99, .28); cursor: pointer; }
+.kk-wcard__body { min-width: 0; }
+.kk-wcard__main { cursor: pointer; border-radius: 4px; }
+.kk-wcard__main:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.kk-wcard__title { margin: 1px 0 2px; font-size: 15px; font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; }
+.kk-wcard__meta { margin: 0; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kk-wcard__note {
+  display: inline-block; max-width: 100%; margin: 6px 0 0; padding: 3px 8px; border-radius: 6px;
+  background: var(--wood-bg, #efe2c8); color: var(--ink); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere;
+}
+.kk-wcard__actions { display: flex; flex-wrap: nowrap; gap: 2px; margin: 4px 0 0 -8px; }
+.kk-wcard__actions .kk-act { white-space: nowrap; }
+.kk-wcard__star {
+  width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: #c9b88f; cursor: pointer;
+}
+.kk-wcard__star.is-on { color: #a8843a; }
+.kk-wcard__star:hover { background: rgba(138, 117, 99, .1); }
+.kk-wcard__star:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.kk-reason--mine, .kk-reason--wiki { color: var(--green); }
+
+.kk-wish__note-input { width: 100%; }
+.kk-wish__count { margin: 4px 0 14px; text-align: right; font-size: 11px; color: var(--muted); }
+.kk-wish__skip { display: flex; align-items: center; gap: 8px; margin: -6px 0 18px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.kk-wish__skip input { accent-color: var(--green); }

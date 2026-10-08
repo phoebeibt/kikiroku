@@ -61,6 +61,9 @@
   padding: 10px 16px; background: linear-gradient(to top, var(--paper) 70%, rgba(248, 245, 238, 0));
 }
 .kk-wdetail__cta .kk-btn { width: 100%; max-width: 648px; margin: 0 auto; display: flex; min-height: 48px; font-size: 15px; }
+.kk-wdetail__cta--pair { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; max-width: 680px; margin: 0 auto; }
+.kk-wdetail__cta--pair .kk-btn { max-width: none; margin: 0; }
+.kk-wdetail__cta .kk-btn.is-on { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
 
 /* Glossary / 原料 inside the new shell */
 .kk-wiki__legacy { margin-top: 4px; }

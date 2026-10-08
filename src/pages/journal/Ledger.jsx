@@ -281,8 +281,8 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
             </button>
           ))}
           <button type="button" className="kk-collection kk-collection--wish" onClick={onShowWishlist}>
-            <strong>{L('飲みたい', '想喝清單', 'Wish list')}</strong>
-            <span>{wishCount}{L('件', ' 筆', '')} · {L('廣場から保存', '從廣場收藏', 'Saved from Discover')}</span>
+            <strong>{L('飲みたい', '想喝', 'Want to try')}</strong>
+            <span>{wishCount}{L('件', ' 筆', '')} · {L('次に記録したい酒', '下一支想記錄的酒', 'What to record next')}</span>
             <span className="kk-collection__go" aria-hidden="true">›</span>
           </button>
         </div>

@@ -13,7 +13,8 @@ import { useTagResolver } from '../contexts/TagsContext'
 import { formatRating } from '../lib/rating'
 import { normalizeType } from '../lib/sakeType'
 import { cleanLabel } from '../lib/labels'
-import { forwardFrom, useWishes } from '../lib/plaza'
+import { forwardFrom } from '../lib/plaza'
+import { useWishes } from '../lib/wishes'
 import './plaza/plaza.css'
 import './sakeDetail.css'
 import { regionPath } from '../lib/region'
@@ -52,7 +53,7 @@ export default function SakeDetail({ session }) {
   const isOwner = !!(session && entry && entry.user_id === session.user.id)
   // Guests see the factual 酒札 only (Phase 7 rule): no photo, rating, notes, tags, dates or name.
   const isGuest = !session
-  const { wishes, toggle: toggleWish } = useWishes(session)
+  const { isWished, toggleWish } = useWishes(session)
 
   // A new record always starts at the top (the ledger may have been scrolled).
   useEffect(() => { window.scrollTo(0, 0); setView('bottle') }, [id]) // eslint-disable-line react-hooks/set-state-in-effect
@@ -280,14 +281,17 @@ export default function SakeDetail({ session }) {
           )}
 
           {isOwner && (
-            <div className="kk-plaque__actions">
+            <div className="kk-plaque__actions kk-plaque__actions--pair">
+              <button type="button" className={`kk-btn${isWished(entry) ? ' is-on' : ''}`} aria-pressed={isWished(entry)} onClick={() => toggleWish(entry)}>
+                {isWished(entry) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('また飲みたい', '還想再喝', 'Drink again')}
+              </button>
               <button type="button" className="kk-btn kk-btn--primary" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>
             </div>
           )}
           {!isOwner && !isGuest && (
             <div className="kk-plaque__actions kk-plaque__actions--pair">
-              <button type="button" className={`kk-btn${wishes.has(entry.id) ? ' is-on' : ''}`} aria-pressed={wishes.has(entry.id)} onClick={() => toggleWish(entry.id)}>
-                {wishes.has(entry.id) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
+              <button type="button" className={`kk-btn${isWished(entry) ? ' is-on' : ''}`} aria-pressed={isWished(entry)} onClick={() => toggleWish(entry)}>
+                {isWished(entry) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
               </button>
               <button type="button" className="kk-btn kk-btn--primary" onClick={() => navigate('/journal', { state: { forward: forwardFrom(entry) } })}>{L('自分も記録', '我也記錄', 'Record it too')}</button>
             </div>

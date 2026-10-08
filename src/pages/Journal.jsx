@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { ensureProduct } from '../lib/wishes'
 import { uploadPhoto, compressImage } from '../lib/upload'
 import Nav from '../components/Nav'
 import Stars from '../components/Stars'
@@ -216,65 +217,6 @@ function CropModal({ src, onConfirm, onCancel }) {
   )
 }
 
-function WishlistView({ entries, loading, lang, typeLabel, onForward, onRemove }) {
-  if (loading) return <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--sub)', fontSize: 14 }}>…</div>
-  if (!entries.length) return (
-    <div style={{ textAlign: 'center', padding: '60px 16px', color: 'var(--sub)' }}>
-      <div style={{ fontSize: 28, marginBottom: 12 }}>🔖</div>
-      <div style={{ fontSize: 14 }}>{lang === 'ja' ? '想喝リストは空です' : lang === 'zh' ? '想喝清單是空的' : 'Your wish list is empty'}</div>
-      <div style={{ fontSize: 12, marginTop: 6, opacity: .7 }}>{lang === 'ja' ? '廣場で気になるお酒をブックマークしよう' : lang === 'zh' ? '在廣場收藏感興趣的酒款' : 'Bookmark sakes in the Plaza'}</div>
-    </div>
-  )
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {entries.map(e => (
-        <div key={e.id} style={{ display: 'flex', gap: 12, background: 'var(--surface-card)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--card-border)' }}>
-          {e.photo_url
-            ? <img src={e.photo_url} style={{ width: 64, height: 80, objectFit: 'cover', flexShrink: 0 }} />
-            : <div style={{ width: 64, height: 80, flexShrink: 0, background: 'var(--photo-ph)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: 'var(--photo-ph-icon)' }}>🍶</div>}
-          <div style={{ flex: 1, padding: '10px 0', minWidth: 0 }}>
-            {e.type && <div style={{ fontSize: 9, color: 'var(--accent)', letterSpacing: '.06em', marginBottom: 2 }}>{typeLabel(e.type)}</div>}
-            <div style={{ fontSize: 14, fontFamily: 'var(--font-serif)', color: 'var(--text)', lineHeight: 1.3, marginBottom: 2 }}>{[e.brand, e.name].filter(Boolean).join(' ')}</div>
-            {e.brewery && <div style={{ fontSize: 11, color: 'var(--sub)' }}>{e.brewery}</div>}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, padding: '10px 12px 10px 0', flexShrink: 0 }}>
-            <button onClick={() => onForward(e)} style={{ padding: '5px 12px', borderRadius: 20, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap' }}>
-              {lang === 'ja' ? '記録する' : lang === 'zh' ? '記錄' : 'Log'}
-            </button>
-            <button onClick={() => onRemove(e.id)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'transparent', color: 'var(--sub)', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-              {lang === 'ja' ? '削除' : lang === 'zh' ? '移除' : 'Remove'}
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ForwardConfirmDialog({ entry, lang, onConfirm, onCancel }) {
-  const [skip, setSkip] = React.useState(false)
-  const title = lang === 'ja' ? '記録しますか？' : lang === 'zh' ? '確認記錄？' : 'Log this sake?'
-  const name = [entry.brand, entry.name].filter(Boolean).join(' ')
-  return (
-    <Sheet open onClose={onCancel} variant="dialog" label={title}>
-      <h2 className="kk-confirm__title">{title}</h2>
-      <p className="kk-confirm__note">
-        {lang === 'ja' ? `「${name}」を記録すると、飲みたいリストから外れます。`
-          : lang === 'zh' ? `記錄「${name}」後，將從想喝清單中移除。`
-          : `"${name}" will be removed from your wish list after logging.`}
-      </p>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--muted)', margin: '-6px 0 18px', cursor: 'pointer' }}>
-        <input type="checkbox" checked={skip} onChange={e => setSkip(e.target.checked)} style={{ accentColor: 'var(--green)' }} />
-        {lang === 'ja' ? '次から表示しない' : lang === 'zh' ? '下次不再提示' : "Don't show again"}
-      </label>
-      <div className="kk-confirm__actions">
-        <button type="button" className="kk-btn" onClick={onCancel}>{lang === 'ja' ? 'キャンセル' : lang === 'zh' ? '取消' : 'Cancel'}</button>
-        <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => onConfirm(skip)}>{lang === 'ja' ? '記録する' : lang === 'zh' ? '確認' : 'Confirm'}</button>
-      </div>
-    </Sheet>
-  )
-}
-
 const TODAY = () => new Date().toISOString().slice(0, 10)
 const DRAFT_KEY = 'kikiroku-draft'
 const draftHasContent = (form, aroma = [], taste = [], photos = {}) =>
@@ -317,11 +259,7 @@ export default function Journal({ session }) {
   const [formDates, setFormDates] = useState([TODAY()])
   const [cropSrc, setCropSrc] = useState(null)
   const [forwardSource, setForwardSource] = useState(null)
-  const [wishlistMode, setWishlistMode] = useState(false)
-  const [wishedEntries, setWishedEntries] = useState([])
-  const [wishlistLoading, setWishlistLoading] = useState(false)
-  const [forwardConfirmEntry, setForwardConfirmEntry] = useState(null)
-  const FORWARD_SKIP_KEY = 'kikiroku_forward_confirm_skip'
+  const [wishCount, setWishCount] = useState(0)
   const [specsOpen, setSpecsOpen] = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const [saveError, setSaveError] = useState('')
@@ -372,8 +310,11 @@ export default function Journal({ session }) {
         setBrandMap(m)
       })
   }, [])
-  // Also on mount, so the ledger can show how many are on the wish list.
-  useEffect(() => { fetchWishlist() }, [wishlistMode])
+  // The ledger shows how many are on the 飲みたい list (the list itself is /wishlist).
+  useEffect(() => {
+    supabase.from('sake_wishes').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id)
+      .then(({ count }) => setWishCount(count || 0))
+  }, [session.user.id])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -450,33 +391,6 @@ export default function Journal({ session }) {
       if (entry) openEdit({ ...entry, type: normalizeType(entry.type) || null })
       pendingEditIdRef.current = null
     }
-  }
-
-  const fetchWishlist = async () => {
-    setWishlistLoading(true)
-    const { data: wishes } = await supabase.from('sake_wishes').select('entry_id').eq('user_id', session.user.id)
-    if (!wishes?.length) { setWishedEntries([]); setWishlistLoading(false); return }
-    const ids = wishes.map(w => w.entry_id)
-    const { data } = await supabase.from('sake_entries').select('*').in('id', ids).eq('is_public', true)
-    setWishedEntries(data || [])
-    setWishlistLoading(false)
-  }
-
-  const removeWish = async (entryId) => {
-    setWishedEntries(prev => prev.filter(e => e.id !== entryId))
-    await supabase.from('sake_wishes').delete().eq('user_id', session.user.id).eq('entry_id', entryId)
-  }
-
-  const handleWishForward = (entry) => {
-    const skip = localStorage.getItem(FORWARD_SKIP_KEY) === '1'
-    if (skip) { removeWish(entry.id); doForward(entry) }
-    else setForwardConfirmEntry(entry)
-  }
-
-  const doForward = (entry) => {
-    const fwd = { brand: entry.brand, name: entry.name, brewery: entry.brewery, region: entry.region, type: entry.type, alcohol: entry.alcohol, rice: entry.rice, polishing: entry.polishing, smv: entry.smv, acidity: entry.acidity, yeast: entry.yeast }
-    setWishlistMode(false)
-    openForward(fwd)
   }
 
   const meta = session.user.user_metadata || {}
@@ -716,25 +630,7 @@ export default function Journal({ session }) {
 
       // Link the record to the catalogue (事典). Reuse a same-name product, or contribute a new one.
       if (!isDraft && !form.product_id && form.name.trim()) {
-        const fullName = [form.brand, form.name].filter(Boolean).join(' ').trim()
-        const { data: found } = await supabase
-          .from('sake_products').select('id').ilike('name', fullName).limit(1)
-        let productId = found?.[0]?.id || null
-        if (!productId && !editId) {
-          const { data: made } = await supabase.from('sake_products').insert({
-            name:         fullName,
-            brewery_name: form.brewery.trim() || null,
-            region:       normalizeRegion(form.region) || null,
-            type:         normalizeType(form.type) || null,
-            rice:         form.rice.trim()    || null,
-            yeast:        form.yeast.trim()   || null,
-            polishing:    form.polishing ? parseFloat(form.polishing) : null,
-            alcohol:      form.alcohol  ? parseFloat(form.alcohol)   : null,
-            smv:          form.smv.trim()     || null,
-            acidity:      form.acidity  ? parseFloat(form.acidity)   : null,
-          }).select('id').single()
-          productId = made?.id || null
-        }
+        const productId = await ensureProduct({ ...form, product_id: null }, { create: !editId })
         if (productId && saved?.id) await supabase.from('sake_entries').update({ product_id: productId }).eq('id', saved.id)
       }
       clearDraft(); setHasDraft(false)
@@ -817,43 +713,14 @@ export default function Journal({ session }) {
   return (
     <div style={s.page}>
       <Nav session={session} topbar={false} />
-      {wishlistMode ? (
-        <div className="kk-ledger">
-          <div className="kk-ledger__head">
-            <button type="button" className="kk-icon-btn" onClick={() => setWishlistMode(false)} aria-label={L3('マイ帳に戻る', '回到酒帳', 'Back to ledger')}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-            <h1 className="kk-ledger__title" style={{ flex: 1 }}>{L3('飲みたいリスト', '想喝清單', 'Wish list')}</h1>
-          </div>
-          <WishlistView
-            entries={wishedEntries} loading={wishlistLoading} lang={lang}
-            typeLabel={typeLabel} onForward={handleWishForward} onRemove={removeWish}
-          />
-        </div>
-      ) : (
-        <Ledger
+      <Ledger
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
           onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
           initialRegion={initialRegion} initialBrewery={initialBrewery} initialView={initialView}
           onAdd={openAdd} hasDraft={hasDraft}
-          wishCount={wishedEntries.length} onShowWishlist={() => setWishlistMode(true)}
+          wishCount={wishCount} onShowWishlist={() => navigate('/wishlist')}
         />
-      )}
-
-      {/* Forward confirmation dialog */}
-      {forwardConfirmEntry && (
-        <ForwardConfirmDialog
-          entry={forwardConfirmEntry} lang={lang}
-          onConfirm={(skipNext) => {
-            if (skipNext) localStorage.setItem(FORWARD_SKIP_KEY, '1')
-            removeWish(forwardConfirmEntry.id)
-            doForward(forwardConfirmEntry)
-            setForwardConfirmEntry(null)
-          }}
-          onCancel={() => setForwardConfirmEntry(null)}
-        />
-      )}
 
       {/* Detail modal */}
       <Sheet

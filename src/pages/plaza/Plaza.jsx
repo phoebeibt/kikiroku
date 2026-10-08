@@ -10,7 +10,8 @@ import { formatRating } from '../../lib/rating'
 import { normalizeType } from '../../lib/sakeType'
 import { cleanLabel } from '../../lib/labels'
 import { pressable } from '../../lib/a11y'
-import { forwardFrom, relativeTime, useWishes } from '../../lib/plaza'
+import { forwardFrom, relativeTime } from '../../lib/plaza'
+import { useWishes } from '../../lib/wishes'
 import { tierFor, tanukiSrc } from '../../lib/plazaTier'
 import PlazaStamp from '../../components/plaza/PlazaStamp'
 import '../journal/ledger.css'
@@ -45,7 +46,7 @@ export default function Plaza({ session }) {
   const isGuest = !session
   // Aroma and taste ids can sit in either list on older records; resolve against both vocabularies.
   const sensoryLabel = id => { const a = tagLabel(id, 'aroma'); return a && a !== id ? a : tagLabel(id, 'taste') }
-  const { wishes, toggle: toggleWish } = useWishes(session)
+  const { isWished, toggleWish } = useWishes(session)
 
   const [tab, setTab] = useState('new')
   const [rows, setRows] = useState([])
@@ -171,7 +172,7 @@ export default function Plaza({ session }) {
             const reason = reasonFor(e)
             const who = e.contributor_name || L('匿名', '匿名', 'Someone')
             const title = [e.brand, e.name].filter(Boolean).join(' ')
-            const wished = wishes.has(e.id)
+            const wished = isWished(e)
             // Guests never see ratings, so they never see the rating colour or scene either.
             const tier = isGuest ? null : tierFor(e.rating)
             // Tanuki marks where a rating band starts: a run of same-tier cards shows it on the first
@@ -212,7 +213,7 @@ export default function Plaza({ session }) {
                           {isGuest ? (
                             <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
                           ) : (<>
-                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e.id)}>
+                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e)}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
                               {L('飲みたい', '想喝', 'Want to try')}
                             </button>
