@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
 import Toast from '../components/ui/Toast'
-import Stars from '../components/Stars'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 import BottleCropEditor from '../components/bottle/BottleCropEditor'
 import { WikiText } from '../components/WikiTooltip'
@@ -22,9 +21,10 @@ import { regionPath } from '../lib/region'
 const dot = d => (d || '').replaceAll('-', '.')
 
 /**
- * 酒詳情 — one 酒札 as a page (/journal/:id).
- * Top: the bottle by default, with a 瓶身 / 原図 switch (original photo = the memory of the moment).
- * Owner actions live in the … menu; 編集 is also a visible primary button, 削除 is never.
+ * 酒詳情 — one 酒札 as a page (/journal/:id). Layout B「照片与记忆・效率精修」(design 2026-10-08):
+ * full-width title → small fixed photo column (瓶身 / 写真) beside my rating, date and two key specs →
+ * 種類・状態 line → 私のメモ → 香り・味わい → 関連 → お酒の詳しい情報 (folded). Desktop: title spans,
+ * 関連 and details move to a right column. Owner actions: 編集 in the top bar, the rest in the … menu.
  */
 export default function SakeDetail({ session }) {
   const { id } = useParams()
@@ -36,18 +36,18 @@ export default function SakeDetail({ session }) {
 
   const [entry, setEntry] = useState(null)
   const [state, setState] = useState('loading') // loading | ready | missing
-  const [view, setView] = useState('bottle')    // bottle | photo | back
+  const [view, setView] = useState('bottle')    // bottle | photo
   const [reading, setReading] = useState(null)
   const [others, setOthers] = useState([])
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
   const [confirmPublic, setConfirmPublic] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [lightbox, setLightbox] = useState(null)
+  const [lightbox, setLightbox] = useState(null) // index into photos
   const [adjusting, setAdjusting] = useState(false)
   const [toast, setToast] = useState(null)
   const [specsOpen, setSpecsOpen] = useState(false)
-  const [datesOpen, setDatesOpen] = useState(false)
+  const [flavorsOpen, setFlavorsOpen] = useState(false)
   const menuBtnRef = useRef(null)
 
   const isOwner = !!(session && entry && entry.user_id === session.user.id)
@@ -160,170 +160,218 @@ export default function SakeDetail({ session }) {
     )
   }
 
-  const photo = view === 'back' ? entry.photo_url2 : entry.photo_url
-  const tagsBlock = (label, ids, cat, outline) => ids?.length > 0 && (
-    <section className="kk-detail-block">
-      <h2>{label}</h2>
-      <div className="kk-mini-tags">{ids.map(x => <span key={x} className={outline ? 'is-outline' : ''}>{tagLabel(x, cat)}</span>)}</div>
+  const photos = [entry.photo_url && { key: 'front', src: entry.photo_url, label: L('表ラベル', '正標', 'Front') }, entry.photo_url2 && { key: 'back', src: entry.photo_url2, label: L('裏ラベル', '背標', 'Back') }].filter(Boolean)
+  const canSeePhoto = !isGuest && photos.length > 0
+  const shownView = canSeePhoto ? view : 'bottle'
+  const rating = Number(entry.rating) || 0
+  const pct = v => (v ? `${String(v).replace(/%$/, '')}%` : null)
+  const keySpecs = [[L('精米歩合', '精米步合', 'Polishing'), pct(entry.polishing)], [L('アルコール', '酒精度', 'Alcohol'), pct(entry.alcohol)]].filter(([, v]) => v)
+  const moreSpecs = specs.filter(([k]) => !keySpecs.some(([kk]) => kk === k))
+  const methodNames = (entry.method_tags || []).map(x => tagLabel(x, 'method'))
+  const flavorIds = [...(entry.aroma_tags || []).map(x => [x, 'aroma']), ...(entry.taste_tags || []).map(x => [x, 'taste'])]
+  const FLAVOR_SHOWN = 6
+  const visibleFlavors = flavorsOpen ? flavorIds : flavorIds.slice(0, FLAVOR_SHOWN)
+  const wished = isWished(entry)
+  const ratingLabel = rating > 0 ? L(`評価 ${formatRating(rating)}（5点中）`, `評分 ${formatRating(rating)}（滿分 5）`, `Rated ${formatRating(rating)} out of 5`) : L('未評価', '未評分', 'Unrated')
+  const readingText = reading && (lang === 'ja' ? reading.furigana : reading.romaji)
+
+  const related = !isGuest && (
+    <section className="kk-dv-related" aria-labelledby="kk-dv-related-title">
+      <h2 id="kk-dv-related-title" className="kk-dv-h2">{L('関連', '相關', 'Related')}</h2>
+      {entry.brewery && (
+        <button type="button" className="kk-dv-row" onClick={() => navigate('/journal', { state: { brewery: entry.brewery } })}>
+          <span><strong>{L('同じ酒造', '同一酒造', 'Same brewery')}</strong><small>{L(`${entry.brewery}の記録を見る`, `看${entry.brewery}的記錄`, `Your records from ${entry.brewery}`)}</small></span>
+          <span className="kk-dv-row__go" aria-hidden="true">›</span>
+        </button>
+      )}
+      {entry.region && (
+        <button type="button" className="kk-dv-row" onClick={() => navigate('/journal', { state: { region: entry.region } })}>
+          <span><strong>{L('同じ産地', '同一產地', 'Same region')}</strong><small>{L(`${entry.region}の酒札を見る`, `看${entry.region}的酒札`, `Your sake from ${entry.region}`)}</small></span>
+          <span className="kk-dv-row__go" aria-hidden="true">›</span>
+        </button>
+      )}
+      <button type="button" className={`kk-dv-row${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(entry)}>
+        <span>
+          <strong>{isOwner ? L('また飲みたい', '還想再喝', 'Drink again') : L('飲みたい', '想喝', 'Want to try')}</strong>
+          <small>{wished ? L('飲みたいリストに入っています', '已在想喝清單裡', 'On your wish list') : L('飲みたいリストに追加', '加入想喝清單', 'Add to your wish list')}</small>
+        </span>
+        <span className="kk-dv-row__go" aria-hidden="true">{wished ? '✓' : '+'}</span>
+      </button>
+      {!isOwner && (
+        <button type="button" className="kk-dv-row" onClick={() => navigate('/journal', { state: { forward: forwardFrom(entry) } })}>
+          <span><strong>{L('自分も記録', '我也記錄', 'Record it too')}</strong><small>{L('この酒で新しい記録をつくる', '用這款酒新增一筆記錄', 'Start a record of this sake')}</small></span>
+          <span className="kk-dv-row__go" aria-hidden="true">›</span>
+        </button>
+      )}
     </section>
   )
 
+  const details = (moreSpecs.length > 0 || dates.length > 1) && (
+    <details className="kk-dv-more" open={specsOpen} onToggle={e => setSpecsOpen(e.currentTarget.open)}>
+      <summary>{L('お酒の詳しい情報', '酒的詳細資訊', 'More about this sake')}</summary>
+      {moreSpecs.length > 0 && (
+        <dl className="kk-dv-specs">
+          {moreSpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
+        </dl>
+      )}
+      {!isGuest && dates.length > 1 && (
+        <div className="kk-dv-dates" id="kk-all-dates">
+          <p className="kk-dv-overline">{L('飲んだ日', '飲用日', 'Dates tasted')}</p>
+          <ul className="kk-dates-list">{dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}</ul>
+        </div>
+      )}
+    </details>
+  )
+
   return (
-    <div className="kk-detail-page">
+    <div className="kk-detail-page kk-dv-page">
       <Nav session={session} topbar={false} />
 
-      <header className="kk-detail-top">
-        <button type="button" className="kk-icon-btn" onClick={goBack} aria-label={L('戻る', '返回', 'Back')}><BackIcon /></button>
-        <h1 className="kk-detail-top__title">{entry.status === 'draft' ? L('下書き', '草稿', 'Draft') : L('記録', '記錄', 'Record')}</h1>
-        {isOwner
-          ? <button ref={menuBtnRef} type="button" className="kk-icon-btn" onClick={() => setMenuOpen(true)} aria-label={L('その他の操作', '更多操作', 'More actions')} aria-haspopup="dialog"><MoreIcon /></button>
-          : <span className="kk-panel__head-spacer" />}
+      <header className="kk-dv-top">
+        <button type="button" className="kk-dv-top__back" onClick={goBack}><span aria-hidden="true">←</span> {isOwner ? L('マイ帳', '酒帳', 'Ledger') : L('戻る', '返回', 'Back')}</button>
+        <h1 className="kk-dv-top__title">{entry.status === 'draft' ? L('下書き', '草稿', 'Draft') : L('酒の記録', '酒的記錄', 'Sake record')}</h1>
+        <div className="kk-dv-top__actions">
+          {isOwner && <button type="button" className="kk-dv-top__edit" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>}
+          {isOwner && <button ref={menuBtnRef} type="button" className="kk-icon-btn kk-dv-top__more" onClick={() => setMenuOpen(true)} aria-label={L('その他の操作', '更多操作', 'More actions')} aria-haspopup="dialog"><MoreIcon /></button>}
+        </div>
       </header>
 
-      <main className="kk-detail">
-        {/* Hero: bottle by default, original photo one tap away */}
-        <section className="kk-detail-hero" aria-label={L('写真', '照片', 'Photo')}>
-          {!isGuest && entry.photo_url && (
-            <div className="kk-seg" role="tablist" aria-label={L('表示', '顯示', 'View')}>
-              {[['bottle', L('瓶身', '瓶身', 'Bottle')], ['photo', L('原図', '原圖', 'Photo')], entry.photo_url2 && ['back', L('裏ラベル', '背標', 'Back')]].filter(Boolean).map(([k, label]) => (
-                <button key={k} type="button" role="tab" aria-selected={view === k} className={view === k ? 'is-active' : ''} onClick={() => setView(k)}>{label}</button>
-              ))}
-            </div>
-          )}
-          {view === 'bottle' ? (
-            <div className="kk-detail-hero__stage">
-              <span className="kk-detail-hero__halo" aria-hidden="true" />
-              <SakeBottleCrop imageUrl={isGuest ? null : entry.photo_url} crop={entry.photo_crop} height="84%" alt={title} />
-            </div>
-          ) : (
-            <button type="button" className="kk-detail-hero__photo" onClick={() => setLightbox(photo)} aria-label={L('写真を拡大', '放大照片', 'Enlarge photo')}>
-              <img src={photo} alt={title} />
-            </button>
-          )}
-          <span className={`kk-status ${entry.is_public ? 'kk-status--public' : 'kk-status--private'} kk-detail-hero__privacy`}>
-            {entry.is_public ? L('公開中', '公開中', 'Shared') : L('非公開', '不公開', 'Private')}
-          </span>
-        </section>
-
-        {/* The 酒札 */}
-        <article className="kk-plaque">
-          <div className="kk-plaque__head">
-            <div className="kk-plaque__titles">
-              {!isOwner && !isGuest && (
-                <p className="kk-plaque-card__who" style={{ marginBottom: 8 }}>
-                  <span className="kk-avatar" aria-hidden="true">{(entry.contributor_name || '?').slice(0, 1)}</span>
-                  <span>{L(`${entry.contributor_name || '匿名'} の公開酒札`, `${entry.contributor_name || '匿名'} 的公開酒札`, `${entry.contributor_name || 'Someone'}’s public tag`)}</span>
-                </p>
-              )}
-              {reading && (lang === 'ja' ? reading.furigana : reading.romaji) && (
-                <p className="kk-plaque__reading">{lang === 'ja' ? reading.furigana : reading.romaji}</p>
-              )}
-              <h2 className="kk-plaque__title">{title || L('名前のない下書き', '未命名草稿', 'Untitled draft')}</h2>
-              <p className="kk-plaque__meta">
-                {[entry.brewery,
-                  entry.region && <button key="r" type="button" className="kk-link" onClick={goRegion}>{entry.region}</button>,
-                  typeName].filter(Boolean).map((x, i) => <span key={i}>{i > 0 && ' / '}{x}</span>)}
-              </p>
-            </div>
-            <span className="kk-seal" aria-hidden="true">{entry.status === 'draft' ? L('下書', '草稿', 'Draft') : L('記録', '記錄', 'Kept')}</span>
-          </div>
-
-          {!isGuest && (<>
-          <div className="kk-plaque__rating">
-            {Number(entry.rating) > 0
-              ? <><span className="kk-score kk-score--lg">{formatRating(entry.rating)}</span><Stars rating={entry.rating} size={13} /></>
-              : <span className="kk-card__unrated">{L('未評価', '未評分', 'Unrated')}</span>}
-          </div>
-          {dates.length > 0 && (
-            <p className="kk-plaque__dates">
-              {L('飲んだ日', '飲用日', 'Tasted')} {dot(dates[0])}
-              {dates.length > 1 && (<> · <button type="button" className="kk-link" aria-expanded={datesOpen} aria-controls="kk-all-dates" onClick={() => setDatesOpen(o => !o)}>
-                {L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}
-              </button></>)}
+      <main className="kk-dv">
+        <div className="kk-dv-titles">
+          <p className="kk-dv-eyebrow">
+            {readingText && <span>{readingText}</span>}
+            {!isOwner && !isGuest && <span>{L(`${entry.contributor_name || '匿名'} の公開酒札`, `${entry.contributor_name || '匿名'} 的公開酒札`, `${entry.contributor_name || 'Someone'}’s public tag`)}</span>}
+            {isOwner && <span className={`kk-dv-privacy${entry.is_public ? ' is-public' : ''}`}>{entry.is_public ? L('公開中', '公開中', 'Shared') : L('非公開', '不公開', 'Private')}</span>}
+          </p>
+          <h2 className="kk-dv-title">{title || L('名前のない下書き', '未命名草稿', 'Untitled draft')}</h2>
+          {(entry.brewery || entry.region) && (
+            <p className="kk-dv-brewery">
+              {entry.brewery && (isGuest ? <span>{entry.brewery}</span> : <button type="button" className="kk-dv-link" onClick={() => navigate('/journal', { state: { brewery: entry.brewery } })}>{entry.brewery}</button>)}
+              {entry.brewery && entry.region && ' · '}
+              {entry.region && <button type="button" className="kk-dv-link" onClick={goRegion}>{entry.region}</button>}
             </p>
           )}
+        </div>
 
-          {entry.notes && (
-            <section className="kk-detail-block">
-              <h2>{L('私のメモ', '我的筆記', 'My notes')}</h2>
-              <p className="kk-detail-note">{entry.notes}</p>
-            </section>
-          )}
-          {tagsBlock(L('香り', '香氣', 'Aroma'), entry.aroma_tags, 'aroma')}
-          {tagsBlock(L('味わい', '味道', 'Taste'), entry.taste_tags, 'taste')}
-          {tagsBlock(L('整理', '整理', 'Labels'), entry.tags, 'flavor', true)}
-          </>)}
-          {tagsBlock(L('製法・状態', '製法・狀態', 'Method'), entry.method_tags, 'method', true)}
-
-          {/* Reference data stays folded: the page leads with the memory, not a data sheet. */}
-          {specs.length > 0 && (
-            <section className="kk-detail-block kk-detail-block--fold">
-              <button type="button" className="kk-fold" aria-expanded={specsOpen} aria-controls="kk-specs" onClick={() => setSpecsOpen(o => !o)}>
-                <span>{L('スペック', '規格', 'Specs')}</span>
-                <span className="kk-fold__summary">{specs.slice(0, 3).map(([, v]) => v).join(' · ')}</span>
-                <Chevron />
-              </button>
-              {specsOpen && (
-                <dl className="kk-specs" id="kk-specs">
-                  {specs.map(([k, v, wiki]) => (
-                    <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>
+        <div className="kk-dv-primary">
+          <div className="kk-dv-overview">
+            <div className="kk-dv-photo-col">
+              {shownView === 'bottle' ? (
+                <div className="kk-dv-photo">
+                  <SakeBottleCrop imageUrl={isGuest ? null : entry.photo_url} crop={entry.photo_crop} height="172px" alt={title} />
+                </div>
+              ) : (
+                <button type="button" className="kk-dv-photo is-original" onClick={() => setLightbox(0)} aria-label={L('写真を拡大', '放大照片', 'Enlarge photo')}>
+                  <img src={entry.photo_url} alt={title} />
+                </button>
+              )}
+              {canSeePhoto ? (
+                <div className="kk-dv-switch" role="group" aria-label={L('表示', '顯示', 'View')}>
+                  {[['bottle', L('瓶身', '瓶身', 'Bottle')], ['photo', L('写真', '照片', 'Photo')]].map(([k, label]) => (
+                    <button key={k} type="button" aria-pressed={shownView === k} onClick={() => setView(k)}>{label}</button>
                   ))}
+                </div>
+              ) : isOwner && (
+                <button type="button" className="kk-dv-addphoto" onClick={goEdit}>{L('写真を追加', '加照片', 'Add a photo')}</button>
+              )}
+            </div>
+
+            <div className="kk-dv-assess">
+              {!isGuest && <img className="kk-dv-tanuki" src="/detail/tanuki-record.webp" alt="" aria-hidden="true" width="76" height="76" />}
+              {!isGuest && (<>
+                <p className="kk-dv-overline">{L('私の評価', '我的評分', 'My rating')}</p>
+                {rating > 0 ? (
+                  <div className="kk-dv-rating" role="img" aria-label={ratingLabel}>
+                    <p className="kk-dv-score" aria-hidden="true"><strong>{formatRating(rating)}</strong><span>/ 5</span></p>
+                    <Dots rating={rating} />
+                  </div>
+                ) : <p className="kk-dv-unrated">{L('未評価', '未評分', 'Unrated')}</p>}
+                {dates.length > 0 && (
+                  <div className="kk-dv-date">
+                    <span>{L('飲んだ日', '飲用日', 'Tasted')}</span>
+                    {dot(dates[0])}
+                    {dates.length > 1 && <small>{L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}</small>}
+                  </div>
+                )}
+              </>)}
+              {keySpecs.length > 0 && (
+                <dl className={`kk-dv-keyspecs${isGuest ? ' is-first' : ''}`}>
+                  {keySpecs.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
                 </dl>
               )}
+            </div>
+          </div>
+
+          {(typeName || methodNames.length > 0) && (
+            <dl className="kk-dv-class">
+              {typeName && <div><dt>{L('種類', '種類', 'Type')}</dt><dd>{typeName}</dd></div>}
+              {methodNames.length > 0 && <div><dt>{L('状態', '狀態', 'Style')}</dt><dd>{methodNames.join('・')}</dd></div>}
+            </dl>
+          )}
+
+          {!isGuest && (
+            <section className="kk-dv-memo" aria-labelledby="kk-dv-memo-title">
+              <h2 id="kk-dv-memo-title" className="kk-dv-h2">{L('私のメモ', '我的筆記', 'My notes')}</h2>
+              {entry.notes
+                ? <p className="kk-dv-note">{entry.notes}</p>
+                : <p className="kk-dv-empty">{L('まだメモはありません。', '還沒有筆記。', 'No notes yet.')}{isOwner && <> <button type="button" className="kk-dv-textbtn" onClick={goEdit}>{L('メモを書く', '寫筆記', 'Write a note')}</button></>}</p>}
             </section>
           )}
 
-          {!isGuest && dates.length > 1 && datesOpen && (
-            <section className="kk-detail-block" id="kk-all-dates">
-              <h2>{L('飲んだ日', '飲用日', 'Dates tasted')}</h2>
-              <ul className="kk-dates-list">{dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}</ul>
-            </section>
+          {!isGuest && (flavorIds.length > 0 || entry.tags?.length > 0) && (
+            <div className="kk-dv-flavors">
+              {flavorIds.length > 0 && (
+                <p className="kk-dv-chips">
+                  <span className="kk-dv-chips__label">{L('香り・味わい', '香氣・味道', 'Aroma · taste')}</span>
+                  {visibleFlavors.map(([x, cat]) => <span key={cat + x} className="kk-dv-chip">{tagLabel(x, cat)}</span>)}
+                  {flavorIds.length > FLAVOR_SHOWN && (
+                    <button type="button" className="kk-dv-chip kk-dv-chip--more" aria-expanded={flavorsOpen} onClick={() => setFlavorsOpen(o => !o)}>
+                      {flavorsOpen ? L('閉じる', '收起', 'Less') : `+${flavorIds.length - FLAVOR_SHOWN}`}
+                    </button>
+                  )}
+                </p>
+              )}
+              {entry.tags?.length > 0 && (
+                <p className="kk-dv-chips">
+                  <span className="kk-dv-chips__label">{L('整理', '整理', 'Labels')}</span>
+                  {entry.tags.map(x => <span key={x} className="kk-dv-chip is-outline">{tagLabel(x, 'flavor')}</span>)}
+                </p>
+              )}
+            </div>
           )}
 
-          {isOwner && (
-            <div className="kk-plaque__actions kk-plaque__actions--pair">
-              <button type="button" className={`kk-btn${isWished(entry) ? ' is-on' : ''}`} aria-pressed={isWished(entry)} onClick={() => toggleWish(entry)}>
-                {isWished(entry) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('また飲みたい', '還想再喝', 'Drink again')}
-              </button>
-              <button type="button" className="kk-btn kk-btn--primary" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>
-            </div>
-          )}
-          {!isOwner && !isGuest && (
-            <div className="kk-plaque__actions kk-plaque__actions--pair">
-              <button type="button" className={`kk-btn${isWished(entry) ? ' is-on' : ''}`} aria-pressed={isWished(entry)} onClick={() => toggleWish(entry)}>
-                {isWished(entry) ? L('飲みたい済み', '已加入想喝', 'On wish list') : L('飲みたい', '想喝', 'Want to try')}
-              </button>
-              <button type="button" className="kk-btn kk-btn--primary" onClick={() => navigate('/journal', { state: { forward: forwardFrom(entry) } })}>{L('自分も記録', '我也記錄', 'Record it too')}</button>
-            </div>
-          )}
           {isGuest && (
-            <div className="kk-plaque__actions">
-              <p className="kk-helper" style={{ margin: '0 0 8px', textAlign: 'center' }}>{L('写真・評価・メモはログインすると見られます。', '登入後可以看到照片、評分和筆記。', 'Sign in to see photos, ratings and notes.')}</p>
+            <div className="kk-dv-guest">
+              <p className="kk-helper">{L('写真・評価・メモはログインすると見られます。', '登入後可以看到照片、評分和筆記。', 'Sign in to see photos, ratings and notes.')}</p>
               <button type="button" className="kk-btn kk-btn--primary" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>
             </div>
           )}
-        </article>
+        </div>
 
-        {/* みんなの瓶身 */}
-        {others.length > 0 && (
-          <section className="kk-others" aria-labelledby="kk-others-title">
-            <div className="kk-others__head">
-              <h2 id="kk-others-title">{L('みんなの瓶身', '大家的瓶身', 'Others’ bottles')}</h2>
-              <span>{L('同じ酒の公開酒札', '同一款酒的公開酒札', 'Public tags of the same sake')}</span>
-            </div>
-            <ul className="kk-others__list">
-              {others.map(o => (
-                <li key={o.id}>
-                  <button type="button" className="kk-others__item" onClick={() => navigate(`/journal/${o.id}`)}>
-                    <span className="kk-others__stage"><SakeBottleCrop imageUrl={isGuest ? null : (o.thumb_url || o.photo_url)} crop={o.photo_crop} height="86px" /></span>
-                    {!isGuest && <span className="kk-others__who">{o.contributor_name || L('匿名', '匿名', 'Anonymous')}</span>}
-                    {!isGuest && Number(o.rating) > 0 && <span className="kk-score">{formatRating(o.rating)}</span>}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <div className="kk-dv-secondary">
+          {related}
+          {details}
+          {/* みんなの瓶身 */}
+          {others.length > 0 && (
+            <section className="kk-dv-others" aria-labelledby="kk-others-title">
+              <div className="kk-others__head">
+                <h2 id="kk-others-title" className="kk-dv-h2">{L('みんなの瓶身', '大家的瓶身', 'Others’ bottles')}</h2>
+                <span>{L('同じ酒の公開酒札', '同一款酒的公開酒札', 'Public tags of the same sake')}</span>
+              </div>
+              <ul className="kk-others__list">
+                {others.map(o => (
+                  <li key={o.id}>
+                    <button type="button" className="kk-others__item" onClick={() => navigate(`/journal/${o.id}`)}>
+                      <span className="kk-others__stage"><SakeBottleCrop imageUrl={isGuest ? null : (o.thumb_url || o.photo_url)} crop={o.photo_crop} height="86px" /></span>
+                      {!isGuest && <span className="kk-others__who">{o.contributor_name || L('匿名', '匿名', 'Anonymous')}</span>}
+                      {!isGuest && Number(o.rating) > 0 && <span className="kk-score">{formatRating(o.rating)}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       </main>
 
       {/* … menu */}
@@ -363,12 +411,16 @@ export default function SakeDetail({ session }) {
         </div>
       </Sheet>
 
-      <Sheet open={!!lightbox} onClose={() => setLightbox(null)} variant="viewer" label={L('写真', '照片', 'Photo')}>
-        <div onClick={() => setLightbox(null)} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img src={lightbox || ''} alt="" style={{ maxWidth: '96vw', maxHeight: '92svh', objectFit: 'contain', borderRadius: 8 }} />
+      <Sheet open={lightbox !== null} onClose={() => setLightbox(null)} variant="viewer" label={L('写真', '照片', 'Photo')}>
+        <div className="kk-dv-viewer" onClick={e => { if (e.target === e.currentTarget) setLightbox(null) }}>
+          {lightbox !== null && photos[lightbox] && <img src={photos[lightbox].src} alt={`${title}・${photos[lightbox].label}`} />}
         </div>
-        <button type="button" className="kk-icon-btn" onClick={() => setLightbox(null)} aria-label={L('閉じる', '關閉', 'Close')}
-          style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: 16, background: 'rgba(0,0,0,.5)', borderColor: 'rgba(255,255,255,.3)', color: '#fff' }}>
+        {photos.length > 1 && (
+          <div className="kk-dv-viewer__tabs" role="group" aria-label={L('写真を選ぶ', '選擇照片', 'Choose photo')}>
+            {photos.map((ph, i) => <button key={ph.key} type="button" aria-pressed={lightbox === i} onClick={() => setLightbox(i)}>{ph.label}</button>)}
+          </div>
+        )}
+        <button type="button" className="kk-icon-btn kk-dv-viewer__close" onClick={() => setLightbox(null)} aria-label={L('閉じる', '關閉', 'Close')}>
           <CloseIcon />
         </button>
       </Sheet>
@@ -384,11 +436,16 @@ export default function SakeDetail({ session }) {
   )
 }
 
+function Dots({ rating }) {
+  const r = Number(rating) || 0
+  return (
+    <span className="kk-pdots kk-dv-dots" aria-hidden="true">
+      {[1, 2, 3, 4, 5].map(i => <i key={i} className={r >= i ? 'is-full' : r >= i - 0.5 ? 'is-half' : ''} />)}
+    </span>
+  )
+}
 function BackIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-}
-function Chevron() {
-  return <svg className="kk-fold__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
 }
 function MoreIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
