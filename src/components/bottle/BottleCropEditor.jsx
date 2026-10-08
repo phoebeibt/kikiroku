@@ -67,9 +67,16 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
       ArrowLeft: c => ({ ...c, x: c.x - step }), ArrowRight: c => ({ ...c, x: c.x + step }),
       ArrowUp: c => ({ ...c, y: c.y - step }), ArrowDown: c => ({ ...c, y: c.y + step }),
       '+': c => ({ ...c, scale: c.scale + 0.1 }), '=': c => ({ ...c, scale: c.scale + 0.1 }), '-': c => ({ ...c, scale: c.scale - 0.1 }),
+      '[': c => ({ ...c, rotation: c.rotation - 0.5 }), ']': c => ({ ...c, rotation: c.rotation + 0.5 }),
     }
     if (map[e.key]) { e.preventDefault(); set(map[e.key]) }
   }
+
+  // Rotation = a quarter turn (回転 button) + a fine 水平 angle within ±45° (slider).
+  const quarter = Math.round(crop.rotation / 90) * 90
+  const fine = Math.round((crop.rotation - quarter) * 10) / 10
+  const setFine = deg => set(c => ({ ...c, rotation: Math.round(c.rotation / 90) * 90 + deg }))
+  const fmtDeg = d => `${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}°`
 
   // Cover-fit size of the image for the template box, before the user's transform.
   const k = nat && box.w ? Math.max(box.w / nat.w, box.h / nat.h) : 0
@@ -91,10 +98,20 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
           <button type="button" className="kk-btn kk-btn--sm" onClick={() => set(DEFAULT_CROP)}>{L('リセット', '重設', 'Reset')}</button>
           <button type="button" className="kk-btn kk-btn--sm" onClick={() => set(c => ({ ...c, scale: c.scale >= MAX_SCALE - 0.01 ? MIN_SCALE : c.scale + 0.25 }))}>{L('拡大', '放大', 'Zoom')}</button>
         </div>
-        <label className="kk-crop-editor__zoom">
-          <span className="visually-hidden">{L('拡大率', '放大倍率', 'Zoom level')}</span>
-          <input type="range" min={MIN_SCALE} max={MAX_SCALE} step="0.01" value={crop.scale} onChange={e => set(c => ({ ...c, scale: Number(e.target.value) }))} />
-        </label>
+        <div className="kk-crop-editor__sliders">
+          <label className="kk-crop-slider">
+            <span className="kk-crop-slider__name">{L('拡大', '縮放', 'Zoom')}</span>
+            <input type="range" min={MIN_SCALE} max={MAX_SCALE} step="0.01" value={crop.scale} onChange={e => set(c => ({ ...c, scale: Number(e.target.value) }))} />
+            <span className="kk-crop-slider__val">×{crop.scale.toFixed(2)}</span>
+          </label>
+          <div className="kk-crop-slider">
+            <label htmlFor="kk-crop-level" className="kk-crop-slider__name">{L('水平', '水平', 'Level')}</label>
+            <input id="kk-crop-level" type="range" min="-45" max="45" step="0.5" value={fine}
+              aria-valuetext={fmtDeg(fine)} onChange={e => setFine(Number(e.target.value))} />
+            <button type="button" className="kk-crop-slider__val kk-crop-slider__reset" onClick={() => setFine(0)} disabled={fine === 0}
+              aria-label={L(`角度 ${fmtDeg(fine)}、0°に戻す`, `角度 ${fmtDeg(fine)}，回到 0°`, `Angle ${fmtDeg(fine)}, back to 0°`)}>{fmtDeg(fine)}</button>
+          </div>
+        </div>
         <div className="kk-crop-editor__actions">
           {extraActions}
           {onSkip && <button type="button" className="kk-btn kk-btn--ghost" onClick={onSkip} disabled={saving}>{L('スキップ', '略過', 'Skip')}</button>}
@@ -107,7 +124,7 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
           <div
             className="kk-crop-box" style={{ width: box.w, height: box.h }}
             role="application" tabIndex={0}
-            aria-label={L('瓶を枠に合わせる：ドラッグで移動、2本指で拡大。矢印キーで移動、＋−で拡大縮小', '把酒瓶對進框內：拖動移動、雙指縮放；方向鍵移動、＋−縮放', 'Fit the bottle in the outline: drag to move, pinch to zoom; arrow keys move, + / − zoom')}
+            aria-label={L('瓶を枠に合わせる：ドラッグで移動、2本指で拡大。矢印キーで移動、＋−で拡大縮小、［ ］で角度', '把酒瓶對進框內：拖動移動、雙指縮放；方向鍵移動、＋−縮放、［ ］調角度', 'Fit the bottle in the outline: drag to move, pinch to zoom; arrow keys move, + / − zoom, [ ] tilt')}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
             onWheel={onWheel} onKeyDown={onKeyDown}
           >
@@ -120,6 +137,8 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
               {src && <img src={src} alt="" draggable="false" style={imgStyle} />}
             </div>
             <svg className="kk-crop-box__outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              {/* Centre line: line the bottle's axis up with it while levelling */}
+              <line className="kk-crop-box__axis" x1="50" y1="-4" x2="50" y2="104" vectorEffect="non-scaling-stroke" />
               <polygon points={BOTTLE_POINTS} vectorEffect="non-scaling-stroke" />
             </svg>
           </div>
