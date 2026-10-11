@@ -22,6 +22,7 @@ import '../components/record/record.css'
 import Ledger from './journal/Ledger'
 import { normalizeRegion } from '../lib/region'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
+import { rememberTags } from '../lib/recentTags'
 
 const EMPTY_FORM = {
   brand: '', name: '', brewery: '', region: '', type: '',
@@ -582,7 +583,7 @@ export default function Journal({ session }) {
       if (!(form.rating > 0)) errs.rating = L3('評価を選んでください', '請選擇評分', 'Choose a rating')
       setFormErrors(errs)
       if (Object.keys(errs).length) {
-        const target = document.getElementById(errs.name ? 'kk-field-brand' : 'kk-field-rating')
+        const target = document.getElementById(errs.name ? 'kk-field-name' : 'kk-field-rating')
         target?.scrollIntoView({ block: 'center', behavior: 'smooth' })
         target?.focus({ preventScroll: true })
         return
@@ -633,6 +634,7 @@ export default function Journal({ session }) {
         const productId = await ensureProduct({ ...form, product_id: null }, { create: !editId })
         if (productId && saved?.id) await supabase.from('sake_entries').update({ product_id: productId }).eq('id', saved.id)
       }
+      if (!isDraft) { rememberTags('aroma', aromaTags); rememberTags('taste', tasteTags); rememberTags('flavor', formTags) }
       clearDraft(); setHasDraft(false)
       setToast(isDraft
         ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました', '已存為草稿', 'Saved as a draft') }
@@ -881,16 +883,35 @@ export default function Journal({ session }) {
           {(!editId || editStatus === 'draft') && (
             <button type="button" className="kk-btn" onClick={() => save('draft')} disabled={saving}>{L3('下書き', '存草稿', 'Draft')}</button>
           )}
-          <button type="button" className="kk-btn kk-btn--primary" onClick={() => save('publish')} disabled={saving}>
-            {saving ? t('saving') : editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('保存', '保存', 'Save')}
-          </button>
+          {(() => {
+            // Until 酒名 + 評価 are in, the main button says what is missing and takes you there.
+            const needName = !(form.brand.trim() || form.name.trim()), needRating = !(form.rating > 0)
+            const guide = needName ? L3('酒名を入れると保存できます', '填入酒名就能保存', 'Add a name to save')
+              : needRating ? L3('評価を選ぶと保存できます', '選好評分就能保存', 'Pick a rating to save') : null
+            return (
+              <button type="button" className={`kk-btn kk-btn--primary${guide ? ' is-guide' : ''}`} onClick={() => save('publish')} disabled={saving}>
+                {saving ? t('saving') : guide || (editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('保存', '保存', 'Save'))}
+              </button>
+            )
+          })()}
         </>}
       >
         <div className="kk-form">
-          <div className="kk-progress" aria-hidden="true">
-            {[!!(photoPreview || photoPreview2), !!(form.brand.trim() || form.name.trim()), form.rating > 0, !!(aromaTags.length || tasteTags.length || form.notes.trim() || formTags.length)]
-              .map((on, i) => <span key={i} className={`kk-progress__step${on ? ' is-on' : ''}`} />)}
-          </div>
+          {/* Four steps, tappable to jump — a guide, not a forced carousel (design 2026-10-08 §2). */}
+          <nav className="kk-progress" aria-label={L3('記録の項目', '記錄項目', 'Record sections')}>
+            {[
+              ['kk-sec-photo', L3('ラベル', '酒標', 'Label'), !!(photoPreview || photoPreview2)],
+              ['kk-sec-basic', L3('どのお酒？', '哪一瓶？', 'Which sake?'), !!(form.brand.trim() || form.name.trim())],
+              ['kk-sec-rating', L3('私の評価', '我的評分', 'My rating'), form.rating > 0],
+              ['kk-sec-feel', L3('メモ・公開', '筆記・公開', 'Notes · sharing'), !!(aromaTags.length || tasteTags.length || form.notes.trim() || formTags.length)],
+            ].map(([target, label, on]) => (
+              <button key={target} type="button" className={`kk-progress__step${on ? ' is-on' : ''}`}
+                onClick={() => document.getElementById(target)?.closest('section')?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>
+                <span className="kk-progress__bar" aria-hidden="true" />
+                <span className="kk-progress__label">{label}{on && <span className="kk-visually-hidden">{L3('（入力済み）', '（已填）', ' (done)')}</span>}</span>
+              </button>
+            ))}
+          </nav>
 
           {saveError && <div className="kk-banner kk-banner--error" role="alert">{saveError}</div>}
 
@@ -1067,11 +1088,11 @@ export default function Journal({ session }) {
             {/* All three are always visible: the old 香り/味わい/メモ switch looked like tags and hid the rest. */}
             <div className="kk-field kk-feel">
               <span className="kk-field__label">{t('form.aroma')}{aromaTags.length > 0 && <span className="kk-tab__count">{aromaTags.length}</span>}</span>
-              <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} />
+              <TastingTagPicker category="aroma" selected={aromaTags} onChange={setAromaTags} lang={lang} title={t('form.aroma')} />
             </div>
             <div className="kk-field kk-feel">
               <span className="kk-field__label">{t('form.taste')}{tasteTags.length > 0 && <span className="kk-tab__count">{tasteTags.length}</span>}</span>
-              <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} />
+              <TastingTagPicker category="taste" selected={tasteTags} onChange={setTasteTags} lang={lang} title={t('form.taste')} />
             </div>
             <div className="kk-field kk-feel">
               <label className="kk-field__label" htmlFor="kk-field-notes">{t('form.notes')}</label>
@@ -1080,7 +1101,7 @@ export default function Journal({ session }) {
             </div>
             <div className="kk-field kk-feel">
               <span className="kk-field__label">{L3('整理', '整理', 'Labels')}</span>
-              <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} />
+              <FlavorTagPicker selected={formTags} onChange={setFormTags} lang={lang} t={t} title={L3('整理', '整理', 'Labels')} />
             </div>
           </section>
 
@@ -1137,7 +1158,7 @@ export default function Journal({ session }) {
                 </div>
                 <div className="kk-field">
                   <span className="kk-field__label">{t('form.methodTags')}</span>
-                  <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} />
+                  <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} title={t('form.methodTags')} />
                 </div>
               </div>
             )}

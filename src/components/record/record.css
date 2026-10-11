@@ -3,9 +3,25 @@
 .kk-form { display: grid; gap: 6px; }
 
 /* Progress: which parts of the 酒札 are filled in (not a wizard). */
-.kk-progress { display: flex; gap: 4px; margin: 0 0 12px; }
-.kk-progress__step { flex: 1; height: 5px; border-radius: 999px; background: #e7dfd1; transition: background .2s; }
-.kk-progress__step.is-on { background: var(--green); }
+/* Sticks to the top of the sheet body (which has 14px top padding) */
+.kk-progress { position: sticky; top: -14px; z-index: 2; display: flex; gap: 4px; margin: -14px -16px 12px; padding: 8px 16px 2px; background: var(--paper-2); border-bottom: 1px solid var(--line); }
+.kk-progress__step {
+  flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 0; border: 0; background: none; color: var(--muted); font: inherit; text-align: left; cursor: pointer;
+}
+.kk-progress__bar { display: block; height: 5px; border-radius: 999px; background: #e7dfd1; transition: background .2s; }
+.kk-progress__label { font-size: 11px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kk-progress__step.is-on .kk-progress__bar { background: var(--green); }
+.kk-progress__step.is-on .kk-progress__label { color: var(--green); font-weight: 700; }
+.kk-progress__step:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 4px; }
+/* Save bar: the main button explains what is missing instead of failing silently */
+.kk-panel__foot .kk-btn--primary.is-guide { font-size: 12.5px; line-height: 1.3; white-space: normal; background: var(--green-bg); color: var(--green); border-color: var(--green-bd); }
+/* もっと見る sheet for chips */
+.kk-chipsheet__all { padding: 4px 0 8px; }
+.kk-chipsheet__extra { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+.kk-custom-tag { display: grid; gap: 8px; }
+.kk-custom-tag__row { display: flex; gap: 8px; }
+.kk-custom-tag__row .kk-input { flex: 1; min-width: 0; }
 
 .kk-note-card {
   display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center;
@@ -191,3 +207,4 @@
 /* 感想: 香り / 味わい / メモ / 整理 stacked (no hidden tabs) */
 .kk-feel + .kk-feel { margin-top: 16px; }
 .kk-feel .kk-field__label .kk-tab__count { margin-left: 6px; }
+.kk-form .kk-section { scroll-margin-top: 64px; } /* clear the sticky progress bar when jumping */
