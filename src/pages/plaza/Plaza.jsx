@@ -179,16 +179,22 @@ export default function Plaza({ session }) {
             // card only; a card whose tier differs from the previous card shows its own (user rule 2026-10-07).
             const prevTier = i > 0 && !isGuest ? tierFor(rows[i - 1].rating) : null
             const scene = !!tier && tier.id !== prevTier?.id
+            // One stable spoken summary per card (design 2026-10-08 §4): name, rating, author, time.
+            const when = relativeTime(e.created_at, lang)
+            const cardLabel = (isGuest
+              ? [title, e.brewery, when]
+              : [title, Number(e.rating) > 0 && L(`評価${formatRating(e.rating)}`, `評分${formatRating(e.rating)}`, `rated ${formatRating(e.rating)}`), who, when]
+            ).filter(Boolean).join(L('、', '，', ', '))
             return (
               <li key={e.id}>
                 <article className={`kk-pcard kk-pcard--${tier ? tier.id : 'none'}${scene ? ' has-scene' : ''}`}>
-                  {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" width="256" height="256" loading="lazy" />}
+                  {scene && <img className="kk-pcard__tanuki" src={tanukiSrc(tier)} alt="" aria-hidden="true" width="256" height="256" loading="lazy" />}
                   <div className="kk-pcard__paper">
                     <div className="kk-pcard__bottle" aria-hidden="true" onClick={() => open(e)}>
                       <SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="84px" />
                     </div>
                     <div className="kk-pcard__body">
-                      <div className="kk-pcard__main" {...pressable(() => open(e), title)}>
+                      <div className="kk-pcard__main" {...pressable(() => open(e), cardLabel)}>
                         {tier && (
                           <p className="kk-pcard__score" title={L(tier.ja, tier.zh, tier.en)} aria-label={L(`評価 ${formatRating(e.rating)}・${tier.ja}`, `評分 ${formatRating(e.rating)}・${tier.zh}`, `Rated ${formatRating(e.rating)} · ${tier.en}`)}>
                             <span className="kk-pcard__num">{formatRating(e.rating)}</span>
@@ -207,17 +213,20 @@ export default function Plaza({ session }) {
                       <div className="kk-pcard__foot">
                         <p className="kk-pcard__who">
                           {!isGuest && <><span className="kk-pcard__name">{who}</span><span aria-hidden="true">·</span></>}
-                          <span>{relativeTime(e.created_at, lang)}</span>
+                          <span>{when}</span>
                         </p>
                         <div className="kk-pcard__actions">
                           {isGuest ? (
-                            <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
+                            <button type="button" className="kk-act kk-act--go" onClick={() => navigate('/login')}
+                              aria-label={L(`ログインして${title}を記録`, `登入後記錄${title}`, `Sign in to record ${title}`)}>{L('ログインして記録', '登入後記錄', 'Sign in to record')}</button>
                           ) : (<>
-                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e)}>
+                            <button type="button" className={`kk-act${wished ? ' is-on' : ''}`} aria-pressed={wished} onClick={() => toggleWish(e)}
+                              aria-label={L(`${title}を飲みたいに追加`, `把${title}加入想喝`, `Add ${title} to want to try`)}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
                               {L('飲みたい', '想喝', 'Want to try')}
                             </button>
-                            <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}>
+                            <button type="button" className="kk-act kk-act--go" onClick={() => recordToo(e)}
+                              aria-label={L(`${title}を自分も記録`, `我也記錄${title}`, `Record ${title} too`)}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                               {L('自分も記録', '我也記錄', 'Record it too')}
                             </button>
