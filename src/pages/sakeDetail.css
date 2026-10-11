@@ -104,6 +104,7 @@
 .kk-action-list { list-style: none; margin: 0 0 8px; padding: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
 .kk-action-list li + li { border-top: 1px solid var(--line); }
 .kk-action-list button { width: 100%; min-height: 50px; padding: 0 16px; border: 0; background: var(--paper-2); color: var(--ink); font-size: 15px; font-weight: 700; text-align: left; }
+.kk-action-list__danger { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
 .kk-action-list__danger button { color: var(--danger); }
 
 /* Folded reference blocks (スペック) */
@@ -156,6 +157,7 @@
 
 /* photo column + my assessment */
 .kk-dv-overview { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 24px; align-items: start; }
+.kk-dv-overview.is-solo { grid-template-columns: minmax(0, 1fr); }
 .kk-dv-photo-col { min-width: 0; }
 .kk-dv-photo {
   display: grid; place-items: center; width: 100%; height: 196px; padding: 12px; border: 0; border-radius: 6px;
@@ -173,20 +175,21 @@
 .kk-dv-addphoto { width: 100%; min-height: 44px; margin-top: 6px; border: 0; background: none; color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; }
 
 .kk-dv-assess { position: relative; min-width: 0; padding-top: 5px; }
-.kk-dv-tanuki {
-  position: absolute; top: 4px; right: 0; width: 76px; height: 76px; object-fit: contain;
-  filter: grayscale(1); opacity: .15; pointer-events: none; user-select: none;
-}
 .kk-dv-overline { margin: 0; font-size: 11px; color: var(--muted); }
 .kk-dv-rating { margin-top: 4px; }
-.kk-dv-score { display: flex; align-items: baseline; gap: 5px; margin: 0; color: #a16b31; font-variant-numeric: tabular-nums; }
+.kk-dv-score { display: flex; align-items: baseline; gap: 5px; margin: 0; color: #7a6227; font-variant-numeric: tabular-nums; }
 .kk-dv-score strong { font-size: 36px; line-height: 1.15; font-weight: 600; }
 .kk-dv-score span { font-size: 12px; color: var(--muted); }
-.kk-dv-dots { --t-dot: #a16b31; gap: 5px; margin-top: 9px; }
+.kk-dv-dots { --t-dot: #b9974a; gap: 5px; margin-top: 9px; }
 .kk-dv-unrated { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .kk-dv-date { margin-top: 18px; font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .kk-dv-date span { display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
-.kk-dv-date small { margin-left: 8px; font-size: 11px; color: var(--muted); }
+.kk-dv-more-dates { min-height: 44px; margin-left: 6px; font-size: 11px; font-weight: 600; }
+.kk-dv-history { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.kk-dv-history .kk-dv-overline { margin-bottom: 6px; }
+.kk-dv-history__list { flex-direction: column; gap: 6px; }
+.kk-panel .kk-dv-history__list { max-height: 50svh; overflow-y: auto; padding: 4px 0 12px; }
+.kk-dv-history__close { margin-top: 8px; }
 .kk-dv-keyspecs { display: grid; gap: 9px; margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
 .kk-dv-keyspecs.is-first { margin-top: 0; padding-top: 0; border-top: 0; }
 .kk-dv-keyspecs div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
@@ -237,11 +240,11 @@
 .kk-dv-specs div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; }
 .kk-dv-specs dt { color: var(--muted); }
 .kk-dv-specs dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-.kk-dv-dates { margin-top: 14px; }
-.kk-dv-dates .kk-dv-overline { margin-bottom: 6px; }
 
 .kk-dv-others { margin-top: 22px; }
 .kk-dv-others .kk-others__head .kk-dv-h2 { margin: 0; }
+.kk-dv-others .kk-others__stage { width: 44px; height: 84px; }
+.kk-dv-others > .kk-dv-textbtn { margin-top: 2px; }
 .kk-dv-guest { display: grid; gap: 8px; padding: 20px 0; text-align: center; }
 
 /* photo viewer (front / back chosen inside, not in the 116px column) */
@@ -258,11 +261,8 @@
 @media (max-width: 359px) {
   .kk-dv { padding-left: 16px; padding-right: 16px; }
   .kk-dv-overview { grid-template-columns: 100px minmax(0, 1fr); gap: 18px; }
-  .kk-dv-tanuki { width: 60px; height: 60px; }
   .kk-dv-title { font-size: 21px; }
 }
-/* Too narrow for the watermark to stay clear of the text → information first */
-@media (max-width: 320px) { .kk-dv-tanuki { display: none; } }
 
 @media (min-width: 760px) {
   .kk-dv { max-width: 960px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(240px, .85fr); column-gap: 48px; padding: 36px 40px 48px; }

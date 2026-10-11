@@ -48,6 +48,9 @@ export default function SakeDetail({ session }) {
   const [toast, setToast] = useState(null)
   const [specsOpen, setSpecsOpen] = useState(false)
   const [flavorsOpen, setFlavorsOpen] = useState(false)
+  const [labelsOpen, setLabelsOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [othersOpen, setOthersOpen] = useState(false)
   const menuBtnRef = useRef(null)
 
   const isOwner = !!(session && entry && entry.user_id === session.user.id)
@@ -55,8 +58,8 @@ export default function SakeDetail({ session }) {
   const isGuest = !session
   const { isWished, toggleWish } = useWishes(session)
 
-  // A new record always starts at the top (the ledger may have been scrolled).
-  useEffect(() => { window.scrollTo(0, 0); setView('bottle') }, [id]) // eslint-disable-line react-hooks/set-state-in-effect
+  // Scroll position is handled by <ScrollMemory> (top on a new page, restored on back).
+  useEffect(() => { setView('bottle'); setHistoryOpen(false); setOthersOpen(false); setOthers([]) }, [id]) // eslint-disable-line react-hooks/set-state-in-effect
 
   useEffect(() => {
     let alive = true
@@ -76,13 +79,17 @@ export default function SakeDetail({ session }) {
       .then(({ data }) => setReading(data?.[0] || null))
   }, [entry?.brand])
 
-  // みんなの瓶身: other public records of the same sake.
+  // みんなの瓶身: other public records of the same sake — by 事典 product when linked,
+  // otherwise 銘柄 + 酒名 exactly (never by brewery or a fuzzy name).
   useEffect(() => {
-    if (!entry || !(entry.brand || entry.name)) return
+    if (!entry) return
+    if (!entry.product_id && !(entry.brand && entry.name)) return
     let q = supabase.from('sake_entries').select('id,brand,name,rating,photo_url,thumb_url,photo_crop,contributor_name,tasted_at')
-      .eq('is_public', true).neq('id', entry.id).limit(12)
-    if (entry.brand) q = q.eq('brand', entry.brand)
-    if (entry.name) q = q.eq('name', entry.name)
+      .eq('is_public', true).eq('status', 'published').neq('id', entry.id).order('created_at', { ascending: false }).limit(24)
+    const quote = v => `"${String(v).replace(/(["\\])/g, '\\$1')}"`
+    const byName = entry.brand && entry.name && `and(brand.eq.${quote(entry.brand)},name.eq.${quote(entry.name)})`
+    if (entry.product_id) q = q.or([`product_id.eq.${entry.product_id}`, byName].filter(Boolean).join(','))
+    else q = q.eq('brand', entry.brand).eq('name', entry.name)
     q.then(({ data }) => setOthers(data || []))
   }, [entry])
 
@@ -174,19 +181,35 @@ export default function SakeDetail({ session }) {
   const wished = isWished(entry)
   const ratingLabel = rating > 0 ? L(`評価 ${formatRating(rating)}（5点中）`, `評分 ${formatRating(rating)}（滿分 5）`, `Rated ${formatRating(rating)} out of 5`) : L('未評価', '未評分', 'Unrated')
   const readingText = reading && (lang === 'ja' ? reading.furigana : reading.romaji)
+  // Whose rating / notes these are. Someone else's 酒札 names the author; a long name falls back to この記録の.
+  const author = entry.contributor_name || L('匿名', '匿名', 'Anonymous')
+  const shortAuthor = [...author].length <= 10
+  const ratingHeading = isOwner ? L('私の評価', '我的評分', 'My rating')
+    : shortAuthor ? L(`${author}の評価`, `${author} 的評分`, `${author}’s rating`) : L('この記録の評価', '這筆記錄的評分', 'Rating on this record')
+  const memoHeading = isOwner ? L('私のメモ', '我的筆記', 'My notes')
+    : shortAuthor ? L(`${author}のメモ`, `${author} 的筆記`, `${author}’s notes`) : L('この記録のメモ', '這筆記錄的筆記', 'Notes on this record')
+  // Only the owner gets an empty photo column (with 写真を追加); others and guests skip it entirely.
+  const showPhotoCol = isOwner || canSeePhoto
+  const labels = isOwner ? (entry.tags || []) : [] // 整理 is personal — owner only
+  const LABELS_SHOWN = 3
+  const visibleLabels = labelsOpen ? labels : labels.slice(0, LABELS_SHOWN)
+  const HISTORY_INLINE = 6 // a longer history opens in a sheet instead of pushing the page down
+  const OTHERS_SHOWN = 4
+  const visibleOthers = othersOpen ? others : others.slice(0, OTHERS_SHOWN)
+  const mineHint = L('自分の記録から探す', '從自己的記錄找', 'Search your own records')
 
   const related = !isGuest && (
     <section className="kk-dv-related" aria-labelledby="kk-dv-related-title">
       <h2 id="kk-dv-related-title" className="kk-dv-h2">{L('関連', '相關', 'Related')}</h2>
       {entry.brewery && (
         <button type="button" className="kk-dv-row" onClick={() => navigate('/journal', { state: { brewery: entry.brewery } })}>
-          <span><strong>{L('同じ酒造', '同一酒造', 'Same brewery')}</strong><small>{L(`${entry.brewery}の記録を見る`, `看${entry.brewery}的記錄`, `Your records from ${entry.brewery}`)}</small></span>
+          <span><strong>{L('同じ酒造', '同一酒造', 'Same brewery')}</strong><small>{mineHint}・{entry.brewery}</small></span>
           <span className="kk-dv-row__go" aria-hidden="true">›</span>
         </button>
       )}
       {entry.region && (
         <button type="button" className="kk-dv-row" onClick={() => navigate('/journal', { state: { region: entry.region } })}>
-          <span><strong>{L('同じ産地', '同一產地', 'Same region')}</strong><small>{L(`${entry.region}の酒札を見る`, `看${entry.region}的酒札`, `Your sake from ${entry.region}`)}</small></span>
+          <span><strong>{L('同じ産地', '同一產地', 'Same region')}</strong><small>{mineHint}・{entry.region}</small></span>
           <span className="kk-dv-row__go" aria-hidden="true">›</span>
         </button>
       )}
@@ -206,20 +229,12 @@ export default function SakeDetail({ session }) {
     </section>
   )
 
-  const details = (moreSpecs.length > 0 || dates.length > 1) && (
+  const details = moreSpecs.length > 0 && (
     <details className="kk-dv-more" open={specsOpen} onToggle={e => setSpecsOpen(e.currentTarget.open)}>
       <summary>{L('お酒の詳しい情報', '酒的詳細資訊', 'More about this sake')}</summary>
-      {moreSpecs.length > 0 && (
-        <dl className="kk-dv-specs">
-          {moreSpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
-        </dl>
-      )}
-      {!isGuest && dates.length > 1 && (
-        <div className="kk-dv-dates" id="kk-all-dates">
-          <p className="kk-dv-overline">{L('飲んだ日', '飲用日', 'Dates tasted')}</p>
-          <ul className="kk-dates-list">{dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}</ul>
-        </div>
-      )}
+      <dl className="kk-dv-specs">
+        {moreSpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
+      </dl>
     </details>
   )
 
@@ -232,7 +247,7 @@ export default function SakeDetail({ session }) {
         <h1 className="kk-dv-top__title">{entry.status === 'draft' ? L('下書き', '草稿', 'Draft') : L('酒の記録', '酒的記錄', 'Sake record')}</h1>
         <div className="kk-dv-top__actions">
           {isOwner && <button type="button" className="kk-dv-top__edit" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>}
-          {isOwner && <button ref={menuBtnRef} type="button" className="kk-icon-btn kk-dv-top__more" onClick={() => setMenuOpen(true)} aria-label={L('その他の操作', '更多操作', 'More actions')} aria-haspopup="dialog"><MoreIcon /></button>}
+          {isOwner && <button ref={menuBtnRef} type="button" className="kk-icon-btn kk-dv-top__more" onClick={() => setMenuOpen(true)} aria-label={L('記録のその他の操作', '這筆記錄的更多操作', 'More actions for this record')} aria-haspopup="dialog"><MoreIcon /></button>}
         </div>
       </header>
 
@@ -254,8 +269,8 @@ export default function SakeDetail({ session }) {
         </div>
 
         <div className="kk-dv-primary">
-          <div className="kk-dv-overview">
-            <div className="kk-dv-photo-col">
+          <div className={`kk-dv-overview${showPhotoCol ? '' : ' is-solo'}`}>
+            {showPhotoCol && <div className="kk-dv-photo-col">
               {shownView === 'bottle' ? (
                 <div className="kk-dv-photo">
                   <SakeBottleCrop imageUrl={isGuest ? null : entry.photo_url} crop={entry.photo_crop} height="172px" alt={title} />
@@ -274,23 +289,34 @@ export default function SakeDetail({ session }) {
               ) : isOwner && (
                 <button type="button" className="kk-dv-addphoto" onClick={goEdit}>{L('写真を追加', '加照片', 'Add a photo')}</button>
               )}
-            </div>
+            </div>}
 
             <div className="kk-dv-assess">
-              {!isGuest && <img className="kk-dv-tanuki" src="/detail/tanuki-record.webp" alt="" aria-hidden="true" width="76" height="76" />}
               {!isGuest && (<>
-                <p className="kk-dv-overline">{L('私の評価', '我的評分', 'My rating')}</p>
+                {(isOwner || rating > 0) && <p className="kk-dv-overline">{ratingHeading}</p>}
                 {rating > 0 ? (
                   <div className="kk-dv-rating" role="img" aria-label={ratingLabel}>
                     <p className="kk-dv-score" aria-hidden="true"><strong>{formatRating(rating)}</strong><span>/ 5</span></p>
                     <Dots rating={rating} />
                   </div>
-                ) : <p className="kk-dv-unrated">{L('未評価', '未評分', 'Unrated')}</p>}
+                ) : isOwner && <p className="kk-dv-unrated">{L('未評価', '未評分', 'Unrated')}</p>}
                 {dates.length > 0 && (
                   <div className="kk-dv-date">
                     <span>{L('飲んだ日', '飲用日', 'Tasted')}</span>
                     {dot(dates[0])}
-                    {dates.length > 1 && <small>{L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}</small>}
+                    {dates.length > 1 && (
+                      <button type="button" className="kk-dv-textbtn kk-dv-more-dates" aria-expanded={historyOpen}
+                        aria-controls={dates.length > HISTORY_INLINE ? undefined : 'kk-dv-history'} aria-haspopup={dates.length > HISTORY_INLINE ? 'dialog' : undefined}
+                        onClick={() => setHistoryOpen(o => !o)}>
+                        {historyOpen && dates.length <= HISTORY_INLINE ? L('閉じる', '收起', 'Hide') : L(`ほか${dates.length - 1}回`, `另外 ${dates.length - 1} 次`, `+${dates.length - 1} more`)}
+                      </button>
+                    )}
+                    {dates.length > 1 && dates.length <= HISTORY_INLINE && historyOpen && (
+                      <div id="kk-dv-history" className="kk-dv-history">
+                        <p className="kk-dv-overline">{L('飲んだ履歴', '飲用紀錄', 'Tasting history')}</p>
+                        <DateList dates={dates} L={L} />
+                      </div>
+                    )}
                   </div>
                 )}
               </>)}
@@ -309,16 +335,16 @@ export default function SakeDetail({ session }) {
             </dl>
           )}
 
-          {!isGuest && (
+          {!isGuest && (isOwner || entry.notes) && (
             <section className="kk-dv-memo" aria-labelledby="kk-dv-memo-title">
-              <h2 id="kk-dv-memo-title" className="kk-dv-h2">{L('私のメモ', '我的筆記', 'My notes')}</h2>
+              <h2 id="kk-dv-memo-title" className="kk-dv-h2">{memoHeading}</h2>
               {entry.notes
                 ? <p className="kk-dv-note">{entry.notes}</p>
                 : <p className="kk-dv-empty">{L('まだメモはありません。', '還沒有筆記。', 'No notes yet.')}{isOwner && <> <button type="button" className="kk-dv-textbtn" onClick={goEdit}>{L('メモを書く', '寫筆記', 'Write a note')}</button></>}</p>}
             </section>
           )}
 
-          {!isGuest && (flavorIds.length > 0 || entry.tags?.length > 0) && (
+          {!isGuest && (flavorIds.length > 0 || labels.length > 0) && (
             <div className="kk-dv-flavors">
               {flavorIds.length > 0 && (
                 <p className="kk-dv-chips">
@@ -331,10 +357,15 @@ export default function SakeDetail({ session }) {
                   )}
                 </p>
               )}
-              {entry.tags?.length > 0 && (
+              {labels.length > 0 && (
                 <p className="kk-dv-chips">
                   <span className="kk-dv-chips__label">{L('整理', '整理', 'Labels')}</span>
-                  {entry.tags.map(x => <span key={x} className="kk-dv-chip is-outline">{tagLabel(x, 'flavor')}</span>)}
+                  {visibleLabels.map(x => <span key={x} className="kk-dv-chip is-outline">{tagLabel(x, 'flavor')}</span>)}
+                  {labels.length > LABELS_SHOWN && (
+                    <button type="button" className="kk-dv-chip kk-dv-chip--more is-outline" aria-expanded={labelsOpen} onClick={() => setLabelsOpen(o => !o)}>
+                      {labelsOpen ? L('閉じる', '收起', 'Less') : `+${labels.length - LABELS_SHOWN}`}
+                    </button>
+                  )}
                 </p>
               )}
             </div>
@@ -359,16 +390,21 @@ export default function SakeDetail({ session }) {
                 <span>{L('同じ酒の公開酒札', '同一款酒的公開酒札', 'Public tags of the same sake')}</span>
               </div>
               <ul className="kk-others__list">
-                {others.map(o => (
+                {visibleOthers.map(o => (
                   <li key={o.id}>
                     <button type="button" className="kk-others__item" onClick={() => navigate(`/journal/${o.id}`)}>
-                      <span className="kk-others__stage"><SakeBottleCrop imageUrl={isGuest ? null : (o.thumb_url || o.photo_url)} crop={o.photo_crop} height="86px" /></span>
+                      <span className="kk-others__stage"><SakeBottleCrop imageUrl={isGuest ? null : (o.thumb_url || o.photo_url)} crop={o.photo_crop} height="68px" /></span>
                       {!isGuest && <span className="kk-others__who">{o.contributor_name || L('匿名', '匿名', 'Anonymous')}</span>}
                       {!isGuest && Number(o.rating) > 0 && <span className="kk-score">{formatRating(o.rating)}</span>}
                     </button>
                   </li>
                 ))}
               </ul>
+              {others.length > OTHERS_SHOWN && (
+                <button type="button" className="kk-dv-textbtn" aria-expanded={othersOpen} onClick={() => setOthersOpen(o => !o)}>
+                  {othersOpen ? L('閉じる', '收起', 'Show fewer') : L(`すべて見る（${others.length}）`, `全部看（${others.length}）`, `Show all (${others.length})`)}
+                </button>
+              )}
             </section>
           )}
         </div>
@@ -431,8 +467,22 @@ export default function SakeDetail({ session }) {
           onClose={() => setAdjusting(false)} />
       )}
 
+      <Sheet open={historyOpen && dates.length > HISTORY_INLINE} onClose={() => setHistoryOpen(false)} className="kk-panel--fit" title={L('飲んだ履歴', '飲用紀錄', 'Tasting history')}>
+        <DateList dates={dates} L={L} />
+        <button type="button" className="kk-btn kk-btn--block kk-dv-history__close" onClick={() => setHistoryOpen(false)}>{L('閉じる', '關閉', 'Close')}</button>
+      </Sheet>
+
       <Toast toast={toast} onDone={() => setToast(null)} />
     </div>
+  )
+}
+
+// Newest first, the latest one marked — dates only (no per-visit rating or notes exist).
+function DateList({ dates, L }) {
+  return (
+    <ul className="kk-dates-list kk-dv-history__list">
+      {dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}
+    </ul>
   )
 }
 

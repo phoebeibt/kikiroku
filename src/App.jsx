@@ -5,6 +5,7 @@ import { initTheme } from './lib/theme'
 import { LangProvider } from './contexts/LangContext'
 import { TagsProvider } from './contexts/TagsContext'
 import { WikiProvider } from './contexts/WikiContext'
+import ScrollMemory from './components/ScrollMemory'
 // Eager: initial landing (Plaza) + Login (tiny)
 import Login from './pages/Login'
 import Plaza from './pages/plaza/Plaza'
@@ -42,6 +43,7 @@ export default function App() {
     <LangProvider>
     <TagsProvider>
     <WikiProvider>
+      <ScrollMemory />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
