@@ -56,8 +56,8 @@ npm run build && npx wrangler pages deploy dist --project-name kikiroku --branch
 | 交接说明 | `~/Documents/ChatGPT/Kikiroku/CLAUDE_HANDOFF_PROMPT.md` |
 | 各页确认答复 | `~/Documents/ChatGPT/Kikiroku/CLAUDE_*_REPLY_*.md` |
 | 素材（狸猫、印章、瓶框） | `~/Documents/ChatGPT/Kikiroku/assets/`（廣場狸猫 `plaza-tanuki-*-256.png`；头像取自 `kikiroku-tanuki-expression-sheet-v1/v2`、`kikiroku-tanuki-behavior-scenes-v1`） |
-| 每页的版面方案／差异清单 | `~/Downloads/Kikiroku-<页名>-版面方案／待确认差异-<日期>.md` |
-| 每页的截图 | `~/Downloads/Kikiroku-review/<页名>/` |
+| 每页的版面方案／差异清单 | `~/Documents/Claude Projects/_reports/Kikiroku-<页名>-版面方案／待确认差异-<日期>.md` |
+| 每页的截图 | `~/Documents/Claude Projects/Kikiroku-review/<页名>/` |
 
 ### 进度
 
