@@ -103,7 +103,7 @@ export default function SakeDetail({ session }) {
     [L('酸度', '酸度', 'Acidity'), entry.acidity],
     [L('原料米', '原料米', 'Rice'), entry.rice, true],
     [L('酵母', '酵母', 'Yeast'), entry.yeast, true],
-    [L('装瓶日', '裝瓶日', 'Bottled'), entry.bottling_date && dot(entry.bottling_date)],
+    [L('装瓶日', '裝瓶日', 'Bottled'), entry.bottling_date && dot(entry.bottling_date), false, 'bottled'],
   ].filter(([, v]) => v) : []
 
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/journal'))
@@ -171,9 +171,9 @@ export default function SakeDetail({ session }) {
   const canSeePhoto = !isGuest && photos.length > 0
   const shownView = canSeePhoto ? view : 'bottle'
   const rating = Number(entry.rating) || 0
-  const pct = v => (v ? `${String(v).replace(/%$/, '')}%` : null)
-  const keySpecs = [[L('精米歩合', '精米步合', 'Polishing'), pct(entry.polishing)], [L('アルコール', '酒精度', 'Alcohol'), pct(entry.alcohol)]].filter(([, v]) => v)
-  const moreSpecs = specs.filter(([k]) => !keySpecs.some(([kk]) => kk === k))
+  // Every spec sits beside the photo (user 2026-10-11: these matter); only 装瓶日 stays folded below.
+  const keySpecs = specs.filter(sp => sp[3] !== 'bottled')
+  const moreSpecs = specs.filter(sp => sp[3] === 'bottled')
   const methodNames = (entry.method_tags || []).map(x => tagLabel(x, 'method'))
   const flavorIds = [...(entry.aroma_tags || []).map(x => [x, 'aroma']), ...(entry.taste_tags || []).map(x => [x, 'taste'])]
   const FLAVOR_SHOWN = 6
@@ -322,7 +322,7 @@ export default function SakeDetail({ session }) {
               </>)}
               {keySpecs.length > 0 && (
                 <dl className={`kk-dv-keyspecs${isGuest ? ' is-first' : ''}`}>
-                  {keySpecs.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+                  {keySpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
                 </dl>
               )}
             </div>

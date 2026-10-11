@@ -183,19 +183,20 @@
 .kk-dv-score span { font-size: 12px; color: var(--muted); }
 .kk-dv-dots { --t-dot: var(--gold); gap: 5px; margin-top: 9px; }
 .kk-dv-unrated { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
-.kk-dv-date { margin-top: 18px; font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+.kk-dv-date { margin-top: 12px; font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .kk-dv-date span { display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
-.kk-dv-more-dates { min-height: 44px; margin-left: 6px; font-size: 11px; font-weight: 600; }
+.kk-dv-more-dates { min-height: 44px; margin: -12px 0 -12px 6px; /* 44px target without growing the line */ font-size: 11px; font-weight: 600; }
 .kk-dv-history { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
 .kk-dv-history .kk-dv-overline { margin-bottom: 6px; }
 .kk-dv-history__list { flex-direction: column; gap: 6px; }
 .kk-panel .kk-dv-history__list { max-height: 50svh; overflow-y: auto; padding: 4px 0 12px; }
 .kk-dv-history__close { margin-top: 8px; }
-.kk-dv-keyspecs { display: grid; gap: 9px; margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
+.kk-dv-keyspecs { display: grid; gap: 7px; margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
 .kk-dv-keyspecs.is-first { margin-top: 0; padding-top: 0; border-top: 0; }
 .kk-dv-keyspecs div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
 .kk-dv-keyspecs dt { color: var(--muted); }
-.kk-dv-keyspecs dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kk-dv-keyspecs dt { flex-shrink: 0; }
+.kk-dv-keyspecs dd { margin: 0 0 0 auto; min-width: 0; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
 
 /* 種類・状態 — one full-width line under the photo area */
 .kk-dv-class {
