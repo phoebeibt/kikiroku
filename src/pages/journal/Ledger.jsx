@@ -171,6 +171,13 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
     aroma: L('香り', '香氣', 'Aroma'), taste: L('味わい', '味道', 'Taste'), tags: L('タグ', '標籤', 'Tag'),
     method: L('製法', '製法', 'Method'), rice: L('原料米', '原料米', 'Rice'), yeast: L('酵母', '酵母', 'Yeast'), notes: L('メモ', '筆記', 'Notes'),
   }
+  // Why a record matched: メモに「梨」 for a note snippet, タグ: メロン / 産地: 長野 for a field value.
+  const hitText = h => {
+    const label = fieldLabels[h.field]
+    const value = h.field === 'region' ? shortRegion(h.value) : h.value
+    if (h.field === 'notes') return L(`${label}に「${value}」`, `${label}中「${value}」`, `${label}: “${value}”`)
+    return L(`${label}: ${value}`, `${label}：${value}`, `${label}: ${value}`)
+  }
   const rangeLabel = f => [f.from, f.to].map(d => d?.replaceAll('-', '.') || '…').join(' – ')
 
   const activeChips = [
@@ -193,6 +200,8 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
       if (sensory[i] && out.length < 3) out.push({ text: sensory[i], kind: 'sense' })
       if (labels[i] && out.length < 3) out.push({ text: labels[i], kind: 'label' })
     }
+    const rest = sensory.length + labels.length - out.length
+    if (rest > 0) out.push({ text: `+${rest}`, kind: 'more' })
     return out
   }
   const statusPill = e => e.is_public
@@ -342,7 +351,7 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
             const isDraft = e.status === 'draft'
             const title = titleOf(e) || L('写真だけの下書き', '只有照片的草稿', 'Photo-only draft')
             const hitLine = hits.length > 0 && (
-              <p className="kk-hit">{hits.slice(0, 2).map(h => L(`${fieldLabels[h.field]}に「${h.value}」`, `${fieldLabels[h.field]}：「${h.value}」`, `${fieldLabels[h.field]}: “${h.value}”`)).join(' / ')}</p>
+              <p className="kk-hit">{hits.slice(0, 2).map(hitText).join(' / ')}</p>
             )
             const meta = [e.brewery, shortRegion(e.region)].filter(Boolean).join(' · ')
             const date = e.tasted_at?.replaceAll('-', '.')
@@ -352,18 +361,20 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
                 {density === 'table' ? (
                   <div className="kk-row" {...pressable(() => onOpen(e), title)}>
                     <span className="kk-row__bottle" aria-hidden="true">
-                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="88px" />
+                      <SakeBottleCrop imageUrl={e.thumb_url || e.photo_url} crop={e.photo_crop} height="72px" />
                     </span>
                     <div className="kk-row__main">
-                    <div className="kk-row__line">
-                      <strong>{title}</strong>
-                      {Number(e.rating) > 0 && <span className="kk-score">{formatRating(e.rating)}</span>}
+                      <strong className="kk-row__title">{title}</strong>
+                      <div className="kk-row__meta">
+                        {meta && <span className="kk-row__meta-text">{meta}</span>}
+                        {isDraft ? <span className="kk-status kk-status--draft">{L('下書き', '草稿', 'Draft')}</span> : statusPill(e)}
+                      </div>
+                      {hitLine}
                     </div>
-                    <div className="kk-row__meta">
-                      <span className="kk-row__meta-text">{[meta, date].filter(Boolean).join(' · ')}</span>
-                      {isDraft ? <span className="kk-status kk-status--draft">{L('下書き', '草稿', 'Draft')}</span> : statusPill(e)}
-                    </div>
-                    {hitLine}
+                    {/* Rating and date keep a fixed right column so the eye can run down them. */}
+                    <div className="kk-row__side">
+                      {Number(e.rating) > 0 ? <span className="kk-score">{formatRating(e.rating)}</span> : <span className="kk-row__unrated">—</span>}
+                      {date && <span className="kk-row__date">{date}</span>}
                     </div>
                   </div>
                 ) : (
