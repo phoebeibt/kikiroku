@@ -128,12 +128,13 @@
 
 /* ── 酒詳情 B「照片与记忆・效率精修」(2026-10-08) ─────────────────────────────
    Paper feel from light ground, quiet rules and spacing — no boxed plaque, no seal. */
-.kk-dv-page { background: #fcfcf8; }
+.kk-dv-page { background: var(--paper); }
+.kk-dv { background: var(--paper-2); }
 .kk-dv-top {
   position: sticky; top: 0; z-index: 30;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
   min-height: 56px; padding: env(safe-area-inset-top, 0px) 8px 0;
-  background: rgba(252, 252, 248, .94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  background: rgba(255, 253, 248, .94); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
 .kk-dv-top__back, .kk-dv-top__edit {
@@ -152,7 +153,7 @@
 .kk-dv-privacy.is-public { color: var(--green); }
 .kk-dv-title { margin: 0; font-size: 23px; line-height: 1.4; font-weight: 800; overflow-wrap: anywhere; }
 .kk-dv-brewery { margin: 8px 0 0; font-size: 12px; line-height: 1.65; color: var(--muted); }
-.kk-dv-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-bottom: 1px solid #bfc9bf; }
+.kk-dv-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-bottom: 1px solid var(--line); }
 .kk-dv-link:hover { color: var(--green); }
 
 /* photo column + my assessment */
@@ -161,7 +162,7 @@
 .kk-dv-photo-col { min-width: 0; }
 .kk-dv-photo {
   display: grid; place-items: center; width: 100%; height: 196px; padding: 12px; border: 0; border-radius: 6px;
-  background: #edf1eb; overflow: hidden;
+  background: var(--wood-bg); overflow: hidden;
 }
 .kk-dv-photo .kk-bottle { max-height: 172px; }
 .kk-dv-photo.is-original { padding: 0; cursor: zoom-in; }
@@ -177,10 +178,10 @@
 .kk-dv-assess { position: relative; min-width: 0; padding-top: 5px; }
 .kk-dv-overline { margin: 0; font-size: 11px; color: var(--muted); }
 .kk-dv-rating { margin-top: 4px; }
-.kk-dv-score { display: flex; align-items: baseline; gap: 5px; margin: 0; color: #7a6227; font-variant-numeric: tabular-nums; }
+.kk-dv-score { display: flex; align-items: baseline; gap: 5px; margin: 0; color: #7a6227; /* = マイ帳 .kk-score */ font-variant-numeric: tabular-nums; }
 .kk-dv-score strong { font-size: 36px; line-height: 1.15; font-weight: 600; }
 .kk-dv-score span { font-size: 12px; color: var(--muted); }
-.kk-dv-dots { --t-dot: #b9974a; gap: 5px; margin-top: 9px; }
+.kk-dv-dots { --t-dot: var(--gold); gap: 5px; margin-top: 9px; }
 .kk-dv-unrated { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .kk-dv-date { margin-top: 18px; font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; }
 .kk-dv-date span { display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
@@ -216,7 +217,7 @@
 .kk-dv-memo:last-child { padding-bottom: 22px; border-bottom: 1px solid var(--line); }
 .kk-dv-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
 .kk-dv-chips__label { margin-right: 4px; font-size: 11px; color: var(--muted); }
-.kk-dv-chip { padding: 4px 7px; border-radius: 4px; background: #edf2ed; color: #48644e; font-size: 11px; line-height: 1.5; }
+.kk-dv-chip { padding: 4px 7px; border-radius: 4px; background: var(--green-bg); color: var(--green); font-size: 11px; line-height: 1.5; }
 .kk-dv-chip.is-outline { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
 .kk-dv-chip--more { border: 0; font-weight: 700; cursor: pointer; }
 
@@ -228,7 +229,7 @@
 }
 .kk-dv-row strong { display: block; font-size: 13px; font-weight: 600; }
 .kk-dv-row small { display: block; margin-top: 3px; font-size: 11px; line-height: 1.65; color: var(--muted); }
-.kk-dv-row__go { flex-shrink: 0; font-size: 20px; color: #7e8b7e; }
+.kk-dv-row__go { flex-shrink: 0; font-size: 20px; color: var(--muted); }
 .kk-dv-row.is-on strong, .kk-dv-row.is-on .kk-dv-row__go { color: var(--green); }
 
 .kk-dv-more { margin-top: 22px; font-size: 12px; }
@@ -256,7 +257,7 @@
   display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: rgba(0, 0, 0, .55);
 }
 .kk-dv-viewer__tabs button { min-height: 40px; padding: 0 16px; border: 0; border-radius: 7px; background: none; color: rgba(255, 255, 255, .8); font-size: 13px; font-weight: 700; cursor: pointer; }
-.kk-dv-viewer__tabs button[aria-pressed="true"] { background: #fffdf8; color: var(--ink); }
+.kk-dv-viewer__tabs button[aria-pressed="true"] { background: var(--paper-2); color: var(--ink); }
 
 @media (max-width: 359px) {
   .kk-dv { padding-left: 16px; padding-right: 16px; }
