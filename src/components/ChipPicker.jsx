@@ -8,7 +8,7 @@ import { recentTags } from '../lib/recentTags'
  * input) lives in a もっと見る sheet, so 香り・味わい・整理 never become a tag wall.
  * `tags` = [{ id, label }] in "most common first" order.
  */
-export default function ChipPicker({ tags, selected = [], onChange, category, title, lang, outline = false, extra = null, renderSelected }) {
+export default function ChipPicker({ tags, selected = [], onChange, category, title, lang, outline = false, extra = null, renderSelected, groups = null }) {
   const [open, setOpen] = useState(false)
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const toggle = id => onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id])
@@ -54,7 +54,15 @@ export default function ChipPicker({ tags, selected = [], onChange, category, ti
       )}
       <Sheet open={open} onClose={() => setOpen(false)} className="kk-panel--fit kk-chipsheet" title={title}
         footer={<button type="button" className="kk-btn kk-btn--primary" onClick={() => setOpen(false)}>{L('完了', '完成', 'Done')}{selected.length > 0 && `（${selected.length}）`}</button>}>
-        <div className="kk-tagpick kk-chipsheet__all">{tags.map(chip)}</div>
+        {groups ? groups.map(g => {
+          const items = g.ids.map(id => byId.get(id)).filter(Boolean)
+          return items.length > 0 && (
+            <section key={g.key} className="kk-chipsheet__group" aria-label={g.label}>
+              <h3 className="kk-chipsheet__heading">{g.label}</h3>
+              <div className="kk-tagpick">{items.map(chip)}</div>
+            </section>
+          )
+        }) : <div className="kk-tagpick kk-chipsheet__all">{tags.map(chip)}</div>}
         {extra && <div className="kk-chipsheet__extra">{extra}</div>}
       </Sheet>
     </div>

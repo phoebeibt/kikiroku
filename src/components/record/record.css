@@ -236,3 +236,5 @@
 .kk-month__grid button:disabled { color: var(--line); cursor: default; }
 .kk-month__foot { display: flex; justify-content: flex-end; gap: 4px; margin-top: 8px; }
 .kk-month__foot button { min-height: 40px; padding: 0 12px; border: 0; background: none; color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; }
+.kk-chipsheet__group + .kk-chipsheet__group { margin-top: 14px; }
+.kk-chipsheet__heading { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--muted); }
