@@ -465,7 +465,7 @@ export default function Journal({ session }) {
     setEditId(e.id)
     setPhotoFile(null); setPhotoFile2(null)
     setPhotoPreview(e.photo_url || null); setPhotoPreview2(e.photo_url2 || null)
-    setSpecsOpen(!!(e.type || e.rice || e.yeast || e.polishing || e.alcohol || e.smv || e.acidity || e.bottling_date))
+    setSpecsOpen(!!(e.rice || e.yeast || e.polishing || e.alcohol || e.smv || e.acidity || e.bottling_date))
     setDatesOpen(false)
     resetFormUi(e.status || 'published')
     setSheet('form')
@@ -1068,6 +1068,22 @@ export default function Journal({ session }) {
               </div>
               )}
             </div>
+
+            {/* Two separate axes (user 2026-10-13, A): the grade printed on the label, and the style. */}
+            <div className="kk-field">
+              <label className="kk-field__label" htmlFor="kk-field-type">{L3('特定名称', '特定名稱', 'Grade')}</label>
+              <select id="kk-field-type" className="kk-select" value={form.type === 'other' ? '' : form.type} onChange={e => f('type', e.target.value)} aria-describedby="kk-type-help">
+                <option value="">{L3('表記なし', '未標示', 'Not on the label')}</option>
+                {sakeTypes.filter(tp => tp.id !== 'other').map(tp => (
+                  <option key={tp.id} value={tp.id}>{lang === 'ja' ? cleanJa(tp.ja) : `${cleanJa(tp.ja)} · ${tp[lang] || tp.en}`}</option>
+                ))}
+              </select>
+              <p className="kk-form-hint" id="kk-type-help">{L3('ラベルに書いていなければ「表記なし」のままで大丈夫です。', '酒標上沒寫的話，維持「未標示」就可以。', 'Leave it as “Not on the label” if the label does not say.')}</p>
+            </div>
+            <div className="kk-field">
+              <span className="kk-field__label">{L3('スタイル・製法', '風格・製法', 'Style')}</span>
+              <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} title={L3('スタイル・製法', '風格・製法', 'Style')} />
+            </div>
           </section>
 
           {/* 3 · 私の評価 */}
@@ -1109,14 +1125,13 @@ export default function Journal({ session }) {
           {/* 5 · 規格 (collapsed) */}
           <section className="kk-section" style={{ paddingTop: 4 }}>
             {(() => {
-              const summary = [typeLabel(form.type), form.polishing && `${L3('精米', '精米', 'Polish')} ${form.polishing}`, form.alcohol, form.rice, form.yeast]
+              const summary = [form.polishing && `${L3('精米', '精米', 'Polish')} ${form.polishing}`, form.alcohol, form.rice, form.yeast, form.bottling_date]
                 .filter(Boolean).map(v => String(v)).join(' · ')
-              const n = methodTags.length
               return (
                 <button type="button" className="kk-disclosure" aria-expanded={specsOpen} aria-controls="kk-specs" onClick={() => setSpecsOpen(o => !o)}>
                   <span className="kk-disclosure__text">
                     <span className="kk-disclosure__title">{L3('精米歩合・原料米など', '精米步合・原料米等', 'Polishing, rice & more')}</span>
-                    <span className="kk-disclosure__summary">{summary || (n ? `${t('form.methodTags')} ${n}` : L3('任意 · 補完ボタンで自動入力されます', '選填 · 可用補全按鈕自動帶入', 'Optional · the fill button can complete these'))}</span>
+                    <span className="kk-disclosure__summary">{summary || (L3('任意 · 補完ボタンで自動入力されます', '選填 · 可用補全按鈕自動帶入', 'Optional · the fill button can complete these'))}</span>
                   </span>
                   <svg className="kk-disclosure__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
                 </button>
@@ -1124,20 +1139,9 @@ export default function Journal({ session }) {
             })()}
             {specsOpen && (
               <div className="kk-disclosure-panel" id="kk-specs">
-                <div className="kk-row2">
-                  <div className="kk-field">
-                    <label className="kk-field__label" htmlFor="kk-field-type">{t('form.type')}</label>
-                    <select id="kk-field-type" className="kk-select" value={form.type} onChange={e => f('type', e.target.value)}>
-                      <option value="">{t('form.typeSelect')}</option>
-                      {sakeTypes.map(tp => (
-                        <option key={tp.id} value={tp.id}>{lang === 'ja' ? cleanJa(tp.ja) : `${cleanJa(tp.ja)} · ${tp[lang] || tp.en}`}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="kk-field">
-                    <label className="kk-field__label" htmlFor="kk-field-bottling">{t('form.bottling')}</label>
-                    <MonthPicker id="kk-field-bottling" value={form.bottling_date} onChange={v => f('bottling_date', v)} lang={lang} />
-                  </div>
+                <div className="kk-field">
+                  <label className="kk-field__label" htmlFor="kk-field-bottling">{t('form.bottling')}</label>
+                  <MonthPicker id="kk-field-bottling" value={form.bottling_date} onChange={v => f('bottling_date', v)} lang={lang} />
                 </div>
                 <div className="kk-row2">
                   <div className="kk-field">
@@ -1156,10 +1160,6 @@ export default function Journal({ session }) {
                       <input id={`kk-field-${k}`} className="kk-input" inputMode={mode} value={form[k]} onChange={e => f(k, e.target.value)} placeholder={ph} />
                     </div>
                   ))}
-                </div>
-                <div className="kk-field">
-                  <span className="kk-field__label">{t('form.methodTags')}</span>
-                  <TastingTagPicker category="method" selected={methodTags} onChange={setMethodTags} lang={lang} title={t('form.methodTags')} />
                 </div>
               </div>
             )}

@@ -17,6 +17,13 @@ export default function ChipPicker({ tags, selected = [], onChange, category, ti
 
   // The base row (recent + common) does not depend on what is selected, so tapping a chip never
   // moves it; a selection outside that row (from the sheet, or an edited record) is pinned in front.
+  // A short list (e.g. スタイル・製法, 10 chips) is shown whole — folding it would only hide 貴醸酒 & co.
+  if (tags.length <= 10) {
+    return <div className="kk-tagpick">{tags.map(tg => {
+      const on = selected.includes(tg.id)
+      return <button key={tg.id} type="button" className={`kk-chip${outline ? ' kk-chip--outline' : ''}${on ? ' is-active' : ''}`} aria-pressed={on} onClick={() => toggle(tg.id)}>{tg.label}</button>
+    })}</div>
+  }
   const byId = new Map(tags.map(tg => [tg.id, tg]))
   const recentShown = recent.filter(id => byId.has(id)).slice(0, 3).map(id => byId.get(id))
   const base = new Set(recentShown.map(tg => tg.id))
