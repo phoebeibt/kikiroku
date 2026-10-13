@@ -55,6 +55,7 @@ for g in plan:
 # ── breweries (keep ← merge), user-confirmed
 BREW = [(397, 1445), (907, 956), (1511, 1497), (1681, 1757), (658, 1803)]
 W = {w['id']: w for w in tables['sake_breweries']}
+BREW = [(k, d) for k, d in BREW if k in W and d in W]  # already merged → nothing to do (safe to re-run)
 brew_relink = {t: [(r['id'], k) for k, d in BREW for r in tables[t] if r.get('brewery_id') == d] for t in ['sake_brands', 'sake_awards', 'sake_products']}
 
 # ── awards exact duplicate
@@ -82,11 +83,12 @@ for wid, pid in relink_wishes: call('PATCH', f'sake_wishes?id=eq.{wid}', {'produ
 for k, d in BREW:
     for t in brew_relink: call('PATCH', f'{t}?brewery_id=eq.{d}', {'brewery_id': k})
 # 2. delete last
-call('DELETE', 'sake_products?id=' + inlist([x['id'] for x, _ in prod_delete]))
-call('DELETE', 'sake_breweries?id=' + inlist([d for _, d in BREW]))
+if prod_delete: call('DELETE', 'sake_products?id=' + inlist([x['id'] for x, _ in prod_delete]))
+if BREW: call('DELETE', 'sake_breweries?id=' + inlist([d for _, d in BREW]))
 if award_delete: call('DELETE', 'sake_awards?id=' + inlist([a['id'] for a in award_delete]))
 # 3. verify
 for t, n in expect.items():
     got = len(fetch(t)); print(f'{t}: {got} (expected {n})', 'OK' if got == n else 'MISMATCH')
-left = sum(1 for t in ['sake_brands', 'sake_awards', 'sake_products'] for r in fetch(t) if r.get('brewery_id') in {d for _, d in BREW})
+MERGED = {1445, 956, 1497, 1757, 1803}
+left = sum(1 for t in ['sake_brands', 'sake_awards', 'sake_products'] for r in fetch(t) if r.get('brewery_id') in MERGED)
 print('rows still pointing at merged breweries:', left)
