@@ -98,12 +98,13 @@ export default function SakeDetail({ session }) {
   const typeName = entry?.type ? tagLabel(entry.type, 'type') : ''
   const dates = useMemo(() => (entry?.tasted_dates?.length ? [...entry.tasted_dates].sort().reverse() : entry?.tasted_at ? [entry.tasted_at] : []), [entry])
   const specs = entry ? [
-    [L('精米歩合', '精米步合', 'Polishing'), entry.polishing && `${String(entry.polishing).replace(/%$/, '')}%`],
+    // [label, value, value links to 事典 (each rice / yeast separately), key, 事典 entry for the label]
+    [L('精米歩合', '精米步合', 'Polishing'), entry.polishing && `${String(entry.polishing).replace(/%$/, '')}%`, false, 'polishing', 'seimaibuai'],
     [L('アルコール', '酒精度', 'Alcohol'), entry.alcohol && `${String(entry.alcohol).replace(/%$/, '')}%`],
-    [L('日本酒度', '日本酒度', 'SMV'), entry.smv],
-    [L('酸度', '酸度', 'Acidity'), entry.acidity],
-    [L('原料米', '原料米', 'Rice'), entry.rice, true],
-    [L('酵母', '酵母', 'Yeast'), entry.yeast, true],
+    [L('日本酒度', '日本酒度', 'SMV'), entry.smv, false, 'smv', 'nihonshu-do'],
+    [L('酸度', '酸度', 'Acidity'), entry.acidity, false, 'acidity', 'sando'],
+    [L('原料米', '原料米', 'Rice'), entry.rice, true, 'rice', 'sake-rice'],
+    [L('酵母', '酵母', 'Yeast'), entry.yeast, true, 'yeast', 'sake-yeast'],
     [L('装瓶日', '裝瓶日', 'Bottled'), entry.bottling_date && dot(entry.bottling_date), false, 'bottled'],
   ].filter(([, v]) => v) : []
 
@@ -235,7 +236,7 @@ export default function SakeDetail({ session }) {
     <details className="kk-dv-more" open={specsOpen} onToggle={e => setSpecsOpen(e.currentTarget.open)}>
       <summary>{L('お酒の詳しい情報', '酒的詳細資訊', 'More about this sake')}</summary>
       <dl className="kk-dv-specs">
-        {moreSpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
+        {moreSpecs.map(sp => <SpecRow key={sp[0]} spec={sp} />)}
       </dl>
     </details>
   )
@@ -328,7 +329,7 @@ export default function SakeDetail({ session }) {
               </>)}
               {keySpecs.length > 0 && (
                 <dl className={`kk-dv-keyspecs${isGuest ? ' is-first' : ''}`}>
-                  {keySpecs.map(([k, v, wiki]) => <div key={k}><dt>{k}</dt><dd>{wiki ? <WikiText text={String(v)} /> : v}</dd></div>)}
+                  {keySpecs.map(sp => <SpecRow key={sp[0]} spec={sp} />)}
                 </dl>
               )}
             </div>
@@ -336,7 +337,7 @@ export default function SakeDetail({ session }) {
 
           {(typeName || methodNames.length > 0) && (
             <dl className="kk-dv-class">
-              {typeName && <div><dt>{L('種類', '種類', 'Type')}</dt><dd>{typeName}</dd></div>}
+              {typeName && <div><dt>{L('種類', '種類', 'Type')}</dt><dd><WikiTermChips items={[{ id: entry.type, label: typeName }]} /></dd></div>}
               {methodNames.length > 0 && <div><dt>{L('状態', '狀態', 'Style')}</dt><dd><WikiTermChips items={methodItems} /></dd></div>}
             </dl>
           )}
@@ -489,6 +490,17 @@ function DateList({ dates, L }) {
     <ul className="kk-dates-list kk-dv-history__list">
       {dates.map((d, i) => <li key={d}>{dot(d)}{i === 0 && <span>{L('最近', '最近', 'latest')}</span>}</li>)}
     </ul>
+  )
+}
+
+// One spec line: the label opens its 事典 entry (精米歩合, 日本酒度…); rice / yeast values link each
+// variety on its own, so 「山田錦（麹米）、八反錦（掛米）」 gives two links.
+function SpecRow({ spec: [label, value, linkValue, , labelTerm] }) {
+  return (
+    <div>
+      <dt>{labelTerm ? <WikiTermChips items={[{ id: labelTerm, label }]} className="is-label" /> : label}</dt>
+      <dd>{linkValue ? <WikiText text={String(value)} /> : value}</dd>
+    </div>
   )
 }
 

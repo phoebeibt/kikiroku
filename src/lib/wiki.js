@@ -676,7 +676,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-14',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会14号', '14号酵母', '金沢酵母', '協会1401号', '1401号酵母', '協会1401号＆協会1801号'], zh: ['協會14號', '14號酵母', '金澤酵母', '協會1401號', '1401號酵母'], en: ['kyokai 14', 'kyokai 1401', 'kanazawa yeast'] },
+    terms: { ja: ['協会14号', '14号酵母', '金沢酵母', '協会1401号', '1401号酵母'], zh: ['協會14號', '14號酵母', '金澤酵母', '協會1401號', '1401號酵母'], en: ['kyokai 14', 'kyokai 1401', 'kanazawa yeast'] },
     title: { ja: '協会14号酵母（金沢酵母）', zh: '協會14號酵母（金澤酵母）', en: 'Kyokai No. 14 Yeast (Kanazawa)' },
     body: {
       ja: '金沢酵母とも呼ばれる。酢酸イソアミルを多く生成し、バナナ・マスカットを思わせる華やかな香りが特徴。酸が少なく穏やかな吟醸香で食事との相性が良い。北陸地方を中心に使われ、1998年に開発された泡なし株1401号が広く普及。',
@@ -731,7 +731,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-11',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会11号', '11号酵母'], zh: ['協會11號', '11號酵母'], en: ['kyokai 11', 'association yeast no.11'] },
+    terms: { ja: ['協会11号', '11号酵母', '協会1101号', '1101号', '協会酵母1101号'], zh: ['協會11號', '11號酵母', '協會1101號'], en: ['kyokai 11', 'association yeast no.11'] },
     title: { ja: '協会11号酵母', zh: '協會11號酵母', en: 'Kyokai No. 11 Yeast' },
     body: {
       ja: '協会7号の20%アルコール環境での選抜育種から生まれた改良株（1975年）。協会史上初の意図的に育種された酵母。高いアルコール耐性と高いリンゴ酸生成能力を持ち、アミノ酸生成が非常に少ない。キレの良い超辛口スタイルの酒を生み、長期発酵でも味が締まる。泡なし株1101号（2014年）もある。',
@@ -1311,6 +1311,116 @@ export const WIKI_TERMS = [
       en: "Sake blended from different tanks, vintages, rice or breweries to build a target flavour. Also called assemblage.",
     },
   },
+  {
+    id: "junmai-ginjo",
+    group: "type",
+    terms: { ja: ["純米吟醸"], zh: ["純米吟醸", "純米吟釀"], en: ["junmai ginjo"] },
+    title: { ja: "純米吟醸", zh: "純米吟醸", en: "Junmai Ginjo" },
+    body: {
+      ja: "米・米麹・水だけで造り、精米歩合60%以下の米を低温でゆっくり発酵させた（吟醸造り）日本酒。純米の旨味と、吟醸らしい華やかな香りを併せ持つ。",
+      zh: "僅以米、米麴、水釀造，使用精米步合60%以下的米低溫慢慢發酵（吟釀造）的日本酒。兼具純米的旨味與吟釀特有的華麗香氣。",
+      en: "Made from only rice, koji and water, with rice polished to 60% or less and fermented slowly at low temperature (ginjo-zukuri). Combines junmai umami with ginjo aromatics.",
+    },
+  },
+  {
+    id: "junmai-daiginjo",
+    group: "type",
+    terms: { ja: ["純米大吟醸"], zh: ["純米大吟醸", "純米大吟釀"], en: ["junmai daiginjo"] },
+    title: { ja: "純米大吟醸", zh: "純米大吟醸", en: "Junmai Daiginjo" },
+    body: {
+      ja: "米・米麹・水だけで造り、精米歩合50%以下まで磨いた米を吟醸造りで醸した日本酒。特定名称酒の中で最も高精白で、繊細で華やかな香りと澄んだ味わいが特徴。",
+      zh: "僅以米、米麴、水釀造，將米磨至精米步合50%以下並以吟釀造釀成的日本酒。特定名稱酒中精米程度最高，香氣細膩華麗、口感清澈。",
+      en: "Made from only rice, koji and water, with rice polished to 50% or less and brewed ginjo-style. The most highly polished special designation — delicate, aromatic and clean.",
+    },
+  },
+  {
+    id: "tokubetsu-honjozo",
+    group: "type",
+    terms: { ja: ["特別本醸造"], zh: ["特別本醸造", "特別本釀造"], en: ["tokubetsu honjozo"] },
+    title: { ja: "特別本醸造", zh: "特別本醸造", en: "Tokubetsu Honjozo" },
+    body: {
+      ja: "本醸造酒のうち、精米歩合60%以下、または特別な製造方法（ラベルに説明を表示）で造ったもの。少量の醸造アルコールを加え、軽快ですっきりした味わいになりやすい。",
+      zh: "本釀造酒中，精米步合60%以下，或以特別製法（須在酒標說明）釀造者。添加少量釀造酒精，口感多輕快清爽。",
+      en: "A honjozo made with rice polished to 60% or less, or by a special method explained on the label. A little brewer's alcohol keeps it light and crisp.",
+    },
+  },
+  {
+    id: "yumeginka",
+    group: "regional-rice",
+    terms: { ja: ["夢吟香"], zh: ["夢吟香"], en: ["yumeginka"] },
+    title: { ja: "夢吟香", zh: "夢吟香", en: "Yumeginka" },
+    body: {
+      ja: "愛知県農業総合試験場で育成された酒造好適米。山田錦を母に持ち、山田錦並みに高精白でき、吟醸酒に向く。栽培しやすさも特徴。",
+      zh: "愛知縣農業總合試驗場育成的酒造好適米。母本為山田錦，可像山田錦一樣高度精米，適合吟釀酒，也較易栽培。",
+      en: "A sake rice bred at the Aichi Agricultural Research Center from Yamada Nishiki. Takes high polishing like its parent, suits ginjo, and is easier to grow.",
+    },
+  },
+  {
+    id: "yumesansui",
+    group: "regional-rice",
+    terms: { ja: ["夢山水"], zh: ["夢山水"], en: ["yumesansui"] },
+    title: { ja: "夢山水", zh: "夢山水", en: "Yumesansui" },
+    body: {
+      ja: "愛知県で育成された酒造好適米。山間地向けの早生〜中生品種で、いもち病に強く収量が多い。心白の発現がよい。",
+      zh: "愛知縣育成的酒造好適米。適合山間地的早熟～中熟品種，抗稻熱病、產量高，心白表現良好。",
+      en: "A sake rice bred in Aichi for upland areas. Early-to-mid maturing, blast-resistant and high-yielding, with a well-formed shinpaku (white core).",
+    },
+  },
+  {
+    id: "ginnoiroha",
+    group: "regional-rice",
+    terms: { ja: ["吟のいろは"], zh: ["吟のいろは"], en: ["ginnoiroha"] },
+    title: { ja: "吟のいろは", zh: "吟のいろは", en: "Gin no Iroha" },
+    body: {
+      ja: "宮城県古川農業試験場で育成された酒造好適米。宮城県の吟醸酒向けの新しい品種。",
+      zh: "宮城縣古川農業試驗場育成的酒造好適米，是宮城縣適合吟釀酒的新品種。",
+      en: "A sake rice bred at Miyagi's Furukawa Agricultural Experiment Station — a newer variety for Miyagi ginjo.",
+    },
+  },
+  {
+    id: "kuranohana",
+    group: "regional-rice",
+    terms: { ja: ["蔵の華"], zh: ["蔵の華", "藏之華"], en: ["kuranohana"] },
+    title: { ja: "蔵の華", zh: "蔵の華", en: "Kura no Hana" },
+    body: {
+      ja: "1997年に宮城県が開発した、県独自として初めての酒造好適米。淡麗で柔らかな酒質の宮城の酒によく使われる。",
+      zh: "1997年由宮城縣開發，是該縣第一個獨自的酒造好適米。常用於口感淡麗柔和的宮城酒。",
+      en: "Developed by Miyagi in 1997 as the prefecture's first own sake rice; common in Miyagi's light, soft sake.",
+    },
+  },
+  {
+    id: "dewanosato",
+    group: "regional-rice",
+    terms: { ja: ["出羽の里"], zh: ["出羽の里"], en: ["dewanosato"] },
+    title: { ja: "出羽の里", zh: "出羽の里", en: "Dewa no Sato" },
+    body: {
+      ja: "山形県で育成された酒造好適米。出羽燦々と並ぶ山形の酒米で、すっきりとした純米酒によく使われる。",
+      zh: "山形縣育成的酒造好適米，與出羽燦燦並列為山形的代表酒米，常用於清爽的純米酒。",
+      en: "A sake rice bred in Yamagata, alongside Dewa Sansan, often used for crisp junmai.",
+    },
+  },
+  {
+    id: "kaminoho",
+    group: "regional-rice",
+    terms: { ja: ["神の穂"], zh: ["神の穂"], en: ["kaminoho"] },
+    title: { ja: "神の穂", zh: "神の穂", en: "Kami no Ho" },
+    body: {
+      ja: "三重県で育成された酒造好適米。三重県の地酒、とくに伊勢・伊賀の蔵でよく使われる。",
+      zh: "三重縣育成的酒造好適米，常用於三重縣地酒。",
+      en: "A sake rice bred in Mie and widely used by Mie breweries.",
+    },
+  },
+  {
+    id: "nojoho",
+    group: "regional-rice",
+    terms: { ja: ["野条穂"], zh: ["野条穂", "野條穗"], en: ["nojoho"] },
+    title: { ja: "野条穂", zh: "野条穂", en: "Nojoho" },
+    body: {
+      ja: "兵庫県で戦前に栽培されていた酒米。長く途絶えていたが、近年少量ながら復活し、限定品に使われている。",
+      zh: "戰前在兵庫縣栽培的酒米，曾長期失傳，近年少量復活，用於限定品。",
+      en: "A pre-war Hyogo sake rice, long out of cultivation and recently revived in small quantities for limited releases.",
+    },
+  },
 ]
 
 // Build a flat lookup for fast keyword detection
@@ -1354,6 +1464,7 @@ export function segmentText(text, index) {
   let i = 0
   outer: while (i < text.length) {
     for (const { word, term } of index) {
+      if (/^[0-9０-９]/.test(word) && i > 0 && /[0-9０-９]/.test(text[i - 1])) continue
       if (text.startsWith(word, i)) {
         parts.push({ type: 'term', content: word, term })
         i += word.length
