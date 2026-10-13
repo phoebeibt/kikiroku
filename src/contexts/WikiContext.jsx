@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { supabase } from '../lib/supabase'
 import { WIKI_TERMS } from '../lib/wiki'
 
+const firstSentence = t => (t ? (t.match(/^.+?(?:。|\. )/) || [t])[0].trim() : null)
+
 const WikiContext = createContext({ articles: [], reload: () => {} })
 
 export function WikiProvider({ children }) {
@@ -24,10 +26,11 @@ export function WikiProvider({ children }) {
     const db = dbMap[term.id] || {}
     return {
       ...term,
+      // Entries without a written summary show their first sentence when folded.
       summary: {
-        ja: db.summary_ja || null,
-        zh: db.summary_zhtw || db.summary_zh || null,
-        en: db.summary_en  || null,
+        ja: db.summary_ja || firstSentence(term.body.ja),
+        zh: db.summary_zhtw || db.summary_zh || firstSentence(term.body.zh),
+        en: db.summary_en  || firstSentence(term.body.en),
       },
       body: {
         ja: db.body_ja   || term.body.ja,

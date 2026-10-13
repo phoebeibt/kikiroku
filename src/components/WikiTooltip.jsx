@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { buildTermIndex, segmentText } from '../lib/wiki'
+import { buildTermIndex, segmentText, WIKI_TERMS } from '../lib/wiki'
+
+const WIKI_TERMS_BY_ID = new Map(WIKI_TERMS.map(t => [t.id, t]))
 import { useLang } from '../contexts/LangContext'
 import { useWiki } from '../contexts/WikiContext'
 
-function WikiPopup({ term, anchorRect, onClose }) {
+export function WikiPopup({ term, anchorRect, onClose }) {
   const { lang } = useLang()
   const { articles } = useWiki()
   const ref = useRef(null)
@@ -181,6 +183,29 @@ export function WikiIcon({ termId }) {
         color: popup ? 'var(--accent)' : 'var(--sub)', fontSize: 11, lineHeight: 1,
         verticalAlign: 'middle', opacity: popup ? 1 : 0.7,
       }}>ⓘ</button>
+      {popup && <WikiPopup term={popup.term} anchorRect={popup.rect} onClose={close} />}
+    </>
+  )
+}
+
+// Chips for a record's スタイル・製法 that open the 事典 entry of the same id (tag id = wiki term id).
+export function WikiTermChips({ items, className = '' }) {
+  const [popup, setPopup] = useState(null)
+  const close = useCallback(() => setPopup(null), [])
+  const terms = WIKI_TERMS_BY_ID
+  return (
+    <>
+      {items.map(({ id, label }, i) => {
+        const term = terms.get(id)
+        const sep = i > 0 ? '・' : ''
+        if (!term) return <span key={id}>{sep}{label}</span>
+        return (
+          <span key={id}>{sep}<button type="button" className={`kk-termlink ${className}`} aria-expanded={popup?.term.id === id}
+            onClick={e => { e.stopPropagation(); const rect = e.currentTarget.getBoundingClientRect(); setPopup(p => (p?.term.id === id ? null : { term, rect })) }}>
+            {label}
+          </button></span>
+        )
+      })}
       {popup && <WikiPopup term={popup.term} anchorRect={popup.rect} onClose={close} />}
     </>
   )

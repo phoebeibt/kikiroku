@@ -3,6 +3,7 @@ import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import Nav from '../components/Nav'
 import { WikiText } from '../components/WikiTooltip'
 import { useWiki } from '../contexts/WikiContext'
+import { METHOD_GROUPS } from '../lib/methodGroups'
 import { useLang } from '../contexts/LangContext'
 import { supabase } from '../lib/supabase'
 import LangButton from '../components/LangButton'
@@ -135,8 +136,8 @@ function ArticleCard({ article, lang, isEditor, onSaved }) {
   }, [isAnchor])
 
   const title = article.title[lang] || article.title.ja
-  const alts = [...(article.terms.ja || []), ...(lang !== 'zh' ? (article.terms.zh || []) : []), ...(lang !== 'en' ? (article.terms.en || []) : [])]
-    .filter(w => w !== title).slice(0, 4)
+  const alts = [...new Set([...(article.terms.ja || []), ...(lang !== 'zh' ? (article.terms.zh || []) : []), ...(lang !== 'en' ? (article.terms.en || []) : [])])]
+    .filter(w => w !== title && w.toLowerCase() !== title.toLowerCase()).slice(0, 4)
 
   const summary = article.summary?.[lang] || article.summary?.ja || ''
   const body = article.body[lang] || article.body.ja || ''
@@ -504,6 +505,9 @@ export default function Wiki({ session }) {
     ...cat,
     items: glossaryItems.filter(a => a.group === cat.id),
   })).filter(cat => cat.items.length > 0)
+  // 製法 reads in brewing order, in the same groups as the record form's スタイル・製法.
+  const methodSub = METHOD_GROUPS.map(g => ({ ...g, items: g.ids.map(id => glossaryItems.find(a => a.id === id && a.group === 'method')).filter(Boolean) }))
+  const methodRest = glossaryItems.filter(a => a.group === 'method' && !METHOD_GROUPS.some(g => g.ids.includes(a.id)))
 
   const scrollToCat = (catId) => {
     const el = document.getElementById(`gloss-cat-${catId}`)
@@ -570,11 +574,22 @@ export default function Wiki({ session }) {
               {glossaryByCat.map(cat => (
                 <div key={cat.id} id={`gloss-cat-${cat.id}`} style={{ scrollMarginTop: 20 }}>
                   <h2 className="kk-wiki__sec">{cat.label[lang] || cat.label.ja}<small>{cat.items.length}</small></h2>
-                  <div style={s.grid}>
-                    {cat.items.map(article => (
-                      <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />
-                    ))}
-                  </div>
+                  {cat.id === 'method' ? (
+                    [...methodSub, { key: 'rest', ja: 'その他の用語', zh: '其他用語', en: 'Other terms', items: methodRest }].filter(g => g.items.length).map(g => (
+                      <div key={g.key} className="kk-wiki__sub">
+                        <h3 className="kk-wiki__subhead">{g[lang] || g.ja}</h3>
+                        <div style={s.grid}>
+                          {g.items.map(article => <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />)}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={s.grid}>
+                      {cat.items.map(article => (
+                        <ArticleCard key={article.id} article={article} lang={lang} isEditor={isEditor} onSaved={reload} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

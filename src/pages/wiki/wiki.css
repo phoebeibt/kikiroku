@@ -90,3 +90,5 @@
   .kk-seg__n { margin-left: 3px; }
 }
 
+.kk-wiki__sub + .kk-wiki__sub { margin-top: 12px; }
+.kk-wiki__subhead { margin: 10px 0 6px; font-size: 12px; font-weight: 700; color: var(--green); }

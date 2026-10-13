@@ -277,3 +277,6 @@
   .kk-dv-photo { height: 218px; }
   .kk-dv-photo .kk-bottle { max-height: 194px; }
 }
+/* スタイル・製法 → tap for the 事典 explanation */
+.kk-termlink { padding: 0; border: 0; border-bottom: 1px dashed var(--green-2); background: none; color: inherit; font: inherit; cursor: pointer; }
+.kk-termlink:hover, .kk-termlink[aria-expanded="true"] { color: var(--green); }

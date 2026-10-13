@@ -6,7 +6,7 @@ import Sheet, { CloseIcon } from '../components/ui/Sheet'
 import Toast from '../components/ui/Toast'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 import BottleCropEditor from '../components/bottle/BottleCropEditor'
-import { WikiText } from '../components/WikiTooltip'
+import { WikiText, WikiTermChips } from '../components/WikiTooltip'
 import { useLang } from '../contexts/LangContext'
 import { useTagResolver } from '../contexts/TagsContext'
 import { formatRating } from '../lib/rating'
@@ -176,6 +176,7 @@ export default function SakeDetail({ session }) {
   const keySpecs = specs.filter(sp => sp[3] !== 'bottled')
   const moreSpecs = specs.filter(sp => sp[3] === 'bottled')
   const methodNames = (entry.method_tags || []).map(x => tagLabel(x, 'method'))
+  const methodItems = (entry.method_tags || []).map(x => ({ id: x, label: tagLabel(x, 'method') }))
   const flavorIds = [...(entry.aroma_tags || []).map(x => [x, 'aroma']), ...(entry.taste_tags || []).map(x => [x, 'taste'])]
   const FLAVOR_SHOWN = 6
   const visibleFlavors = flavorsOpen ? flavorIds : flavorIds.slice(0, FLAVOR_SHOWN)
@@ -336,7 +337,7 @@ export default function SakeDetail({ session }) {
           {(typeName || methodNames.length > 0) && (
             <dl className="kk-dv-class">
               {typeName && <div><dt>{L('種類', '種類', 'Type')}</dt><dd>{typeName}</dd></div>}
-              {methodNames.length > 0 && <div><dt>{L('状態', '狀態', 'Style')}</dt><dd>{methodNames.join('・')}</dd></div>}
+              {methodNames.length > 0 && <div><dt>{L('状態', '狀態', 'Style')}</dt><dd><WikiTermChips items={methodItems} /></dd></div>}
             </dl>
           )}
 
