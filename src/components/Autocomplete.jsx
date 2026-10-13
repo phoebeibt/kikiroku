@@ -335,34 +335,64 @@ export function ProductInput({ value, onChange, onProductFill, onBreweryFill, on
   )
 }
 
-// Name (品名) autocomplete — searches sake_products with brand prefix, strips brand on select
+// Name (品名) autocomplete — searches the whole 事典 (sake_products). Every word typed must match
+// somewhere (name / brewery / romaji / 中文), results scroll and load more at the bottom.
+const PRODUCT_COLS = 'id,name,brewery_name,region,type,rice,yeast,polishing,alcohol,smv,acidity'
+const PAGE = 30
+const escLike = s => s.replace(/[%_,()]/g, ' ').trim()
+function productQuery(query, from) {
+  const words = toJP(query).split(/\s+/).map(escLike).filter(Boolean)
+  let q = supabase.from('sake_products').select(PRODUCT_COLS, { count: 'exact' })
+  for (const w of words) q = q.or(['name', 'brewery_name', 'name_romaji', 'name_zh'].map(c => `${c}.ilike.*${w}*`).join(','))
+  return q.order('name').range(from, from + PAGE - 1)
+}
+
 export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, onBreweryFill, onRegionFill, onNoResults, style, placeholder, ...inputProps }) {
   const [open, setOpen] = useState(false)
   const [products, setProducts] = useState([])
+  const [total, setTotal] = useState(0)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [goldBrands, setGoldBrands] = useState(new Set())
   const [hover, setHover] = useState(-1)
   const inputRef = useRef()
+  const listRef = useRef()
   const timerRef = useRef()
+  const queryRef = useRef('')
   const hasResultsRef = useRef(true)
 
   useEffect(() => { setHover(-1) }, [products])
 
   useEffect(() => {
-    const query = [brand, value].filter(Boolean).join(' ')
-    if (!open || !query || query.length < 1) { setProducts([]); setGoldBrands(new Set()); return }
+    const query = [brand, value].filter(Boolean).join(' ').trim()
+    queryRef.current = query
+    if (!open || !query) { setProducts([]); setTotal(0); setGoldBrands(new Set()); return }
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(async () => {
+      const { data, count } = await productQuery(query, 0)
+      if (queryRef.current !== query) return // typed on meanwhile
+      setProducts(data || []); setTotal(count || 0)
+      if (listRef.current) listRef.current.scrollTop = 0
+      hasResultsRef.current = (data || []).length > 0
       const jp = toJP(query)
-      const { data: pd } = await supabase.functions.invoke('search-products', { body: { query: jp } })
-      const productList = Array.isArray(pd) ? pd : []
-      setProducts(productList)
-      hasResultsRef.current = productList.length > 0
       const awardFilter = jp !== query ? `brand_name.ilike.%${query}%,brand_name.ilike.%${jp}%` : `brand_name.ilike.%${query}%`
       const { data: ad } = await supabase.from('sake_awards').select('brand_name').or(awardFilter).eq('is_gold', true).gte('year', 2019).limit(20)
       setGoldBrands(new Set((ad || []).map(a => a.brand_name)))
     }, 150)
     return () => clearTimeout(timerRef.current)
   }, [value, brand, open])
+
+  const loadMore = async () => {
+    if (loadingMore || products.length >= total) return
+    setLoadingMore(true)
+    const query = queryRef.current
+    const { data } = await productQuery(query, products.length)
+    if (queryRef.current === query) setProducts(prev => [...prev, ...(data || []).filter(p => !prev.some(x => x.id === p.id))])
+    setLoadingMore(false)
+  }
+  const onScroll = e => {
+    const el = e.currentTarget
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) loadMore()
+  }
 
   useEffect(() => {
     const el = inputRef.current
@@ -377,12 +407,13 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
     el.addEventListener('keydown', onKey)
     return () => el.removeEventListener('keydown', onKey)
   }, [open, products, hover])
+  // Keep the keyboard-highlighted row in view while scrolling with the arrows.
+  useEffect(() => { listRef.current?.querySelector(`[data-i="${hover}"]`)?.scrollIntoView({ block: 'nearest' }) }, [hover])
 
   const selectProduct = async (p) => {
     setOpen(false); setProducts([])
     // Strip brand prefix to get pure product name
     let pureName = p.name
-    let resolvedBrand = brand
     if (brand && p.name.startsWith(brand)) {
       pureName = p.name.slice(brand.length).trim()
     } else if (!brand) {
@@ -390,7 +421,6 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
       const { data } = await supabase.from('sake_brands').select('name').ilike('name', `${p.name.slice(0, 1)}%`).limit(50)
       const match = (data || []).filter(b => p.name.startsWith(b.name)).sort((a, b) => b.name.length - a.name.length)[0]
       if (match) {
-        resolvedBrand = match.name
         pureName = p.name.slice(match.name.length).trim()
         onBrandFill?.(match.name)
       }
@@ -411,9 +441,11 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
     })
   }
 
+  const listId = `${inputProps.id || 'kk-name'}-list`
   return (
     <div style={{ position: 'relative' }}>
       <input ref={inputRef} {...inputProps} style={style} value={value} placeholder={placeholder}
+        role="combobox" aria-autocomplete="list" aria-expanded={open && products.length > 0} aria-controls={listId}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         onBlur={e => {
@@ -422,26 +454,27 @@ export function NameInput({ value, onChange, brand, onBrandFill, onProductFill, 
           inputProps.onBlur?.(e)
         }} />
       {open && products.length > 0 && (
-        <div style={dropStyle}>
-          {products.map((p, i) => {
-            const displayName = brand && p.name.startsWith(brand) ? p.name.slice(brand.length).trim() : p.name
-            const isGold = [...goldBrands].some(b => p.name.startsWith(b) || b.startsWith(p.name.split(' ')[0]))
-            return (
-              <div key={p.id}
-                style={{ padding: '9px 13px', cursor: 'pointer', background: i === hover ? 'var(--accent-bg)' : 'transparent', borderBottom: i < products.length - 1 ? '1px solid var(--border)' : 'none' }}
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(-1)}
-                onMouseDown={e => { e.preventDefault(); selectProduct(p) }}>
-                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {displayName}
-                  {isGold && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 8, background: 'rgba(180,140,0,.12)', color: '#8A6C00', border: '1px solid rgba(180,140,0,.25)', flexShrink: 0 }}>★ 金賞</span>}
-                </div>
-                {(p.brewery_name || p.region) && (
-                  <div style={{ fontSize: 11, color: 'var(--sub)', marginTop: 2 }}>{[p.brewery_name, p.region].filter(Boolean).join(' · ')}</div>
-                )}
-              </div>
-            )
-          })}
+        <div className="kk-suggest">
+          <div className="kk-suggest__count" aria-live="polite">{total}件</div>
+          <ul ref={listRef} id={listId} role="listbox" className="kk-suggest__list" onScroll={onScroll}>
+            {products.map((p, i) => {
+              const displayName = brand && p.name.startsWith(brand) ? p.name.slice(brand.length).trim() : p.name
+              const isGold = [...goldBrands].some(b => p.name.startsWith(b) || b.startsWith(p.name.split(' ')[0]))
+              const meta = [p.brewery_name, p.region, p.type, p.polishing != null && `精米${p.polishing}%`].filter(Boolean).join(' · ')
+              return (
+                <li key={p.id} data-i={i} role="option" aria-selected={i === hover} className={`kk-suggest__item${i === hover ? ' is-hover' : ''}`}
+                  onMouseEnter={() => setHover(i)}
+                  onMouseDown={e => { e.preventDefault(); selectProduct(p) }}>
+                  <span className="kk-suggest__name">
+                    {displayName}
+                    {isGold && <span className="kk-suggest__gold">★ 金賞</span>}
+                  </span>
+                  {meta && <span className="kk-suggest__meta">{meta}</span>}
+                </li>
+              )
+            })}
+            {products.length < total && <li className="kk-suggest__more" aria-hidden="true">{loadingMore ? '…' : `${products.length} / ${total}`}</li>}
+          </ul>
         </div>
       )}
     </div>

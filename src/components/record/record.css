@@ -208,3 +208,31 @@
 .kk-feel + .kk-feel { margin-top: 16px; }
 .kk-feel .kk-field__label .kk-tab__count { margin-left: 6px; }
 .kk-form .kk-section { scroll-margin-top: 64px; } /* clear the sticky progress bar when jumping */
+
+/* 酒名 suggestions: the whole 事典, scrollable, more rows load at the bottom */
+.kk-suggest { position: absolute; top: 100%; left: 0; right: 0; z-index: 100; margin-top: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); box-shadow: var(--shadow-sm); overflow: hidden; }
+.kk-suggest__count { padding: 6px 13px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.kk-suggest__list { list-style: none; margin: 0; padding: 0; max-height: min(52svh, 380px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.kk-suggest__item { display: grid; gap: 2px; padding: 9px 13px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.kk-suggest__item.is-hover { background: var(--green-bg); }
+.kk-suggest__name { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.kk-suggest__gold { flex-shrink: 0; padding: 1px 5px; border-radius: 8px; border: 1px solid rgba(185, 151, 74, .35); background: rgba(185, 151, 74, .12); color: #7a6227; font-size: 9px; }
+.kk-suggest__meta { font-size: 11px; color: var(--muted); }
+.kk-suggest__more { padding: 8px 13px; text-align: center; color: var(--muted); font-size: 11px; }
+
+/* 装瓶日: year switcher over a month grid */
+.kk-month { position: relative; }
+.kk-month__trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; cursor: pointer; color: var(--ink); }
+.kk-month__trigger.is-empty span { color: var(--muted); }
+.kk-month__trigger svg { flex-shrink: 0; color: var(--muted); }
+.kk-month__pop { position: absolute; z-index: 60; top: calc(100% + 4px); right: 0; /* the field sits in the right column */ width: max(100%, 260px); max-width: calc(100vw - 32px); padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2); box-shadow: var(--shadow-sm); }
+.kk-month__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.kk-month__head strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+.kk-month__head button { width: 44px; height: 40px; border: 0; border-radius: 8px; background: none; color: var(--green); font-size: 20px; cursor: pointer; }
+.kk-month__head button:disabled { color: var(--line); cursor: default; }
+.kk-month__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kk-month__grid button { min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-2); color: var(--ink); font-size: 13px; cursor: pointer; }
+.kk-month__grid button[aria-pressed="true"] { border-color: var(--green); background: var(--green); color: #fff; font-weight: 700; }
+.kk-month__grid button:disabled { color: var(--line); cursor: default; }
+.kk-month__foot { display: flex; justify-content: flex-end; gap: 4px; margin-top: 8px; }
+.kk-month__foot button { min-height: 40px; padding: 0 12px; border: 0; background: none; color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; }

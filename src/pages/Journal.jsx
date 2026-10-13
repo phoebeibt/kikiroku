@@ -23,6 +23,7 @@ import Ledger from './journal/Ledger'
 import { normalizeRegion } from '../lib/region'
 import SakeBottleCrop from '../components/bottle/SakeBottleCrop'
 import { rememberTags } from '../lib/recentTags'
+import MonthPicker from '../components/MonthPicker'
 
 const EMPTY_FORM = {
   brand: '', name: '', brewery: '', region: '', type: '',
@@ -1135,7 +1136,7 @@ export default function Journal({ session }) {
                   </div>
                   <div className="kk-field">
                     <label className="kk-field__label" htmlFor="kk-field-bottling">{t('form.bottling')}</label>
-                    <input id="kk-field-bottling" className="kk-input" type="text" inputMode="numeric" maxLength="7" value={form.bottling_date} onChange={e => f('bottling_date', e.target.value)} placeholder="yyyy-mm" />
+                    <MonthPicker id="kk-field-bottling" value={form.bottling_date} onChange={v => f('bottling_date', v)} lang={lang} />
                   </div>
                 </div>
                 <div className="kk-row2">
