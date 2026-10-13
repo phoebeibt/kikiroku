@@ -718,7 +718,7 @@ export default function Journal({ session }) {
       <Ledger
           entries={entries} loading={loading} lang={lang}
           tagLabel={tagLabel} typeLabel={typeLabel} brandMap={brandMap}
-          onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`)}
+          onOpen={e => e.status === 'draft' ? openEdit(e) : navigate(`/journal/${e.id}`, { state: { from: 'ledger' } })}
           initialRegion={initialRegion} initialBrewery={initialBrewery} initialView={initialView}
           onAdd={openAdd} hasDraft={hasDraft}
           wishCount={wishCount} onShowWishlist={() => navigate('/wishlist')}

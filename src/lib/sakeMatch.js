@@ -31,8 +31,8 @@ export function loadPublicEntries() {
     publicCache = supabase.from('sake_entries').select(PUBLIC_COLS)
       .eq('is_public', true).eq('status', 'published')
       .order('created_at', { ascending: false }).limit(1000)
-      .then(({ data }) => data || [])
-    publicCache.catch(() => { publicCache = null })
+      .then(({ data, error }) => { if (error) throw error; return data || [] })
+    publicCache.catch(() => { publicCache = null }) // a failed load is retried next time
   }
   return publicCache
 }

@@ -138,13 +138,13 @@
   border-bottom: 1px solid var(--line);
 }
 .kk-dv-top__back, .kk-dv-top__edit {
-  min-height: 44px; padding: 0 8px; border: 0; background: none; font-size: 13px; cursor: pointer;
+  min-height: 44px; min-width: 44px; padding: 0 8px; border: 0; background: none; font-size: 13px; cursor: pointer;
 }
 .kk-dv-top__back { justify-self: start; color: var(--muted); }
 .kk-dv-top__title { margin: 0; font-size: 13px; font-weight: 700; text-align: center; }
 .kk-dv-top__actions { justify-self: end; display: flex; align-items: center; gap: 2px; }
 .kk-dv-top__edit { color: var(--green); font-weight: 700; }
-.kk-dv-top__more { width: 40px; height: 40px; border-color: transparent; background: none; }
+.kk-dv-top__more { width: 44px; height: 44px; border-color: transparent; background: none; }
 
 .kk-dv { max-width: 640px; margin: 0 auto; padding: 22px 20px calc(32px + var(--nav-h, 0px)); }
 .kk-dv-titles { margin-bottom: 20px; }
@@ -165,8 +165,9 @@
   background: var(--wood-bg); overflow: hidden;
 }
 .kk-dv-photo .kk-bottle { max-height: 172px; }
-.kk-dv-photo.is-original { padding: 0; cursor: zoom-in; }
-.kk-dv-photo.is-original img { width: 100%; height: 100%; object-fit: contain; }
+/* The original photo must fit the fixed box in both directions (a grid item sized by width overflowed it). */
+.kk-dv-photo.is-original { display: block; padding: 0; cursor: zoom-in; }
+.kk-dv-photo.is-original img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
 .kk-dv-switch { display: flex; margin-top: 6px; border-bottom: 1px solid var(--line); }
 .kk-dv-switch button {
   flex: 1; min-width: 0; min-height: 44px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;

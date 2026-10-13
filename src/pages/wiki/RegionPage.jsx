@@ -27,9 +27,10 @@ export default function RegionPage({ session }) {
   const [publicEntries, setPublicEntries] = useState(null)
   const [breweries, setBreweries] = useState(null)
   const [seg, setSeg] = useState(null)
+  const [publicError, setPublicError] = useState(false)
 
   useEffect(() => {
-    loadPublicEntries().then(setPublicEntries)
+    loadPublicEntries().then(d => { setPublicEntries(d); setPublicError(false) }, () => { setPublicEntries([]); setPublicError(true) })
     supabase.from('sake_breweries').select('id,name,furigana,romaji,sake_areas!inner(name)').eq('sake_areas.name', name).order('name').limit(1000)
       .then(({ data }) => setBreweries((data || []).filter(b => b.name?.trim())))
   }, [name])
@@ -42,7 +43,8 @@ export default function RegionPage({ session }) {
   }, [session?.user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const own = useMemo(() => (mine || []).filter(e => e.status !== 'draft' && normalizeRegion(e.region) === name), [mine, name])
-  const others = useMemo(() => (publicEntries || []).filter(e => normalizeRegion(e.region) === name && e.user_id !== session?.user?.id), [publicEntries, name, session?.user?.id])
+  // 公開酒札 = every public 酒札 from this region, the viewer's own included (same set as 廣場).
+  const others = useMemo(() => (publicEntries || []).filter(e => normalizeRegion(e.region) === name), [publicEntries, name])
   const ownByBrewery = useMemo(() => own.reduce((m, e) => (e.brewery ? { ...m, [e.brewery]: (m[e.brewery] || 0) + 1 } : m), {}), [own])
   const topBrewery = Object.keys(ownByBrewery).sort((a, b) => ownByBrewery[b] - ownByBrewery[a])[0]
   const breweryList = useMemo(() => [...(breweries || [])].sort((a, b) => (ownByBrewery[b.name] || 0) - (ownByBrewery[a.name] || 0) || a.name.localeCompare(b.name, 'ja')), [breweries, ownByBrewery])
@@ -68,7 +70,7 @@ export default function RegionPage({ session }) {
             {!isGuest && <div><dd>{ready ? own.length : '…'}</dd><dt>{L('自分の酒札', '我的酒札', 'Your tags')}</dt></div>}
             {!isGuest && <div><dd className="is-text">{topBrewery || '—'}</dd><dt>{L('よく飲む酒造', '最常喝酒造', 'Most recorded')}</dt></div>}
             <div><dd>{breweries ? breweries.length : '…'}</dd><dt>{L('酒造', '酒造', 'Breweries')}</dt></div>
-            <div><dd>{publicEntries ? others.length : '…'}</dd><dt>{L('公開酒札', '公開酒札', 'Public tags')}</dt></div>
+            <div><dd>{!publicEntries ? '…' : publicError ? '—' : others.length}</dd><dt>{L('公開酒札', '公開酒札', 'Public tags')}</dt></div>
           </dl>
         </header>
 
@@ -107,14 +109,16 @@ export default function RegionPage({ session }) {
                   <span className="kk-shelf__bottle" aria-hidden="true"><SakeBottleCrop imageUrl={isGuest ? null : (e.thumb_url || e.photo_url)} crop={e.photo_crop} height="72px" /></span>
                   <span className="kk-shelf__main">
                     <span className="kk-shelf__title">{title(e)}</span>
-                    <span className="kk-shelf__meta">{[e.brewery, !isGuest && e.contributor_name].filter(Boolean).join(' · ')}</span>
+                    <span className="kk-shelf__meta">{[e.brewery, !isGuest && (e.user_id === session?.user?.id ? L('自分', '自己', 'You') : e.contributor_name)].filter(Boolean).join(' · ')}</span>
                   </span>
                   <span className="kk-shelf__chev" aria-hidden="true">›</span>
                 </button>
               </li>
             ))}
           </ul>
-        ) : <p className="kk-wdetail__empty">{L('この産地の公開酒札はまだありません。', '這個產地還沒有公開酒札。', 'No public tags from here yet.')}</p>)}
+        ) : publicError
+          ? <p className="kk-wdetail__empty" role="alert">{L('公開酒札を読み込めませんでした。通信を確認して、もう一度開いてください。', '無法載入公開酒札，請確認網路後再開一次。', 'Could not load public tags. Check your connection and try again.')}</p>
+          : <p className="kk-wdetail__empty">{L('この産地の公開酒札はまだありません。', '這個產地還沒有公開酒札。', 'No public tags from here yet.')}</p>)}
 
         {ready && active === 'breweries' && (breweryList.length ? (
           <ul className="kk-shelf">

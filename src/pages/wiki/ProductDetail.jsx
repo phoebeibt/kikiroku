@@ -52,7 +52,7 @@ export default function ProductDetail({ session, recorded = false }) {
     if (!recorded) {
       supabase.from('sake_products').select('*').eq('id', id).maybeSingle()
         .then(({ data }) => setLoaded({ id, data: data || null }))
-      loadPublicEntries().then(setPublicEntries)
+      loadPublicEntries().then(setPublicEntries, () => setPublicEntries([]))
       return
     }
     const probe = { brand: rb, name: rn, brewery: rbr }

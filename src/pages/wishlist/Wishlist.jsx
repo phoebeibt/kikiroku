@@ -48,7 +48,7 @@ export default function Wishlist({ session }) {
       .select(`id,entry_id,product_id,priority,note,created_at,product:sake_products(*),entry:sake_entries(${ENTRY_COLS})`)
       .eq('user_id', uid).order('created_at', { ascending: false })
       .then(({ data, error: err }) => { if (err) setError(err.message); setRows(data || []) })
-    loadPublicEntries().then(setPublicEntries)
+    loadPublicEntries().then(setPublicEntries, () => setPublicEntries([]))
   }, [uid])
 
   // One shape for the list: 事典 facts first, the source 酒札 as fallback.
@@ -116,7 +116,7 @@ export default function Wishlist({ session }) {
   }
   const openItem = ({ w }) => {
     if (w.product_id) navigate(`/wiki/sake/${w.product_id}`)
-    else if (w.entry) navigate(`/journal/${w.entry.id}`)
+    else if (w.entry) navigate(`/journal/${w.entry.id}`, { state: { from: 'wishlist' } })
   }
 
   const Star = ({ on }) => (

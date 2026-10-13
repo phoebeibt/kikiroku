@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Nav from '../components/Nav'
 import Sheet, { CloseIcon } from '../components/ui/Sheet'
@@ -29,6 +29,7 @@ const dot = d => (d || '').replaceAll('-', '.')
 export default function SakeDetail({ session }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const from = useLocation().state?.from // where the 酒札 was opened from — names the back button
   const { lang, t } = useLang()
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const rawTag = useTagResolver()
@@ -243,7 +244,11 @@ export default function SakeDetail({ session }) {
       <Nav session={session} topbar={false} />
 
       <header className="kk-dv-top">
-        <button type="button" className="kk-dv-top__back" onClick={goBack}><span aria-hidden="true">←</span> {isOwner ? L('マイ帳', '酒帳', 'Ledger') : L('戻る', '返回', 'Back')}</button>
+        <button type="button" className="kk-dv-top__back" onClick={goBack}><span aria-hidden="true">←</span> {
+          from === 'ledger' ? L('マイ帳', '酒帳', 'Ledger')
+            : from === 'plaza' ? L('廣場', '廣場', 'Discover')
+              : from === 'wishlist' ? L('飲みたい', '想喝', 'Want to try')
+                : L('戻る', '返回', 'Back')}</button>
         <h1 className="kk-dv-top__title">{entry.status === 'draft' ? L('下書き', '草稿', 'Draft') : L('酒の記録', '酒的記錄', 'Sake record')}</h1>
         <div className="kk-dv-top__actions">
           {isOwner && <button type="button" className="kk-dv-top__edit" onClick={goEdit}>{L('編集', '編輯', 'Edit')}</button>}

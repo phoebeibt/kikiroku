@@ -25,7 +25,7 @@ export default function SakeShelf({ lang, isGuest }) {
   const [showAllRecorded, setShowAllRecorded] = useState(false)
   const pageRef = useRef(0)
 
-  useEffect(() => { loadPublicEntries().then(setPublicEntries) }, [])
+  useEffect(() => { loadPublicEntries().then(setPublicEntries, () => setPublicEntries([])) }, [])
 
   // Recorded sakes, grouped by brand + name; the newest record with a photo is the cover.
   const recorded = useMemo(() => {

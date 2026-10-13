@@ -8,7 +8,7 @@ import { matchEntry, splitTerms } from '../../lib/ledgerSearch'
 import { useTags } from '../../contexts/TagsContext'
 import { useLang } from '../../contexts/LangContext'
 import { cleanLabel } from '../../lib/labels'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigationType } from 'react-router-dom'
 import { isPrefecture, normalizeRegion, regionPath } from '../../lib/region'
 import './ledger.css'
 
@@ -19,6 +19,19 @@ const THIS_YEAR = String(new Date().getFullYear())
 const EMPTY_FILTERS = { status: 'all', rating: 'any', period: 'all', from: '', to: '', flavors: [], regions: [], breweries: [] }
 const VIEW_KEY = 'kk_ledger_density'
 const SORT_KEY = 'kk_ledger_sort'
+
+// Search / filters / shelf per history entry, so back (e.g. from a 産地 page) lands on the same
+// narrowed list. Journal swaps the incoming route state away, so it cannot live there.
+const SHELF_KEY = 'kk-ledger-shelf'
+const readShelf = key => { try { return JSON.parse(sessionStorage.getItem(SHELF_KEY))?.[key] || null } catch { return null } }
+const writeShelf = (key, v) => {
+  try {
+    const all = JSON.parse(sessionStorage.getItem(SHELF_KEY)) || {}
+    all[key] = v
+    const keys = Object.keys(all); if (keys.length > 40) delete all[keys[0]]
+    sessionStorage.setItem(SHELF_KEY, JSON.stringify(all))
+  } catch { /* storage blocked */ }
+}
 
 const readPref = (k, fallback) => { try { return localStorage.getItem(k) || fallback } catch { return fallback } }
 const writePref = (k, v) => { try { localStorage.setItem(k, v) } catch { /* storage blocked */ } }
@@ -57,14 +70,19 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
   const L = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
   const tagLabel = (id, cat) => cleanLabel(rawTagLabel(id, cat))
   const allTags = useTags()
-  const [query, setQuery] = useState('')
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [collection, setCollection] = useState(null)
+  const location = useLocation()
+  const navType = useNavigationType()
+  // Only a back / forward visit restores; a fresh visit to マイ帳 starts clean.
+  const [restored] = useState(() => (navType === 'POP' ? readShelf(location.key) : null))
+  const [query, setQuery] = useState(restored?.query || '')
+  const [filters, setFilters] = useState(restored?.filters ? { ...EMPTY_FILTERS, ...restored.filters } : EMPTY_FILTERS)
+  const [collection, setCollection] = useState(restored?.collection ?? null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS)
   const [density, setDensity] = useState(() => readPref(VIEW_KEY, 'card'))
   const [sort, setSort] = useState(() => readPref(SORT_KEY, 'recent'))
-  const [draftsOpen, setDraftsOpen] = useState(false)
+  const [draftsOpen, setDraftsOpen] = useState(!!restored?.draftsOpen)
+  useEffect(() => { writeShelf(location.key, { query, filters, collection, draftsOpen }) }, [location.key, query, filters, collection, draftsOpen])
 
   // Arriving from a detail page's 産地 link narrows the shelf to that region.
   useEffect(() => {

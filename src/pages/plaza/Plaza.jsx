@@ -129,7 +129,7 @@ export default function Plaza({ session }) {
     ...(isGuest ? [] : [['near', L('近い好み', '相近口味', 'Close to you')]]),
   ]
 
-  const open = e => navigate(`/journal/${e.id}`)
+  const open = e => navigate(`/journal/${e.id}`, { state: { from: 'plaza' } })
   const recordToo = e => navigate('/journal', { state: { forward: forwardFrom(e) } })
 
   return (
