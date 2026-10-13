@@ -23,6 +23,9 @@ export default function SakeShelf({ lang, isGuest }) {
   const [loading, setLoading] = useState(true)
   const [publicEntries, setPublicEntries] = useState([])
   const [showAllRecorded, setShowAllRecorded] = useState(false)
+  // The 4k-row catalogue starts folded (user 2026-10-13); the choice survives back navigation in this tab.
+  const [catalogOpen, setCatalogOpen] = useState(() => { try { return sessionStorage.getItem('kk-wiki-catalog-open') === '1' } catch { return false } })
+  const toggleCatalog = () => setCatalogOpen(o => { try { sessionStorage.setItem('kk-wiki-catalog-open', o ? '0' : '1') } catch { /* blocked */ } return !o })
   const pageRef = useRef(0)
 
   useEffect(() => { loadPublicEntries().then(setPublicEntries, () => setPublicEntries([])) }, [])
@@ -109,10 +112,24 @@ export default function SakeShelf({ lang, isGuest }) {
         </>
       )}
 
-      <h2 className="kk-wiki__sec">
-        {browsing ? L('酒款カタログ', '酒款目錄', 'Catalog') : L('検索結果', '搜尋結果', 'Results')}
-        {total != null && <small>{L(`${total} 件`, `${total} 款`, `${total}`)}</small>}
-      </h2>
+      {browsing ? (
+        <h2 className="kk-wiki__sec kk-wiki__sec--toggle">
+          <button type="button" aria-expanded={catalogOpen} aria-controls="kk-wiki-catalog" onClick={toggleCatalog}>
+            <span>{L('酒款カタログ', '酒款目錄', 'Catalog')}</span>
+            <span className="kk-wiki__sec-side">
+              {total != null && <small>{L(`${total} 件`, `${total} 款`, `${total}`)}</small>}
+              <span aria-hidden="true">{catalogOpen ? '−' : '＋'}</span>
+            </span>
+          </button>
+        </h2>
+      ) : (
+        <h2 className="kk-wiki__sec">
+          {L('検索結果', '搜尋結果', 'Results')}
+          {total != null && <small>{L(`${total} 件`, `${total} 款`, `${total}`)}</small>}
+        </h2>
+      )}
+      {/* Searching or picking a type always shows results; plain browsing only when unfolded. */}
+      {(!browsing || catalogOpen) && <div id="kk-wiki-catalog">
       {rows.length > 0 && (
         <ul className="kk-shelf" aria-busy={loading}>
           {rows.map(p => {
@@ -147,6 +164,7 @@ export default function SakeShelf({ lang, isGuest }) {
           {L('もっと見る', '載入更多', 'Show more')}
         </button>
       )}
+      </div>}
     </div>
   )
 }

@@ -92,3 +92,8 @@
 
 .kk-wiki__sub + .kk-wiki__sub { margin-top: 12px; }
 .kk-wiki__subhead { margin: 10px 0 6px; font-size: 12px; font-weight: 700; color: var(--green); }
+/* 酒款カタログ: folded by default, the heading is the toggle */
+.kk-wiki__sec--toggle { display: block; }
+.kk-wiki__sec--toggle button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: inherit; font: inherit; letter-spacing: inherit; cursor: pointer; }
+.kk-wiki__sec-side { display: inline-flex; align-items: baseline; gap: 10px; color: var(--green); }
+.kk-wiki__sec-side small { color: var(--muted); }
