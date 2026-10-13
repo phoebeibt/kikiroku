@@ -654,7 +654,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-7',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会7号', '7号酵母', '真澄酵母', '協会701号', '701号酵母', 'きょうかい701号'], zh: ['協會7號', '7號酵母', '協會701號', '701號酵母'], en: ['kyokai 7', 'kyokai 701', 'association yeast no.7'] },
+    terms: { ja: ['協会7号', '7号酵母', '7号', '真澄酵母', '協会701号', '701号酵母', 'きょうかい701号'], zh: ['協會7號', '7號酵母', '協會701號', '701號酵母'], en: ['kyokai 7', 'kyokai 701', 'association yeast no.7'] },
     title: { ja: '協会7号酵母', zh: '協會7號酵母', en: 'Kyokai No. 7 Yeast' },
     body: {
       ja: '日本で最も広く使われる協会酵母。長野県諏訪・真澄蔵由来。アルコール耐性が高く安定した発酵が可能で、穏やかな香りとしっかりした旨味を生む。全国の蔵で愛用されるスタンダードな酵母。',
@@ -665,7 +665,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-9',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会9号', '9号酵母', '熊本酵母', '協会901号', '901号酵母', 'きょうかい901号', 'KA-1', '香露酵母'], zh: ['協會9號', '9號酵母', '熊本酵母', '協會901號', '901號酵母'], en: ['kyokai 9', 'kyokai 901', 'kumamoto yeast', 'KA-1'] },
+    terms: { ja: ['協会9号', '9号酵母', '熊本酵母', '協会901号', '901号酵母', 'きょうかい901号', 'KA-1', 'KA1', '香露酵母', '9号系酵母', '9号系'], zh: ['協會9號', '9號酵母', '熊本酵母', '協會901號', '901號酵母'], en: ['kyokai 9', 'kyokai 901', 'kumamoto yeast', 'KA-1'] },
     title: { ja: '協会9号酵母（熊本酵母）', zh: '協會9號酵母（熊本酵母）', en: 'Kyokai No. 9 Yeast (Kumamoto)' },
     body: {
       ja: '熊本酵母とも呼ばれる。カプロン酸エチルを豊富に生成し、リンゴ・メロンを思わせる爽やかな吟醸香が特徴。「YK35（山田錦・9号酵母・精米35%）」の方程式で全国新酒鑑評会を席巻し、現代の吟醸ブームを牽引した。今も全国の蔵で広く使われる定番酵母で、泡なし株901号も普及している。',
@@ -764,7 +764,7 @@ export const WIKI_TERMS = [
   {
     id: 'kyokai-18',
     group: 'kyokai-yeast',
-    terms: { ja: ['協会1801号', '1801号酵母', '18号酵母', '1801', 'きょうかい1801号'], zh: ['協會1801號', '1801號酵母', '1801'], en: ['kyokai 1801', 'association yeast no.1801', '1801'] },
+    terms: { ja: ['協会1801号', '1801号酵母', '18号酵母', '協会18号', '1801', 'きょうかい1801号'], zh: ['協會1801號', '1801號酵母', '1801'], en: ['kyokai 1801', 'association yeast no.1801', '1801'] },
     title: { ja: '協会1801号酵母', zh: '協會1801號酵母', en: 'Kyokai No. 1801 Yeast' },
     body: {
       ja: '現在の全国新酒鑑評会金賞受賞酒の約48%に使われる、現代で最も重要な競技用酵母（2006年頒布）。1601号×901号の交配株で、カプロン酸エチルと酢酸イソアミルの両方が1601号を40〜50%上回る。さらに1601号の「発酵力の弱さ」と1701号の「イソアミルアルコール（老香の原因）の多さ」という両方の弱点を解決。最初から泡なし設計。',
@@ -1361,9 +1361,9 @@ export const WIKI_TERMS = [
     terms: { ja: ["夢山水"], zh: ["夢山水"], en: ["yumesansui"] },
     title: { ja: "夢山水", zh: "夢山水", en: "Yumesansui" },
     body: {
-      ja: "愛知県で育成された酒造好適米。山間地向けの早生〜中生品種で、いもち病に強く収量が多い。心白の発現がよい。",
-      zh: "愛知縣育成的酒造好適米。適合山間地的早熟～中熟品種，抗稻熱病、產量高，心白表現良好。",
-      en: "A sake rice bred in Aichi for upland areas. Early-to-mid maturing, blast-resistant and high-yielding, with a well-formed shinpaku (white core).",
+      ja: "愛知県の蔵で多く使われる酒造好適米。中間地向けの早生〜中生品種で、いもち病に強く収量が多い。心白の発現がよい。",
+      zh: "愛知縣酒藏常用的酒造好適米。適合中間地帶的早熟～中熟品種，抗稻熱病、產量高，心白表現良好。",
+      en: "A sake rice widely used by Aichi breweries. Early-to-mid maturing for intermediate areas, blast-resistant and high-yielding, with a well-formed shinpaku (white core).",
     },
   },
   {
@@ -1405,9 +1405,9 @@ export const WIKI_TERMS = [
     terms: { ja: ["神の穂"], zh: ["神の穂"], en: ["kaminoho"] },
     title: { ja: "神の穂", zh: "神の穂", en: "Kami no Ho" },
     body: {
-      ja: "三重県で育成された酒造好適米。三重県の地酒、とくに伊勢・伊賀の蔵でよく使われる。",
-      zh: "三重縣育成的酒造好適米，常用於三重縣地酒。",
-      en: "A sake rice bred in Mie and widely used by Mie breweries.",
+      ja: "三重県独自の酒造好適米。県の農業研究部伊賀研究室で選抜された「三重酒18号」が、2010年度に「神の穂」として品種登録された。山田錦とともに三重の酒造りを支えている。",
+      zh: "三重縣獨有的酒造好適米。由縣農業研究部伊賀研究室選育的「三重酒18號」，於2010年度以「神の穂」之名完成品種登錄，與山田錦一同支撐三重的釀酒。",
+      en: "Mie's own sake rice: the line \"Mie-shu No. 18\", selected at the prefecture's Iga research station, was registered as Kami no Ho in fiscal 2010. Supports Mie brewing alongside Yamada Nishiki.",
     },
   },
   {
@@ -1416,9 +1416,53 @@ export const WIKI_TERMS = [
     terms: { ja: ["野条穂"], zh: ["野条穂", "野條穗"], en: ["nojoho"] },
     title: { ja: "野条穂", zh: "野条穂", en: "Nojoho" },
     body: {
-      ja: "兵庫県で戦前に栽培されていた酒米。長く途絶えていたが、近年少量ながら復活し、限定品に使われている。",
-      zh: "戰前在兵庫縣栽培的酒米，曾長期失傳，近年少量復活，用於限定品。",
-      en: "A pre-war Hyogo sake rice, long out of cultivation and recently revived in small quantities for limited releases.",
+      ja: "兵庫県の古い酒米。一時は栽培が途絶えたが近年復活し、兵庫や京都の蔵が少量の限定品に使っている（例：神蔵 野条穂）。",
+      zh: "兵庫縣的古老酒米，一度停止栽培，近年復活，兵庫與京都的酒藏以少量限定品使用（例：神蔵 野条穂）。",
+      en: "An old Hyogo sake rice that fell out of cultivation and has been revived; breweries in Hyogo and Kyoto use it for small limited releases (e.g. Kaminokura Nojoho).",
+    },
+  },
+  {
+    id: "kyokai-77",
+    group: "kyokai-yeast",
+    terms: { ja: ["協会77号", "77号酵母", "協会77号酵母", "きょうかい77号"], zh: ["協會77號", "77號酵母"], en: ["kyokai 77", "association yeast no.77"] },
+    title: { ja: "協会77号酵母", zh: "協會77號酵母", en: "Kyokai No. 77 Yeast" },
+    body: {
+      ja: "リンゴ酸を多く生む多酸性の協会酵母。有機酸の約7割がリンゴ酸で、コハク酸は少ない。カプロン酸エチルの生成も多く、甘酸っぱくジューシーな酒になる。多酸酒・貴醸酒・長期熟成酒・低アルコール酒に向く。",
+      zh: "大量產生蘋果酸的多酸性協會酵母。有機酸約七成為蘋果酸，琥珀酸較少；己酸乙酯生成量也高，可釀出酸甜多汁的酒。適合多酸酒、貴釀酒、長期熟成酒與低酒精酒。",
+      en: "A high-acid Kyokai yeast that makes plenty of malic acid (about 70% of the organic acids) and little succinic acid, plus abundant ethyl caproate — sweet-tart and juicy. Suited to high-acid, kijoshu, long-aged and low-alcohol sake.",
+    },
+  },
+  {
+    id: "mie-yeast",
+    group: "local-yeast",
+    terms: { ja: ["三重県酵母", "三重酵母", "MK-1", "MK1", "MK-3", "MK3", "MK-5", "MK-7", "MLA-12", "MLA12"], zh: ["三重縣酵母", "MK-1", "MK-3"], en: ["mie yeast", "MK-1", "MK-3", "MLA-12"] },
+    title: { ja: "三重県酵母（MK・MLA）", zh: "三重縣酵母（MK・MLA）", en: "Mie Yeasts (MK, MLA)" },
+    body: {
+      ja: "三重県工業研究所が開発し、県内の蔵に頒布している酵母群（MK-1・MK-3・MK-5・MK-7・MLA-12）。それぞれ特徴的な有機酸や香気成分を生み、三重の地酒の多様化を支えている。",
+      zh: "三重縣工業研究所開發、提供給縣內酒藏的酵母群（MK-1、MK-3、MK-5、MK-7、MLA-12）。各自產生具特色的有機酸與香氣成分，支撐三重地酒的多樣化。",
+      en: "A family of yeasts (MK-1, MK-3, MK-5, MK-7, MLA-12) developed by the Mie Prefecture Industrial Research Institute for the prefecture's breweries. Each produces characteristic acids and aromas, broadening the range of Mie sake.",
+    },
+  },
+  {
+    id: "m310",
+    group: "local-yeast",
+    terms: { ja: ["M310", "M310酵母", "M-310"], zh: ["M310"], en: ["M310"] },
+    title: { ja: "M310酵母", zh: "M310酵母", en: "M310 Yeast" },
+    body: {
+      ja: "茨城・水戸の明利酒類が自社で開発した酵母。名前は「み（3）と（10）」＝水戸の語呂合わせ。メロンやバナナのような果実の香りと、すっきりとキレのよい飲み口を生む。",
+      zh: "茨城水戶的明利酒類自行開發的酵母。名稱取「み（3）と（10）」＝水戶的諧音。帶來哈密瓜、香蕉般的果香，口感清爽俐落。",
+      en: "A yeast developed in-house by Meiri Shurui of Mito, Ibaraki — \"M-3-10\" is a pun on Mi-to. Gives melon- and banana-like fruit with a clean, crisp finish.",
+    },
+  },
+  {
+    id: "yumegokochi",
+    group: "regional-rice",
+    terms: { ja: ["夢ごこち"], zh: ["夢ごこち"], en: ["yumegokochi"] },
+    title: { ja: "夢ごこち", zh: "夢ごこち", en: "Yumegokochi" },
+    body: {
+      ja: "コシヒカリ系の食用米（飯米）。艶があり、粘りと甘みが強いのが特徴。酒造好適米ではないが、地元の米として日本酒の原料に使われることもある。",
+      zh: "越光系的食用米（飯米），有光澤、黏性與甜味強。雖非酒造好適米，但也會作為在地米用來釀日本酒。",
+      en: "A Koshihikari-line table rice, glossy, sticky and sweet. Not a dedicated sake rice, but sometimes used as a local rice for sake.",
     },
   },
 ]
