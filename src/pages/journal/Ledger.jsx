@@ -222,9 +222,10 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
     if (rest > 0) out.push({ text: `+${rest}`, kind: 'more' })
     return out
   }
+  // 初期設定は非公開。印は例外の「公開中」だけに付ける（2026-10-20 本人）
   const statusPill = e => e.is_public
     ? <span className="kk-status kk-status--public">{statusLabels.public}</span>
-    : <span className="kk-status kk-status--private">{statusLabels.private}</span>
+    : null
 
   const visibleDrafts = draftsOpen ? drafts : drafts.slice(0, DRAFTS_PREVIEW)
 

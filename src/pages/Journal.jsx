@@ -399,6 +399,13 @@ export default function Journal({ session }) {
   // プロフ › プライバシー: the name shown on public tags and whether new records start public.
   const defaultName = meta.public_name || meta.display_name || session.user.email.split('@')[0]
   const defaultPublic = meta.default_public === true
+  // 「写真・評価・メモがみんなに見えます」の確認は、アカウントごとに一度（user_metadata.public_ok）。
+  // 旧版はこの端末だけ（localStorage kk_public_ok）だったので、そちらも見る
+  const [publicOk, setPublicOk] = useState(() => {
+    if (meta.public_ok === true) return true
+    try { return localStorage.getItem('kk_public_ok') === '1' } catch { return false }
+  })
+  const pendingSaveRef = useRef(false)
 
   const openAdd = () => {
     const draft = loadDraft()
@@ -501,10 +508,13 @@ export default function Journal({ session }) {
   }
   useEffect(() => { if (form.brand && !form.brewery && sheet === 'form') inferBreweryFromBrand() }, [form.brand]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const askPublic = () => {
-    let ok = false
-    try { ok = localStorage.getItem('kk_public_ok') === '1' } catch { /* storage blocked */ }
-    if (ok) f('is_public', true); else setConfirmPublic(true)
+  const askPublic = () => { if (publicOk) f('is_public', true); else setConfirmPublic(true) }
+  const acceptPublic = () => {
+    f('is_public', true); setConfirmPublic(false); setPublicOk(true)
+    supabase.auth.updateUser({ data: { public_ok: true } })
+    try { localStorage.setItem('kk_public_ok', '1') } catch { /* storage blocked */ }
+    // 「保存して公開」から開いたときは、確認のあとそのまま保存する
+    if (pendingSaveRef.current) { pendingSaveRef.current = false; save('publish', true) }
   }
 
   const resetFormUi = status => {
@@ -575,7 +585,8 @@ export default function Journal({ session }) {
 
   // mode 'publish' → a finished 酒札 (needs a name and a rating).
   // mode 'draft'   → kept on the server as status 'draft', never public, anything goes.
-  const save = async (mode = 'publish') => {
+  // confirmed：公開の確認ダイアログで「公開する」を押した直後（この render の publicOk はまだ false）
+  const save = async (mode = 'publish', confirmed = false) => {
     const hasName = !!(form.brand.trim() || form.name.trim())
     const hasAnything = hasName || photoFile || photoFile2 || photoPreview || form.notes.trim() || form.rating > 0 || aromaTags.length || tasteTags.length
     if (mode === 'publish') {
@@ -592,6 +603,8 @@ export default function Journal({ session }) {
     } else if (!hasAnything) {
       closeClean(); return
     }
+    // 初期設定が「公開」の人も、はじめて公開するときは何が見えるかを一度確認する
+    if (mode === 'publish' && form.is_public && !publicOk && !confirmed && !(editId && entries.find(e => e.id === editId)?.is_public)) { pendingSaveRef.current = true; setConfirmPublic(true); return }
     setSaving(true); setSaveError('')
     try {
       // Always fetch a fresh, validated user to avoid stale session issues
@@ -638,8 +651,10 @@ export default function Journal({ session }) {
       if (!isDraft) { rememberTags('aroma', aromaTags); rememberTags('taste', tasteTags); rememberTags('flavor', formTags) }
       clearDraft(); setHasDraft(false)
       setToast(isDraft
-        ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました', '已存為草稿', 'Saved as a draft') }
-        : { id: Date.now(), stamp: L3('保存', '保存', 'Saved'), message: L3('酒札を保存しました', '酒札已保存', 'Sake tag saved') })
+        ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました（非公開）', '已存為草稿（不公開）', 'Saved as a private draft') }
+        : form.is_public
+          ? { id: Date.now(), stamp: L3('公開', '公開', 'Shared'), message: L3('保存して、廣場に公開しました', '已保存並公開到廣場', 'Saved and shared to Discover') }
+          : { id: Date.now(), stamp: L3('保存', '保存', 'Saved'), message: L3('自分だけの記録として保存しました', '已保存，只有自己看得到', 'Saved — only you can see it') })
       await fetchEntries(); closeClean()
       if (editReturnRef.current) { const back = editReturnRef.current; editReturnRef.current = null; navigate(back, { replace: true }) }
     } catch (e) {
@@ -876,13 +891,18 @@ export default function Journal({ session }) {
               : <span className="kk-panel__head-spacer" />}
         </>}
         footer={<>
+          {/* 公開はスイッチ：文字は「廣場に公開」で固定、オン／オフはつまみで見せる（2026-10-20 本人 A 案） */}
           <button type="button" role="switch" className="kk-foot-public" aria-checked={!!form.is_public}
-            onClick={() => (form.is_public ? f('is_public', false) : askPublic())}
-            title={L3('廣場への公開', '公開到廣場', 'Share to Discover')}>
-            {form.is_public ? L3('公開する', '公開', 'Public') : L3('非公開', '不公開', 'Private')}
+            onClick={() => (form.is_public ? f('is_public', false) : askPublic())}>
+            <span>{L3('廣場に公開', '公開到廣場', 'Share')}</span>
+            <span className="kk-foot-public__track" aria-hidden="true" />
           </button>
           {(!editId || editStatus === 'draft') && (
-            <button type="button" className="kk-btn" onClick={() => save('draft')} disabled={saving}>{L3('下書き', '存草稿', 'Draft')}</button>
+            <button type="button" className="kk-btn kk-foot-draft" onClick={() => save('draft')} disabled={saving}>
+              {L3('下書き', '存草稿', 'Draft')}
+              {/* 公開オンのときだけ「下書きは公開されない」を小さく添える（スマホで3つ並ぶ幅に収める） */}
+              {form.is_public && <small>{L3('非公開', '不公開', 'private')}</small>}
+            </button>
           )}
           {(() => {
             // Until 酒名 + 評価 are in, the main button says what is missing and takes you there.
@@ -891,7 +911,11 @@ export default function Journal({ session }) {
               : needRating ? L3('評価を選ぶと保存できます', '選好評分就能保存', 'Pick a rating to save') : null
             return (
               <button type="button" className={`kk-btn kk-btn--primary${guide ? ' is-guide' : ''}`} onClick={() => save('publish')} disabled={saving}>
-                {saving ? t('saving') : guide || (editId && editStatus !== 'draft' ? L3('変更を保存', '儲存變更', 'Save changes') : L3('保存', '保存', 'Save'))}
+                {saving ? t('saving') : guide || (
+                  // 押すと廣場に出るなら、ボタンにそう書く（公開済みの記録の編集は「変更を保存」のまま）
+                  editId && editStatus !== 'draft' && (!form.is_public || entries.find(e => e.id === editId)?.is_public)
+                    ? L3('変更を保存', '儲存變更', 'Save changes')
+                    : form.is_public ? L3('保存して公開', '保存並公開', 'Save & share') : L3('保存', '保存', 'Save'))}
               </button>
             )
           })()}
@@ -1174,7 +1198,7 @@ export default function Journal({ session }) {
           onSave={crop => finishBottleEdit(crop)} onSkip={() => finishBottleEdit(null)} onClose={() => finishBottleEdit(null)} />
       )}
 
-      <Sheet open={confirmPublic} onClose={() => setConfirmPublic(false)} variant="dialog" label={L3('廣場に公開されます', '將公開到廣場', 'This will be shared')}>
+      <Sheet open={confirmPublic} onClose={() => { pendingSaveRef.current = false; setConfirmPublic(false) }} variant="dialog" label={L3('廣場に公開されます', '將公開到廣場', 'This will be shared')}>
         <h2 className="kk-confirm__title">{L3('廣場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
         <p className="kk-confirm__note">{L3('写真・評価・メモがみんなに見えます。あとで非公開に戻せます。', '照片、評分和筆記會讓大家看到；之後可以改回不公開。', 'Photo, rating and notes become visible. You can make it private again later.')}</p>
         <div className="kk-field">
@@ -1182,8 +1206,8 @@ export default function Journal({ session }) {
           <input id="kk-field-contributor" className="kk-input" value={form.contributor_name} onChange={e => f('contributor_name', e.target.value)} placeholder={defaultName} />
         </div>
         <div className="kk-confirm__actions">
-          <button type="button" className="kk-btn" onClick={() => setConfirmPublic(false)}>{L3('やめる', '取消', 'Cancel')}</button>
-          <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={() => { f('is_public', true); setConfirmPublic(false); try { localStorage.setItem('kk_public_ok', '1') } catch { /* storage blocked */ } }}>{L3('公開する', '公開', 'Share')}</button>
+          <button type="button" className="kk-btn" onClick={() => { pendingSaveRef.current = false; setConfirmPublic(false) }}>{L3('やめる', '取消', 'Cancel')}</button>
+          <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={acceptPublic}>{L3('公開する', '公開', 'Share')}</button>
         </div>
       </Sheet>
 

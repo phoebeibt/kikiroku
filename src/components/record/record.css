@@ -197,12 +197,19 @@
 
 /* Footer: visibility switch + draft + save */
 .kk-foot-public {
-  flex: 0 0 auto !important; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+  flex: 0 0 auto !important; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px;
   border-radius: 9px; border: 1px solid var(--line); background: var(--paper-2); color: #5f5246; font-size: 13px; font-weight: 800;
 }
-.kk-foot-public::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: rgba(138, 117, 99, .55); }
 .kk-foot-public[aria-checked="true"] { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
-.kk-foot-public[aria-checked="true"]::before { background: var(--green); }
+/* 下書き：公開オンのときは「非公開」を下に小さく。保存ボタンに幅を譲る */
+.kk-panel__foot > .kk-foot-draft { flex: 0 1 auto; padding-inline: 14px; display: inline-flex; flex-direction: column; justify-content: center; line-height: 1.15; }
+.kk-foot-draft small { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+/* つまみ：左＝オフ、右＝オン */
+.kk-foot-public__track { position: relative; width: 30px; height: 18px; flex-shrink: 0; border-radius: 999px; background: rgba(138, 117, 99, .35); transition: background .15s; }
+.kk-foot-public__track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; }
+.kk-foot-public[aria-checked="true"] .kk-foot-public__track { background: var(--green); }
+.kk-foot-public[aria-checked="true"] .kk-foot-public__track::after { transform: translateX(12px); }
+@media (prefers-reduced-motion: reduce) { .kk-foot-public__track, .kk-foot-public__track::after { transition: none; } }
 
 /* 感想: 香り / 味わい / メモ / 整理 stacked (no hidden tabs) */
 .kk-feel + .kk-feel { margin-top: 16px; }
