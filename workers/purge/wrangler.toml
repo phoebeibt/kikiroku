@@ -1,0 +1,13 @@
+# アカウント削除の実行役（supabase/migrations/20261021_account_deletion.sql を参照）
+# 毎日 03:00 JST に、申し込みから 30 日を過ぎたアカウントを消す。
+# secret: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY（npx wrangler secret put …）
+name = "kikiroku-purge"
+main = "index.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+[triggers]
+crons = ["0 18 * * *"]
+
+[observability]
+enabled = true

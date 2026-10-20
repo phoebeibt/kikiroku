@@ -19,6 +19,7 @@ const BreweryDetail = lazy(() => import('./pages/wiki/BreweryDetail'))
 const RegionPage = lazy(() => import('./pages/wiki/RegionPage'))
 const Wishlist = lazy(() => import('./pages/wishlist/Wishlist'))
 const Terms = lazy(() => import('./pages/Terms'))
+const DeletionPending = lazy(() => import('./pages/DeletionPending'))
 
 const EntryRedirect = () => { const { id } = useParams(); return <Navigate to={`/journal/${id}`} replace /> }
 
@@ -37,7 +38,19 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // An account waiting to be deleted (プロフ › アカウントを削除, 30 days) only sees the cancel screen.
+  // undefined = still checking; a missing table (SQL not run yet) counts as "not pending".
+  const uid = session?.user?.id
+  const [pending, setPending] = useState(undefined)
+  const [checkedFor, setCheckedFor] = useState(null)
+  useEffect(() => {
+    if (!uid) return
+    supabase.from('account_deletions').select('purge_after').eq('user_id', uid).maybeSingle()
+      .then(({ data }) => { setPending(data?.purge_after || null); setCheckedFor(uid) })
+  }, [uid])
+
   if (session === undefined) return null
+  if (uid && checkedFor !== uid) return null
 
   return (
     <LangProvider>
@@ -45,6 +58,7 @@ export default function App() {
     <WikiProvider>
       <ScrollMemory />
       <Suspense fallback={<RouteFallback />}>
+        {uid && pending ? <DeletionPending purgeAfter={pending} onCancelled={() => setPending(null)} /> : (
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/journal" replace /> : <Login />} />
           <Route path="/journal" element={session ? <Journal session={session} /> : <Navigate to="/login" replace />} />
@@ -62,6 +76,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        )}
       </Suspense>
     </WikiProvider>
     </TagsProvider>

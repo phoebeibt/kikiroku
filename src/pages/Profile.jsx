@@ -40,6 +40,11 @@ export default function Profile({ session }) {
   const [editing, setEditing] = useState(null) // 'name' | 'publicName'
   const [notice, setNotice] = useState(null)
   const [confirmOut, setConfirmOut] = useState(false)
+  // アカウント削除（2026-10-21 本人：30 日後に削除・パスワードで確認）。done = 削除予定日
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletePw, setDeletePw] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteDone, setDeleteDone] = useState(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -98,6 +103,18 @@ export default function Profile({ session }) {
     } catch { flash(L('書き出せませんでした', '匯出失敗', 'Export failed')) } finally { setBusy(false) }
   }
   const signOut = async () => { await supabase.auth.signOut(); nav('/login') }
+  const requestDeletion = async e => {
+    e.preventDefault()
+    setBusy(true); setDeleteError('')
+    // Re-check the password first, so an unlocked phone in someone else's hands cannot do this.
+    const { error: pwErr } = await supabase.auth.signInWithPassword({ email: session.user.email, password: deletePw })
+    if (pwErr) { setBusy(false); setDeleteError(L('パスワードが違います', '密碼不正確', 'That password is not right')); return }
+    const { data, error } = await supabase.rpc('request_account_deletion')
+    setBusy(false)
+    if (error) { setDeleteError(L('申し込めませんでした。時間をおいてもう一度お試しください。', '申請失敗，請稍後再試。', 'Could not request deletion. Please try again later.')); return }
+    setDeletePw('')
+    setDeleteDone(new Date(data).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replaceAll('/', '.'))
+  }
 
   const numbers = [
     ['repeat', L('また飲みたい', '想再喝', 'Drink again'), stats.repeat, { kind: 'collection', value: 'repeat' }],
@@ -233,6 +250,9 @@ export default function Profile({ session }) {
           <li>
             <button type="button" className="kk-pf-signout" onClick={() => setConfirmOut(true)}>{L('ログアウト', '登出', 'Sign out')}</button>
           </li>
+          <li>
+            <button type="button" className="kk-pf-delete" onClick={() => { setDeleteError(''); setDeleteOpen(true) }}>{L('アカウントを削除', '刪除帳戶', 'Delete account')}</button>
+          </li>
         </ul>
 
         {notice && <p className="kk-pf-notice" role="status">{notice}</p>}
@@ -249,6 +269,44 @@ export default function Profile({ session }) {
             </li>
           ))}
         </ul>
+      </Sheet>
+
+      <Sheet open={deleteOpen} onClose={() => { if (deleteDone) { signOut(); return } setDeleteOpen(false); setDeletePw('') }}
+        title={L('アカウントを削除', '刪除帳戶', 'Delete account')} label={L('アカウントを削除', '刪除帳戶', 'Delete account')}>
+        {deleteDone ? (
+          <div className="kk-pf-delete-sheet">
+            <p><strong>{L(`${deleteDone} に削除されます。`, `將於 ${deleteDone} 刪除。`, `Your account will be deleted on ${deleteDone}.`)}</strong></p>
+            <p>{L('記録はすべて非公開にしました。それまでにログインすれば、削除を取り消せます。', '所有記錄已設為不公開。在那之前登入就可以取消刪除。', 'All your records are now private. Sign in before then to cancel.')}</p>
+            <div className="kk-confirm__actions">
+              <button type="button" className="kk-btn kk-btn--primary" data-autofocus onClick={signOut}>{L('ログアウトする', '登出', 'Sign out')}</button>
+            </div>
+          </div>
+        ) : (
+          <form className="kk-pf-delete-sheet" onSubmit={requestDeletion}>
+            <p>{L('申し込みから 30 日後に、次のものがすべて削除されます。', '申請 30 天後，以下內容將全部刪除。', 'Thirty days after you ask, all of this is deleted:')}</p>
+            <ul>
+              <li>{L(`記録 ${(entries || []).length} 件（下書きを含む）`, `記錄 ${(entries || []).length} 筆（含草稿）`, `${(entries || []).length} records (drafts included)`)}</li>
+              <li>{L(`うち公開中の ${stats.shared} 件は、すぐに廣場から外れます`, `其中公開中的 ${stats.shared} 筆會立即從廣場移除`, `${stats.shared} shared records leave Discover right away`)}</li>
+              <li>{L('ラベルの写真、飲みたいリスト、プロフの設定', '酒標照片、想喝清單、個人設定', 'Label photos, your want-to-try list and settings')}</li>
+            </ul>
+            <p className="kk-pf-hint">{L('事典に加わったお酒の情報は残ります（誰が加えたかは残りません）。30 日以内にログインすれば取り消せます。', '加入事典的酒款資料會保留（不會留下是誰加的）。30 天內登入就可以取消。', 'Sake you added to the wiki stays (without your name). Sign in within 30 days to cancel.')}</p>
+            <div className="kk-pf-actions kk-pf-delete-sheet__export">
+              <span>{L('先に書き出しておく', '先匯出備份', 'Export first')}</span>
+              <button type="button" className="kk-btn kk-btn--sm" disabled={busy} onClick={() => doExport('csv')}>CSV</button>
+              <button type="button" className="kk-btn kk-btn--sm" disabled={busy} onClick={() => doExport('json')}>JSON</button>
+            </div>
+            <div className="kk-field">
+              <label className="kk-field__label" htmlFor="kk-delete-pw">{L('確認のためパスワードを入力', '請輸入密碼確認', 'Enter your password to confirm')}</label>
+              <input id="kk-delete-pw" className="kk-input" type="password" autoComplete="current-password" value={deletePw}
+                onChange={e => setDeletePw(e.target.value)} aria-invalid={!!deleteError || undefined} aria-describedby={deleteError ? 'kk-delete-error' : undefined} />
+              {deleteError && <p className="kk-field-error" id="kk-delete-error" role="alert">{deleteError}</p>}
+            </div>
+            <div className="kk-confirm__actions">
+              <button type="button" className="kk-btn" data-autofocus onClick={() => { setDeleteOpen(false); setDeletePw('') }}>{L('やめる', '取消', 'Cancel')}</button>
+              <button type="submit" className="kk-btn kk-btn--danger" disabled={busy || !deletePw}>{L('削除を申し込む', '申請刪除', 'Request deletion')}</button>
+            </div>
+          </form>
+        )}
       </Sheet>
 
       <Sheet open={confirmOut} onClose={() => setConfirmOut(false)} variant="dialog" label={L('ログアウトしますか？', '要登出嗎？', 'Sign out?')}>
