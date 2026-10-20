@@ -197,7 +197,9 @@ public/
 | `sake_entries.type` 空值 | ＝「表記なし」。`other`（その他）已不再使用，旧资料已改为空 |
 | `sake_entries.method_tags` | スタイル・製法 id 阵列；可选值见 `sake_tags`（category `method`，31 个） |
 | `sake_entries.bottling_date` | `yyyy-mm` 字串 |
-| `auth.users.user_metadata` | `display_name`、`avatar`（头像 id）、`default_public`、`public_name`（都在プロフ设定） |
+| `auth.users.user_metadata` | `display_name`、`avatar`（头像 id）、`default_public`、`public_name`（都在プロフ设定）；`public_ok`＝看过"公开会让大家看到什么"的确认（每个账号一次） |
+| `sake_entries.rating` 空值 | ＝「未評価」。2026-10-21 起只要酒名就能保存（评分可空，也可公开） |
+| `account_deletions` | 账号删除申请：`purge_after`（申请＋30 天）、`public_entry_ids`（申请时公开的记录，取消时恢复）。只能经 RPC `request_account_deletion()` / `cancel_account_deletion()` 写入 |
 
 **资料整理（2026-10-13）**：酒款 4354 → 4418（删重复 25、新增 89 款来自用户公开记录）、酒造 1688 → 1682（合并 6 组）、得奖删重复 1；用户 112 笔记录中 105 笔已连 `product_id`；113 款酒款补上 `brewery_id`；39 笔记录按酒名补上制法。
 
@@ -208,6 +210,9 @@ public/
 - `supabase/migrations/20261007_entry_product_id.sql`
 - `supabase/migrations/20261007_region_normalize.sql`
 - `supabase/migrations/20261008_wish_products.sql`（2026-10-08 执行；既有 1 笔 wish 已连到事典）
+- `supabase/migrations/20261021_account_deletion.sql`（2026-10-21 执行）
+
+**账号删除（2026-10-21）**：プロフ › アカウントを削除 → 输入密码 → 记录立刻全部不公开，30 天内登录会看到"削除予定"画面、可取消。到期由 Cloudflare Worker `kikiroku-purge`（`workers/purge`，每天 03:00 JST）删除：照片 → `sake_cheers` → `sake_wishes` → `sake_entries` → auth 用户（`sake_entries.user_id` 对 auth.users 没有 cascade，所以顺序不能换）。事典（`sake_products`）保留。Worker 的 secret：`SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`；改代码后在 `workers/purge` 里 `npx wrangler deploy`。日志在 Cloudflare 后台（只记件数和 user id 前 8 码）。
 
 ## 脚本与备份
 
