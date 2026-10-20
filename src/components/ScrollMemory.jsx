@@ -4,10 +4,12 @@ import { useLocation, useNavigationType } from 'react-router-dom'
 // Scroll positions per history entry, kept for the tab's lifetime (survives a reload of the same tab).
 const KEY = 'kk-scroll'
 const read = () => { try { return JSON.parse(sessionStorage.getItem(KEY)) || {} } catch { return {} } }
+const TAB_PATHS = ['/journal']
 const write = map => { try { sessionStorage.setItem(KEY, JSON.stringify(map)) } catch { /* private mode */ } }
 
 /**
  * Back / forward returns to where you were (e.g. マイ帳 → 酒詳情 → back lands on the same row).
+ * So does coming back to マイ帳 through the bottom tab (state.tab): its last position is kept per path.
  * Lists load their rows asynchronously, so the restore retries until the page is tall enough
  * or ~2s pass. A new page (PUSH / REPLACE to another path) starts at the top.
  *
@@ -20,6 +22,7 @@ export default function ScrollMemory() {
   const positions = useRef(read())
   const currentKey = useRef(location.key)
   const prevPath = useRef(location.pathname)
+  const currentPath = useRef(location.pathname)
   const restoring = useRef(false)
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export default function ScrollMemory() {
     const onScroll = () => {
       if (restoring.current) return
       map[currentKey.current] = window.scrollY
+      if (TAB_PATHS.includes(currentPath.current)) map[`tab:${currentPath.current}`] = window.scrollY
       clearTimeout(timer)
       timer = setTimeout(() => write(map), 200)
     }
@@ -38,13 +42,16 @@ export default function ScrollMemory() {
 
   useLayoutEffect(() => {
     currentKey.current = location.key
+    currentPath.current = location.pathname
     const samePath = prevPath.current === location.pathname
     prevPath.current = location.pathname
-    if (navType !== 'POP') {
+    const byTab = navType !== 'POP' && location.state?.tab && TAB_PATHS.includes(location.pathname)
+    if (navType !== 'POP' && !byTab) {
       if (!samePath && !location.hash) window.scrollTo(0, 0)
       return
     }
-    const target = positions.current[location.key]
+    const target = positions.current[byTab ? `tab:${location.pathname}` : location.key]
+    if (byTab && !target) { window.scrollTo(0, 0); return }
     if (!target) return
     const until = Date.now() + 2000
     let raf = 0

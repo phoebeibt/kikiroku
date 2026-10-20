@@ -68,6 +68,13 @@ export default function Nav({ session, topbar = false }) {
   const lbl = key => LABELS[key][lang] || LABELS[key].ja
   const path = location.pathname
   const isRecord = path === '/journal' && location.search.includes('new')
+  // マイ帳 tab: from elsewhere it returns to where you left the shelf (state.tab, see Ledger / ScrollMemory);
+  // tapped again on マイ帳 itself it goes back to the top of a clean shelf.
+  const onLedgerTab = e => {
+    if (path !== '/journal' || isRecord) return
+    e.preventDefault()
+    navigate('/journal', { replace: true, state: { view: { kind: 'reset' } } })
+  }
   const signOut = async () => { await supabase.auth.signOut(); navigate('/login') }
 
   const tabs = session
@@ -140,7 +147,8 @@ export default function Nav({ session, topbar = false }) {
             </li>
           ) : (
             <li key={tab.key}>
-              <Link to={tab.to} className={`kk-bottom-nav__item${tab.active ? ' is-active' : ''}`} aria-current={tab.active ? 'page' : undefined}>
+              <Link to={tab.to} state={tab.key === 'ledger' ? { tab: true } : undefined} onClick={tab.key === 'ledger' ? onLedgerTab : undefined}
+                className={`kk-bottom-nav__item${tab.active ? ' is-active' : ''}`} aria-current={tab.active ? 'page' : undefined}>
                 {tab.icon}
                 <span className="kk-bottom-nav__label">{lbl(tab.key)}</span>
               </Link>

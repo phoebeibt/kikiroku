@@ -19,17 +19,22 @@ const THIS_YEAR = String(new Date().getFullYear())
 const EMPTY_FILTERS = { status: 'all', rating: 'any', period: 'all', from: '', to: '', flavors: [], regions: [], breweries: [] }
 const VIEW_KEY = 'kk_ledger_density'
 const SORT_KEY = 'kk_ledger_sort'
+const SUMMARY_KEY = 'kk_ledger_summary'
 
 // Search / filters / shelf per history entry, so back (e.g. from a 産地 page) lands on the same
 // narrowed list. Journal swaps the incoming route state away, so it cannot live there.
 const SHELF_KEY = 'kk-ledger-shelf'
+// Coming back through the bottom tab (state.tab) picks up the last shelf instead (2026-10-20 本人)
+const LAST_KEY = 'kk-ledger-last'
 const readShelf = key => { try { return JSON.parse(sessionStorage.getItem(SHELF_KEY))?.[key] || null } catch { return null } }
+const readLast = () => { try { return JSON.parse(sessionStorage.getItem(LAST_KEY)) } catch { return null } }
 const writeShelf = (key, v) => {
   try {
     const all = JSON.parse(sessionStorage.getItem(SHELF_KEY)) || {}
     all[key] = v
     const keys = Object.keys(all); if (keys.length > 40) delete all[keys[0]]
     sessionStorage.setItem(SHELF_KEY, JSON.stringify(all))
+    sessionStorage.setItem(LAST_KEY, JSON.stringify(v))
   } catch { /* storage blocked */ }
 }
 
@@ -72,8 +77,8 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
   const allTags = useTags()
   const location = useLocation()
   const navType = useNavigationType()
-  // Only a back / forward visit restores; a fresh visit to マイ帳 starts clean.
-  const [restored] = useState(() => (navType === 'POP' ? readShelf(location.key) : null))
+  // Back / forward and the bottom tab restore; any other fresh visit to マイ帳 starts clean.
+  const [restored] = useState(() => (navType === 'POP' ? readShelf(location.key) : location.state?.tab ? readLast() : null))
   const [query, setQuery] = useState(restored?.query || '')
   const [filters, setFilters] = useState(restored?.filters ? { ...EMPTY_FILTERS, ...restored.filters } : EMPTY_FILTERS)
   const [collection, setCollection] = useState(restored?.collection ?? null)
@@ -82,6 +87,8 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
   const [density, setDensity] = useState(() => readPref(VIEW_KEY, 'card'))
   const [sort, setSort] = useState(() => readPref(SORT_KEY, 'recent'))
   const [draftsOpen, setDraftsOpen] = useState(!!restored?.draftsOpen)
+  const [summaryOpen, setSummaryOpen] = useState(() => readPref(SUMMARY_KEY, '0') === '1')
+  const summaryId = useId()
   useEffect(() => { writeShelf(location.key, { query, filters, collection, draftsOpen }) }, [location.key, query, filters, collection, draftsOpen])
 
   // Arriving from a detail page's 産地 link narrows the shelf to that region.
@@ -95,6 +102,11 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
     setQuery('')
     if (initialView.kind === 'collection') { setFilters(EMPTY_FILTERS); setCollection(initialView.value) }
     if (initialView.kind === 'private') { setCollection(null); setFilters({ ...EMPTY_FILTERS, status: 'private' }) }
+    // Tapping the マイ帳 tab while already here: back to the top of a clean shelf
+    if (initialView.kind === 'reset') {
+      setCollection(null); setFilters(EMPTY_FILTERS); setDraftsOpen(false)
+      window.scrollTo({ top: 0 })
+    }
     if (initialView.kind === 'drafts') {
       setCollection(null); setFilters(EMPTY_FILTERS); setDraftsOpen(true)
       requestAnimationFrame(() => document.getElementById('kk-drafts-title')?.scrollIntoView({ block: 'start' }))
@@ -109,6 +121,7 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
 
   useEffect(() => { writePref(VIEW_KEY, density) }, [density])
   useEffect(() => { writePref(SORT_KEY, sort) }, [sort])
+  useEffect(() => { writePref(SUMMARY_KEY, summaryOpen ? '1' : '0') }, [summaryOpen])
 
   const tagIndex = useMemo(() => {
     const m = {}
@@ -250,13 +263,38 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
         {query && <button type="button" className="kk-search__clear" onClick={() => setQuery('')} aria-label={L('検索をクリア', '清除搜尋', 'Clear search')}>×</button>}
       </div>
 
+      {/* まとめ：数字と よく戻る棚・飲みたい は畳んでおき、一覧を最初の画面に出す（2026-10-20 本人 B 案）。開閉はこの端末で覚える */}
       {finished.length > 0 && !anyNarrowing && (
-        <dl className="kk-stats">
-          <div className="kk-stat"><dt>{L('記録', '記錄', 'Records')}</dt><dd>{finished.length}</dd></div>
-          <div className="kk-stat"><dt>{L('平均評価', '平均評分', 'Avg rating')}</dt><dd>{avg ? formatRating(avg) : '—'}</dd></div>
-          <div className="kk-stat"><dt>{L('公開中', '公開中', 'Shared')}</dt><dd>{finished.filter(e => e.is_public).length}</dd></div>
-          <div className="kk-stat"><dt>{L('最多酒造', '最常喝酒造', 'Top brewery')}</dt><dd className="kk-stat__text">{topBrewery || '—'}</dd></div>
-        </dl>
+        <section className={`kk-summary${summaryOpen ? ' is-open' : ''}`}>
+          <button type="button" className="kk-summary__toggle" aria-expanded={summaryOpen} aria-controls={summaryId} onClick={() => setSummaryOpen(o => !o)}>
+            <strong>{L('まとめ', '總覽', 'Overview')}</strong>
+            <span>{L(`${finished.length}記録`, `${finished.length} 筆`, `${finished.length} records`)} · {L('平均', '平均', 'avg')} {avg ? formatRating(avg) : '—'}</span>
+            <svg className="kk-summary__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+          {summaryOpen && (
+            <div id={summaryId} className="kk-summary__body">
+              <dl className="kk-stats">
+                <div className="kk-stat"><dt>{L('記録', '記錄', 'Records')}</dt><dd>{finished.length}</dd></div>
+                <div className="kk-stat"><dt>{L('平均評価', '平均評分', 'Avg rating')}</dt><dd>{avg ? formatRating(avg) : '—'}</dd></div>
+                <div className="kk-stat"><dt>{L('公開中', '公開中', 'Shared')}</dt><dd>{finished.filter(e => e.is_public).length}</dd></div>
+                <div className="kk-stat"><dt>{L('最多酒造', '最常喝酒造', 'Top brewery')}</dt><dd className="kk-stat__text">{topBrewery || '—'}</dd></div>
+              </dl>
+              <div className="kk-collections" role="group" aria-label={L('よく戻る酒札', '常用集合', 'Shelves')}>
+                {collections.map(c => (
+                  <button key={c.id} type="button" className="kk-collection" onClick={() => setCollection(c.id)} disabled={!c.count}>
+                    <strong>{c.title}</strong>
+                    <span>{c.count}{L('件', ' 筆', '')} · {c.note}</span>
+                  </button>
+                ))}
+                <button type="button" className="kk-collection kk-collection--wish" onClick={onShowWishlist}>
+                  <strong>{L('飲みたい', '想喝', 'Want to try')}</strong>
+                  <span>{wishCount}{L('件', ' 筆', '')} · {L('次に記録したい酒', '下一支想記錄的酒', 'What to record next')}</span>
+                  <span className="kk-collection__go" aria-hidden="true">›</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {!anyNarrowing && (drafts.length > 0 || hasDraft) && (
@@ -300,21 +338,6 @@ export default function Ledger({ initialRegion, initialBrewery, initialView, ent
         </section>
       )}
 
-      {!anyNarrowing && finished.length > 0 && (
-        <div className="kk-collections" role="group" aria-label={L('よく戻る酒札', '常用集合', 'Shelves')}>
-          {collections.map(c => (
-            <button key={c.id} type="button" className="kk-collection" onClick={() => setCollection(c.id)} disabled={!c.count}>
-              <strong>{c.title}</strong>
-              <span>{c.count}{L('件', ' 筆', '')} · {c.note}</span>
-            </button>
-          ))}
-          <button type="button" className="kk-collection kk-collection--wish" onClick={onShowWishlist}>
-            <strong>{L('飲みたい', '想喝', 'Want to try')}</strong>
-            <span>{wishCount}{L('件', ' 筆', '')} · {L('次に記録したい酒', '下一支想記錄的酒', 'What to record next')}</span>
-            <span className="kk-collection__go" aria-hidden="true">›</span>
-          </button>
-        </div>
-      )}
 
       {activeChips.length > 0 && (
         <div className="kk-active-chips">

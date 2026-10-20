@@ -27,6 +27,16 @@
 .kk-search input::-webkit-search-cancel-button { display: none; }
 .kk-search__clear { border: 0; background: none; color: var(--muted); font-size: 20px; line-height: 1; padding: 4px; }
 
+.kk-summary { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2); }
+.kk-summary__toggle { width: 100%; min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--ink); text-align: left; cursor: pointer; border-radius: 9px; }
+.kk-summary__toggle strong { font-size: 14px; }
+.kk-summary__toggle span { flex: 1; color: var(--muted); font-size: 12px; font-weight: 700; }
+.kk-summary__chev { color: var(--muted); transition: transform .15s; }
+.kk-summary.is-open .kk-summary__chev { transform: rotate(180deg); }
+.kk-summary__toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.kk-summary__body { padding: 0 10px 10px; }
+.kk-summary__body .kk-collections { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .kk-summary__chev { transition: none; } }
 .kk-collections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
 .kk-collection {
   min-height: 58px; padding: 10px; text-align: left;
