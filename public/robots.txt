@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /journal
+Disallow: /wishlist
+Disallow: /profile
+
+Sitemap: https://www.kikiroku.com/sitemap.xml

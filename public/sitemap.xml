@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 访客能看的固定页面。酒・酒造・产地的个别页面还没列进来 -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.kikiroku.com/</loc></url>
+  <url><loc>https://www.kikiroku.com/wiki</loc></url>
+  <url><loc>https://www.kikiroku.com/login</loc></url>
+  <url><loc>https://www.kikiroku.com/terms</loc></url>
+</urlset>
