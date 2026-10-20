@@ -583,7 +583,7 @@ export default function Journal({ session }) {
 
   const L3 = (ja, zh, en) => (lang === 'ja' ? ja : lang === 'zh' ? zh : en)
 
-  // mode 'publish' → a finished 酒札 (needs a name and a rating).
+  // mode 'publish' → a finished 酒札 (needs a name; a rating is optional — unrated is shown as 未評価, 2026-10-21 本人).
   // mode 'draft'   → kept on the server as status 'draft', never public, anything goes.
   // confirmed：公開の確認ダイアログで「公開する」を押した直後（この render の publicOk はまだ false）
   const save = async (mode = 'publish', confirmed = false) => {
@@ -592,10 +592,9 @@ export default function Journal({ session }) {
     if (mode === 'publish') {
       const errs = {}
       if (!hasName) errs.name = L3('酒名か銘柄を入れてください', '請填寫酒名或銘柄', 'Add a sake name or brand')
-      if (!(form.rating > 0)) errs.rating = L3('評価を選んでください', '請選擇評分', 'Choose a rating')
       setFormErrors(errs)
       if (Object.keys(errs).length) {
-        const target = document.getElementById(errs.name ? 'kk-field-name' : 'kk-field-rating')
+        const target = document.getElementById('kk-field-name')
         target?.scrollIntoView({ block: 'center', behavior: 'smooth' })
         target?.focus({ preventScroll: true })
         return
@@ -905,10 +904,9 @@ export default function Journal({ session }) {
             </button>
           )}
           {(() => {
-            // Until 酒名 + 評価 are in, the main button says what is missing and takes you there.
-            const needName = !(form.brand.trim() || form.name.trim()), needRating = !(form.rating > 0)
-            const guide = needName ? L3('酒名を入れると保存できます', '填入酒名就能保存', 'Add a name to save')
-              : needRating ? L3('評価を選ぶと保存できます', '選好評分就能保存', 'Pick a rating to save') : null
+            // Until 酒名 is in, the main button says what is missing and takes you there.
+            const needName = !(form.brand.trim() || form.name.trim())
+            const guide = needName ? L3('酒名を入れると保存できます', '填入酒名就能保存', 'Add a name to save') : null
             return (
               <button type="button" className={`kk-btn kk-btn--primary${guide ? ' is-guide' : ''}`} onClick={() => save('publish')} disabled={saving}>
                 {saving ? t('saving') : guide || (
@@ -1043,6 +1041,20 @@ export default function Journal({ session }) {
                   .filter(Boolean).map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}
               </p>
             )}
+          </section>
+
+          {/* 3 · 私の評価 — 酒名のすぐ下（2026-10-21 本人 A 案：必要なものを先に、詳しい情報はその下） */}
+          <section className="kk-section" aria-labelledby="kk-sec-rating">
+            <h3 className="kk-section__title" id="kk-sec-rating">
+              <span>{L3('私の評価', '我的評分', 'My rating')}</span>
+            </h3>
+            <RatingPicker id="kk-field-rating" value={form.rating} label={L3('私の評価', '我的評分', 'My rating')} onChange={v => f('rating', v)} />
+            <p className="kk-form-hint">{L3('あとからでも付けられます。付けないと「未評価」として残ります。', '之後再補也可以；不評分就以「未評分」保存。', 'You can add it later. Without one, the record is kept as unrated.')}</p>
+          </section>
+
+          {/* 4 · 詳しい情報（なくても保存できる。事典から選ぶと埋まる） */}
+          <section className="kk-section" aria-labelledby="kk-sec-detail">
+            <h3 className="kk-section__title" id="kk-sec-detail">{L3('詳しい情報', '詳細資料', 'Details')}</h3>
             <div className="kk-row2">
               <div className="kk-field">
                 <label className="kk-field__label" htmlFor="kk-field-brewery">{L3('酒造', '酒造', 'Brewery')}</label>
@@ -1110,20 +1122,7 @@ export default function Journal({ session }) {
             </div>
           </section>
 
-          {/* 3 · 私の評価 */}
-          <section className="kk-section" aria-labelledby="kk-sec-rating">
-            <h3 className="kk-section__title" id="kk-sec-rating">
-              <span>{L3('私の評価', '我的評分', 'My rating')}</span>
-              <span className="kk-required">{L3('保存に必要', '儲存必填', 'Required')}</span>
-            </h3>
-            <RatingPicker id="kk-field-rating" value={form.rating} label={L3('私の評価', '我的評分', 'My rating')} invalid={!!formErrors.rating}
-              onChange={v => { f('rating', v); if (formErrors.rating) setFormErrors(e => ({ ...e, rating: null })) }} />
-            {formErrors.rating
-              ? <p className="kk-field-error" role="alert" style={{ marginTop: 6 }}>{formErrors.rating}</p>
-              : <p className="kk-form-hint">{L3('酒名と評価だけで保存できます。迷ったら「下書き」へ。', '只要酒名和評分就能保存。還沒想好就先存草稿。', 'A name and a rating are enough. Not sure yet? Save a draft.')}</p>}
-          </section>
-
-          {/* 4 · 感想 */}
+          {/* 5 · 感想 */}
           <section className="kk-section" aria-labelledby="kk-sec-feel">
             <h3 className="kk-section__title" id="kk-sec-feel">{L3('感想', '感想', 'Impressions')}</h3>
             {/* All three are always visible: the old 香り/味わい/メモ switch looked like tags and hid the rest. */}
@@ -1146,7 +1145,7 @@ export default function Journal({ session }) {
             </div>
           </section>
 
-          {/* 5 · 規格 (collapsed) */}
+          {/* 6 · 規格 (collapsed) */}
           <section className="kk-section" style={{ paddingTop: 4 }}>
             {(() => {
               const summary = [form.polishing && `${L3('精米', '精米', 'Polish')} ${form.polishing}`, form.alcohol, form.rice, form.yeast, form.bottling_date]
