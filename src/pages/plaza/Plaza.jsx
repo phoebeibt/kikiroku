@@ -91,6 +91,7 @@ export default function Plaza({ session }) {
       if (e.region && profile.regions.has(e.region)) return { kind: 'region', label: L('記録のある産地', '記錄過的產地', 'A region you’ve recorded'), detail: shortRegion(e.region) }
     }
     if (tab === 'top') return { kind: 'top', label: L('評価上位', '高評分', 'Top rated') }
+    if (tab === 'notes') return { kind: 'new', label: L('コメントあり', '有評論', 'With a comment') }
     return { kind: 'new', label: L('新着', '最新公開', 'Newly shared') }
   }, [profile, tab, isGuest, lang, rawTag]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -103,7 +104,11 @@ export default function Plaza({ session }) {
       q = q.or(`brand.ilike.${like},name.ilike.${like},brewery.ilike.${like},region.ilike.${like}`)
     }
     if (tab === 'top') q = q.not('rating', 'is', null).order('rating', { ascending: false }).order('created_at', { ascending: false })
-    else q = q.order('created_at', { ascending: false })
+    else {
+      // コメントあり: only records whose メモ has text, newest first
+      if (tab === 'notes') q = q.not('notes', 'is', null).neq('notes', '')
+      q = q.order('created_at', { ascending: false })
+    }
     // 近い好み scores a wider window client-side, then shows the closest first.
     const size = tab === 'near' ? 200 : PAGE
     const { data } = await q.range(page * size, page * size + size - 1)
@@ -126,10 +131,11 @@ export default function Plaza({ session }) {
 
   useEffect(() => { if (searchOpen) searchRef.current?.focus() }, [searchOpen])
 
+  // 時間順・評価順・コメントあり (2026-10-21 本人). Guests never see comments, so that tab is members-only, like 近い好み.
   const tabs = [
-    ['new', L('新着', '最新', 'New')],
-    ['top', L('高評価', '高評分', 'Top rated')],
-    ...(isGuest ? [] : [['near', L('近い好み', '相近口味', 'Close to you')]]),
+    ['new', L('時間順', '時間順', 'Newest')],
+    ['top', L('評価順', '評分順', 'Top rated')],
+    ...(isGuest ? [] : [['notes', L('コメントあり', '有評論', 'With comments')], ['near', L('近い好み', '相近口味', 'Close to you')]]),
   ]
 
   const open = e => navigate(`/journal/${e.id}`, { state: { from: 'plaza' } })
