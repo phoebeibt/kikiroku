@@ -57,6 +57,9 @@ export default function Plaza({ session }) {
   const [mine, setMine] = useState(null) // the user's own records, for 近い好み
   const pageRef = useRef(0)
   const searchRef = useRef(null)
+  // Guests land here first: a short card says what Kikiroku is (2026-10-21 本人). Closing it is remembered.
+  const [introClosed, setIntroClosed] = useState(() => { try { return localStorage.getItem('kk_intro_closed') === '1' } catch { return false } })
+  const closeIntro = () => { setIntroClosed(true); try { localStorage.setItem('kk_intro_closed', '1') } catch { /* storage blocked */ } }
 
   // Own records → taste profile (aroma/taste tags of 4.0+), breweries and regions.
   useEffect(() => {
@@ -148,6 +151,25 @@ export default function Plaza({ session }) {
             </button>
           </div>
         </header>
+
+        {isGuest && !introClosed && (
+          <section className="kk-intro" aria-labelledby="kk-intro-title">
+            <img src="/icon-192.png" alt="" width="48" height="48" className="kk-intro__icon" />
+            <div className="kk-intro__body">
+              <h2 id="kk-intro-title">{L('飲んだ日本酒を、一本ずつ札に。', '把喝過的日本酒，一瓶一瓶做成酒札。', 'Every sake you drink, kept as a tag.')}</h2>
+              <ul>
+                <li>{L('ラベルを撮って自動入力', '拍酒標自動填寫', 'Snap the label, fields fill in')}</li>
+                <li>{L('酒名にふりがな・3 言語', '酒名附讀音・3 種語言', 'Readings on names, 3 languages')}</li>
+                <li>{L('自分用にも、廣場で共有にも', '自己看，或分享到廣場', 'Keep it private, or share it here')}</li>
+              </ul>
+              <div className="kk-intro__actions">
+                <button type="button" className="kk-btn kk-btn--sm kk-btn--primary" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>
+                <span>{L('新規登録は招待制です', '目前採邀請制註冊', 'Sign-up is by invitation')}</span>
+              </div>
+            </div>
+            <button type="button" className="kk-intro__close" onClick={closeIntro} aria-label={L('閉じる', '關閉', 'Close')}>×</button>
+          </section>
+        )}
 
         {searchOpen && (
           <div className="kk-search" role="search" id="kk-plaza-search">
