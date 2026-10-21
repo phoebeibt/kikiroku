@@ -339,7 +339,7 @@ function BreweryDirectory({ lang, initialQ = '', session }) {
                     <button type="button" className="kk-shelf__item" onClick={() => navigate(regionPath(area))}>
                       <span className="kk-shelf__main">
                         <span className="kk-shelf__title">{lang === 'ja' ? `${area}の産地ページ` : lang === 'zh' ? `${areaLabel(area, lang)}產地頁` : `About ${areaLabel(area, lang)}`}</span>
-                        <span className="kk-shelf__meta">{lang === 'ja' ? '自分の酒札・公開酒札・酒造' : lang === 'zh' ? '我的酒札・公開酒札・酒造' : 'Your tags, public tags, breweries'}</span>
+                        <span className="kk-shelf__meta">{lang === 'ja' ? '自分の酒札・公開中の酒札・酒造' : lang === 'zh' ? '我的酒札・公開酒札・酒造' : 'Your tags, public tags, breweries'}</span>
                       </span>
                       <span className="kk-shelf__chev" aria-hidden="true">›</span>
                     </button>
@@ -461,7 +461,7 @@ function FlatDirectory({ items, lang }) {
 // ── Main Wiki page ─────────────────────────────────────────────────────────────
 
 const TAB_META = {
-  sake:      { ja: '酒款', zh: '酒款', en: 'Sakes' },
+  sake:      { ja: '銘柄', zh: '酒款', en: 'Sakes' },
   breweries: { ja: '産地・酒造', zh: '產地・酒造', en: 'Regions' },
   glossary:  { ja: '用語', zh: '用語', en: 'Terms' },
   materials: { ja: '原料', zh: '原料', en: 'Rice & yeast' },

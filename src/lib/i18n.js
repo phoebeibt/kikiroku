@@ -115,7 +115,7 @@ export const TRANSLATIONS = {
     'filter.rating5': '★★★★★',
     // Form sections
     'form.photos':      '写真',
-    'form.mainPhoto':   '瓶身',
+    'form.mainPhoto':   'ボトル',
     'form.subPhoto':    '背ラベル（スペック確認用）',
     'form.tapToAdd':    'タップして追加',
     'form.basic':       '基本情報',

@@ -140,13 +140,13 @@ export default function Plaza({ session }) {
       <Nav session={session} topbar={false} />
       <div className="kk-plaza">
         <header className="kk-ledger__head">
-          <h1 className="kk-ledger__title">{L('廣場', '廣場', 'Discover')}</h1>
+          <h1 className="kk-ledger__title">{L('広場', '廣場', 'Discover')}</h1>
           <div className="kk-ledger__head-actions">
             {/* Signed-in users switch language in プロフ; guests have no プロフ, so they keep it here. */}
             {isGuest && <LangButton lang={lang} onChange={changeLang} label={L('表示言語', '介面語言', 'Language')} />}
             {isGuest && <button type="button" className="kk-btn kk-btn--sm" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>}
             <button type="button" className="kk-icon-btn" onClick={() => setSearchOpen(o => !o)} aria-expanded={searchOpen} aria-controls="kk-plaza-search"
-              aria-label={L('廣場を検索', '搜尋廣場', 'Search Discover')}>
+              aria-label={L('広場を検索', '搜尋廣場', 'Search Discover')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             </button>
           </div>
@@ -160,7 +160,7 @@ export default function Plaza({ session }) {
               <ul>
                 <li>{L('ラベルを撮って自動入力', '拍酒標自動填寫', 'Snap the label, fields fill in')}</li>
                 <li>{L('酒名にふりがな・3 言語', '酒名附讀音・3 種語言', 'Readings on names, 3 languages')}</li>
-                <li>{L('自分用にも、廣場で共有にも', '自己看，或分享到廣場', 'Keep it private, or share it here')}</li>
+                <li>{L('自分用にも、広場で共有にも', '自己看，或分享到廣場', 'Keep it private, or share it here')}</li>
               </ul>
               <div className="kk-intro__actions">
                 <button type="button" className="kk-btn kk-btn--sm kk-btn--primary" onClick={() => navigate('/login')}>{L('ログイン', '登入', 'Sign in')}</button>
@@ -175,7 +175,7 @@ export default function Plaza({ session }) {
           <div className="kk-search" role="search" id="kk-plaza-search">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             <input ref={searchRef} type="search" value={query} onChange={e => setQuery(e.target.value)}
-              placeholder={L('酒名・酒造・産地で探す', '以酒名・酒造・產地搜尋', 'Name, brewery or region')} aria-label={L('廣場を検索', '搜尋廣場', 'Search Discover')} />
+              placeholder={L('酒名・酒造・産地で探す', '以酒名・酒造・產地搜尋', 'Name, brewery or region')} aria-label={L('広場を検索', '搜尋廣場', 'Search Discover')} />
             {query && <button type="button" className="kk-search__clear" onClick={() => setQuery('')} aria-label={L('検索をクリア', '清除搜尋', 'Clear search')}>×</button>}
           </div>
         )}
@@ -268,7 +268,7 @@ export default function Plaza({ session }) {
         )}
         {!loading && rows.length === 0 && (
           <div className="kk-empty kk-empty--quiet">
-            <strong>{query ? L('見つかりませんでした', '找不到結果', 'Nothing found') : tab === 'near' ? L('近い好みの酒札はまだありません', '還沒有口味相近的酒札', 'Nothing close to your taste yet') : L('まだ公開酒札がありません', '還沒有公開酒札', 'No public tags yet')}</strong>
+            <strong>{query ? L('見つかりませんでした', '找不到結果', 'Nothing found') : tab === 'near' ? L('近い好みの酒札はまだありません', '還沒有口味相近的酒札', 'Nothing close to your taste yet') : L('まだ公開中の酒札がありません', '還沒有公開酒札', 'No public tags yet')}</strong>
           </div>
         )}
         {hasMore && !loading && (

@@ -79,3 +79,25 @@
    a trailing block inside it does extend the scroll area. */
 body:has(.kk-bottom-nav) #root::after { content: ""; display: block; height: calc(var(--nav-h) + var(--safe-b) + 16px); }
 .kk-lang__btn { font-size: 13px; font-weight: 800; }
+
+/* ── Desktop (≥1024px): the bottom bar becomes a left rail (2026-10-21 本人) ──
+   Pages keep their own layout; #root just moves right by the rail width. */
+@media (min-width: 1024px) {
+  :root { --nav-h: 0px; --rail-w: 96px; }
+  .kk-bottom-nav {
+    top: 0; right: auto; bottom: 0; width: var(--rail-w);
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 10px 20px;
+    background: var(--paper-2); box-shadow: 1px 0 0 var(--line);
+  }
+  .kk-bottom-nav__list,
+  .kk-bottom-nav__list--2 { height: auto; max-width: none; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  /* 記録 (+) leads the rail instead of sitting in the middle */
+  .kk-bottom-nav__list > li:has(.kk-bottom-nav__item--record) { order: -1; margin-bottom: 14px; }
+  .kk-bottom-nav__item { min-height: 64px; }
+  .kk-bottom-nav__add { margin-top: 0; }
+  .kk-bottom-nav__label { font-size: 11px; }
+  .kk-bottom-nav__item.is-active::before { top: 50%; left: 5px; transform: translateY(-50%); }
+  body.sheet-open .kk-bottom-nav { transform: none; }
+  body:has(.kk-bottom-nav) #root { padding-left: var(--rail-w); }
+  body:has(.kk-bottom-nav) #root::after { height: 32px; }
+}

@@ -91,7 +91,7 @@ export default function Login() {
             <h1>{L('あなたの酒札棚をはじめる', '開始你的酒札櫃', 'Start your shelf of sake tags')}</h1>
             <p className="kk-login__lead">
               <span>{L('記録は最初から非公開。', '記錄一開始都是不公開的。', 'Records start private.')}</span>
-              <span>{L('公開したい酒札だけ、あとで廣場へ。', '想分享的酒札，之後再放到廣場。', 'Share only the tags you want, later.')}</span>
+              <span>{L('公開したい酒札だけ、あとで広場へ。', '想分享的酒札，之後再放到廣場。', 'Share only the tags you want, later.')}</span>
             </p>
           </>
         )}
@@ -151,7 +151,7 @@ export default function Login() {
           </>
         )}
 
-        <Link className="kk-login__link kk-login__browse" to="/">{L('ログインせずに廣場を見る', '先不登入，逛逛廣場', 'Browse Discover without signing in')} ›</Link>
+        <Link className="kk-login__link kk-login__browse" to="/">{L('ログインせずに広場を見る', '先不登入，逛逛廣場', 'Browse Discover without signing in')} ›</Link>
       </main>
     </div>
   )

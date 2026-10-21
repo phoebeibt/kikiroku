@@ -652,7 +652,7 @@ export default function Journal({ session }) {
       setToast(isDraft
         ? { id: Date.now(), tone: 'draft', stamp: L3('下書', '草稿', 'Draft'), message: L3('下書きとして残しました（非公開）', '已存為草稿（不公開）', 'Saved as a private draft') }
         : form.is_public
-          ? { id: Date.now(), stamp: L3('公開', '公開', 'Shared'), message: L3('保存して、廣場に公開しました', '已保存並公開到廣場', 'Saved and shared to Discover') }
+          ? { id: Date.now(), stamp: L3('公開', '公開', 'Shared'), message: L3('保存して、広場に公開しました', '已保存並公開到廣場', 'Saved and shared to Discover') }
           : { id: Date.now(), stamp: L3('保存', '保存', 'Saved'), message: L3('自分だけの記録として保存しました', '已保存，只有自己看得到', 'Saved — only you can see it') })
       await fetchEntries(); closeClean()
       if (editReturnRef.current) { const back = editReturnRef.current; editReturnRef.current = null; navigate(back, { replace: true }) }
@@ -893,7 +893,7 @@ export default function Journal({ session }) {
           {/* 公開はスイッチ：文字は「廣場に公開」で固定、オン／オフはつまみで見せる（2026-10-20 本人 A 案） */}
           <button type="button" role="switch" className="kk-foot-public" aria-checked={!!form.is_public}
             onClick={() => (form.is_public ? f('is_public', false) : askPublic())}>
-            <span>{L3('廣場に公開', '公開到廣場', 'Share')}</span>
+            <span>{L3('広場に公開', '公開到廣場', 'Share')}</span>
             <span className="kk-foot-public__track" aria-hidden="true" />
           </button>
           {(!editId || editStatus === 'draft') && (
@@ -968,12 +968,12 @@ export default function Journal({ session }) {
             ) : (<>
               <div className="kk-photo-main">
                 <button type="button" className="kk-bottle-stage" onClick={() => photoPreview ? setBottleEdit({ src: photoPreview, initial: form.photo_crop }) : fileRef.current.click()}
-                  aria-label={photoPreview ? L3('瓶身を調整', '調整瓶身', 'Adjust the bottle') : L3('瓶の写真を追加', '新增瓶身照片', 'Add a bottle photo')} style={{ border: 0 }}>
+                  aria-label={photoPreview ? L3('ボトルを調整', '調整瓶身', 'Adjust the bottle') : L3('瓶の写真を追加', '新增瓶身照片', 'Add a bottle photo')} style={{ border: 0 }}>
                   <SakeBottleCrop imageUrl={photoPreview} crop={form.photo_crop} height="136px" />
                 </button>
                 <div className="kk-photo-main__actions">
                   {photoPreview ? (<>
-                    <button type="button" className="kk-btn kk-btn--sm" onClick={() => setBottleEdit({ src: photoPreview, initial: form.photo_crop })}>{L3('瓶身を調整', '調整瓶身', 'Adjust bottle')}</button>
+                    <button type="button" className="kk-btn kk-btn--sm" onClick={() => setBottleEdit({ src: photoPreview, initial: form.photo_crop })}>{L3('ボトルを調整', '調整瓶身', 'Adjust bottle')}</button>
                     <button type="button" className="kk-label-action" onClick={() => setLightbox(photoPreview)}>{L3('元の写真を見る', '查看原圖', 'View original')}</button>
                     <button type="button" className="kk-label-action" onClick={() => fileRef.current.click()}>{L3('撮り直す', '重拍', 'Retake')}</button>
                   </>) : (
@@ -1197,8 +1197,8 @@ export default function Journal({ session }) {
           onSave={crop => finishBottleEdit(crop)} onSkip={() => finishBottleEdit(null)} onClose={() => finishBottleEdit(null)} />
       )}
 
-      <Sheet open={confirmPublic} onClose={() => { pendingSaveRef.current = false; setConfirmPublic(false) }} variant="dialog" label={L3('廣場に公開されます', '將公開到廣場', 'This will be shared')}>
-        <h2 className="kk-confirm__title">{L3('廣場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
+      <Sheet open={confirmPublic} onClose={() => { pendingSaveRef.current = false; setConfirmPublic(false) }} variant="dialog" label={L3('広場に公開されます', '將公開到廣場', 'This will be shared')}>
+        <h2 className="kk-confirm__title">{L3('広場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
         <p className="kk-confirm__note">{L3('写真・評価・メモがみんなに見えます。あとで非公開に戻せます。', '照片、評分和筆記會讓大家看到；之後可以改回不公開。', 'Photo, rating and notes become visible. You can make it private again later.')}</p>
         <div className="kk-field">
           <label className="kk-field__label" htmlFor="kk-field-contributor">{t('form.displayName')}</label>

@@ -136,3 +136,17 @@ body.sheet-open { overflow: hidden; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 
 .kk-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Desktop (≥1024px): list pages share one 960px column (2026-10-21 本人). Reading pages (事典の詳細) stay narrow. */
+@media (min-width: 1024px) {
+  /* #root raises specificity over the page stylesheets, which load later (lazy chunks) */
+  #root .kk-ledger, #root .kk-plaza, #root .kk-wiki { max-width: 960px; padding-left: 32px; padding-right: 32px; }
+  #root .kk-feed { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #root .kk-wiki .kk-shelf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #root .kk-wiki .kk-shelf > li + li { border-top: 0; }
+  #root .kk-wiki .kk-shelf > li:nth-child(n + 3) { border-top: 1px solid rgba(138, 117, 99, .12); }
+  #root .kk-wiki .kk-shelf > li:nth-child(2n) { border-left: 1px solid rgba(138, 117, 99, .12); }
+}
+@media (min-width: 1024px) {
+  .kk-wdetail__cta { left: var(--rail-w); }
+}

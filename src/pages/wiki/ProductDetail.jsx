@@ -104,7 +104,7 @@ export default function ProductDetail({ session, recorded = false }) {
       <div className="kk-wiki-page"><Nav session={session} topbar={false} />
         <div className="kk-wdetail">
           <button type="button" className="kk-wdetail__back" onClick={() => navigate('/wiki')}>‹ {L('事典', '事典', 'Library')}</button>
-          <div className="kk-empty kk-empty--quiet"><strong>{L('この酒款は見つかりませんでした', '找不到這款酒', 'Sake not found')}</strong></div>
+          <div className="kk-empty kk-empty--quiet"><strong>{L('このお酒は見つかりませんでした', '找不到這款酒', 'Sake not found')}</strong></div>
         </div>
       </div>
     )
@@ -161,7 +161,7 @@ export default function ProductDetail({ session, recorded = false }) {
           </ul>
         )}
 
-        <h2 className="kk-wiki__sec">{L('みんなの瓶身', '大家的瓶身', 'Others’ bottles')}<small>{L(`公開酒札 ${others.length}`, `公開酒札 ${others.length}`, `${others.length} public`)}</small></h2>
+        <h2 className="kk-wiki__sec">{L('みんなのボトル', '大家的瓶身', 'Others’ bottles')}<small>{L(`公開中の酒札 ${others.length}`, `公開酒札 ${others.length}`, `${others.length} public`)}</small></h2>
         {others.length > 0 ? (
           <section className="kk-others">
             <ul className="kk-others__list">
@@ -179,7 +179,7 @@ export default function ProductDetail({ session, recorded = false }) {
             </ul>
           </section>
         ) : (
-          <p className="kk-wdetail__empty">{L('まだ公開酒札がありません。記録して公開すると、ここに瓶身が並びます。', '還沒有公開酒札。記錄並公開後，瓶身會出現在這裡。', 'No public tags yet. Record and share it to add the first bottle.')}</p>
+          <p className="kk-wdetail__empty">{L('まだ公開中の酒札がありません。記録して公開すると、ここにボトルが並びます。', '還沒有公開酒札。記錄並公開後，瓶身會出現在這裡。', 'No public tags yet. Record and share it to add the first bottle.')}</p>
         )}
 
         {!isGuest && (
@@ -208,7 +208,7 @@ export default function ProductDetail({ session, recorded = false }) {
 
         {siblings.length > 0 && (
           <>
-            <h2 className="kk-wiki__sec">{L('同じ酒造の酒款', '同酒造的酒款', 'More from this brewery')}</h2>
+            <h2 className="kk-wiki__sec">{L('同じ酒造のお酒', '同酒造的酒款', 'More from this brewery')}</h2>
             <ul className="kk-shelf">
               {siblings.map(s => (
                 <li key={s.id}>

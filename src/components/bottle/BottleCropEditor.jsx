@@ -86,7 +86,7 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
   } : { opacity: 0 }
 
   return (
-    <Sheet open={open} onClose={onClose} className="kk-panel--full kk-crop-editor" label={L('瓶身を合わせる', '對齊瓶身', 'Align the bottle')}
+    <Sheet open={open} onClose={onClose} className="kk-panel--full kk-crop-editor" label={L('ボトルを合わせる', '對齊瓶身', 'Align the bottle')}
       header={<>
         <button type="button" className="kk-icon-btn" onClick={onClose} aria-label={L('閉じる', '關閉', 'Close')}><CloseIcon /></button>
         <h2 className="kk-panel__title">{title || L('ラベルを撮る', '拍酒標', 'Photograph the label')}</h2>
@@ -147,7 +147,7 @@ export default function BottleCropEditor({ open, src, initial, onSave, onSkip, o
         <div className="kk-note-card kk-crop-editor__note">
           <div className="kk-note-card__mark" aria-hidden="true">瓶</div>
           <div>
-            <strong>{L('瓶身テンプレートに合わせる', '對齊瓶身模板', 'Fit the bottle template')}</strong>
+            <strong>{L('ボトルのテンプレートに合わせる', '對齊瓶身模板', 'Fit the bottle template')}</strong>
             <div className="kk-helper">{L('AI判定なし。原図はそのまま保存します。', '不使用 AI 判斷。原圖會原樣保存。', 'No AI detection. The original photo is kept as is.')}</div>
           </div>
         </div>

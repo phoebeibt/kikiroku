@@ -74,7 +74,7 @@ export default function SakeShelf({ lang, isGuest }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input type="search" value={query} onChange={e => setQuery(e.target.value)}
           placeholder={L('酒名・酒造・産地で探す', '以酒名・酒造・產地搜尋', 'Name, brewery or region')}
-          aria-label={L('酒款を検索', '搜尋酒款', 'Search sakes')} />
+          aria-label={L('お酒を検索', '搜尋酒款', 'Search sakes')} />
         {query && <button type="button" className="kk-search__clear" onClick={() => setQuery('')} aria-label={L('検索をクリア', '清除搜尋', 'Clear search')}>×</button>}
       </div>
       <div className="kk-wiki__chips" role="group" aria-label={L('種類', '種類', 'Type')}>
@@ -86,7 +86,7 @@ export default function SakeShelf({ lang, isGuest }) {
 
       {browsing && recorded.length > 0 && (
         <>
-          <h2 className="kk-wiki__sec">{L('公開酒札にある酒', '公開酒札裡的酒', 'From public tags')}<small>{recorded.length}</small></h2>
+          <h2 className="kk-wiki__sec">{L('公開中の酒札にある酒', '公開酒札裡的酒', 'From public tags')}<small>{recorded.length}</small></h2>
           <ul className="kk-shelf">
             {recordedShown.map(({ cover: e, count }) => (
               <li key={e.id}>
@@ -97,7 +97,7 @@ export default function SakeShelf({ lang, isGuest }) {
                   <span className="kk-shelf__main">
                     <span className="kk-shelf__title">{[e.brand, e.name].filter(Boolean).join(' ')}</span>
                     <span className="kk-shelf__meta">{[e.brewery, shortRegion(e.region)].filter(Boolean).join(' · ')}</span>
-                    <span className="kk-shelf__hint">{L(`みんなの瓶身 ${count}`, `大家的瓶身 ${count}`, `${count} bottle${count > 1 ? 's' : ''}`)}</span>
+                    <span className="kk-shelf__hint">{L(`みんなのボトル ${count}`, `大家的瓶身 ${count}`, `${count} bottle${count > 1 ? 's' : ''}`)}</span>
                   </span>
                   <span className="kk-shelf__chev" aria-hidden="true">›</span>
                 </button>
@@ -115,7 +115,7 @@ export default function SakeShelf({ lang, isGuest }) {
       {browsing ? (
         <h2 className="kk-wiki__sec kk-wiki__sec--toggle">
           <button type="button" aria-expanded={catalogOpen} aria-controls="kk-wiki-catalog" onClick={toggleCatalog}>
-            <span>{L('酒款カタログ', '酒款目錄', 'Catalog')}</span>
+            <span>{L('銘柄カタログ', '酒款目錄', 'Catalog')}</span>
             <span className="kk-wiki__sec-side">
               {total != null && <small>{L(`${total} 件`, `${total} 款`, `${total}`)}</small>}
               <span aria-hidden="true">{catalogOpen ? '−' : '＋'}</span>
@@ -144,7 +144,7 @@ export default function SakeShelf({ lang, isGuest }) {
                   <span className="kk-shelf__main">
                     <span className="kk-shelf__title">{p.name}</span>
                     <span className="kk-shelf__meta">{[p.brewery_name, shortRegion(p.region), p.type, p.polishing && L(`精米${p.polishing}%`, `精米${p.polishing}%`, `${p.polishing}% polish`)].filter(Boolean).join(' · ')}</span>
-                    {m.length > 0 && <span className="kk-shelf__hint">{L(`みんなの瓶身 ${m.length}`, `大家的瓶身 ${m.length}`, `${m.length} bottle${m.length > 1 ? 's' : ''}`)}</span>}
+                    {m.length > 0 && <span className="kk-shelf__hint">{L(`みんなのボトル ${m.length}`, `大家的瓶身 ${m.length}`, `${m.length} bottle${m.length > 1 ? 's' : ''}`)}</span>}
                   </span>
                   <span className="kk-shelf__chev" aria-hidden="true">›</span>
                 </button>

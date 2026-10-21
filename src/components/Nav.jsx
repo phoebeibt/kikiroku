@@ -39,7 +39,7 @@ const IcoProfile = () => svg(<>
 </>)
 
 const LABELS = {
-  discover: { ja: '廣場',   zh: '廣場', en: 'Discover' },
+  discover: { ja: '広場',   zh: '廣場', en: 'Discover' },
   ledger:   { ja: 'マイ帳', zh: '酒帳', en: 'Ledger' },
   record:   { ja: '記録',   zh: '記錄', en: 'Record' },
   wiki:     { ja: '事典',   zh: '事典', en: 'Wiki' },

@@ -58,8 +58,8 @@ export default function Wishlist({ session }) {
     const photoFrom = (e && (e.thumb_url || e.photo_url)) ? e : (p ? coverFor(p, publicEntries) : null)
     let source
     if (mineEntry) source = { kind: 'mine', label: L('自分の酒札から', '來自自己的酒札', 'From your record'), detail: Number(e.rating) > 0 ? formatRating(e.rating) : '' }
-    else if (e) source = { kind: 'plaza', label: L('廣場から', '來自廣場', 'From Discover'), detail: [e.contributor_name, Number(e.rating) > 0 && formatRating(e.rating)].filter(Boolean).join(' ') }
-    else if (w.entry_id || (!w.product_id)) source = { kind: 'plaza', label: L('廣場から', '來自廣場', 'From Discover'), detail: '' }
+    else if (e) source = { kind: 'plaza', label: L('広場から', '來自廣場', 'From Discover'), detail: [e.contributor_name, Number(e.rating) > 0 && formatRating(e.rating)].filter(Boolean).join(' ') }
+    else if (w.entry_id || (!w.product_id)) source = { kind: 'plaza', label: L('広場から', '來自廣場', 'From Discover'), detail: '' }
     else source = { kind: 'wiki', label: L('事典から', '來自事典', 'From the library'), detail: '' }
     return {
       w, source,
@@ -155,8 +155,8 @@ export default function Wishlist({ session }) {
           <div className="kk-empty">
             <img src="/plaza/tanuki-plain.webp" alt="" width="96" height="96" />
             <strong>{L('飲みたいお酒はまだありません', '還沒有想喝的酒', 'Nothing on your list yet')}</strong>
-            <span>{L('廣場や事典で気になるお酒に「飲みたい」を付けよう', '在廣場或事典看到感興趣的酒，按下「想喝」', 'Tap “Want to try” on a sake in Discover or the library')}</span>
-            <button type="button" className="kk-btn" onClick={() => navigate('/')}>{L('廣場を見る', '去逛廣場', 'Go to Discover')}</button>
+            <span>{L('広場や事典で気になるお酒に「飲みたい」を付けよう', '在廣場或事典看到感興趣的酒，按下「想喝」', 'Tap “Want to try” on a sake in Discover or the library')}</span>
+            <button type="button" className="kk-btn" onClick={() => navigate('/')}>{L('広場を見る', '去逛廣場', 'Go to Discover')}</button>
           </div>
         )}
 

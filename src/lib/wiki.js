@@ -1042,7 +1042,7 @@ export const WIKI_TERMS = [
     terms: { ja: ['銘柄'], zh: ['銘柄', '品牌'], en: ['meigara', 'sake brand'] },
     title: { ja: '銘柄', zh: '銘柄（品牌名）', en: 'Meigara (Brand Name)' },
     body: {
-      ja: '日本酒の「ブランド名」にあたる呼び名。「新政」「獺祭」「而今」など、蔵元がその酒に付けた固有の名前。一つの蔵元が複数の銘柄を持つこともある。同じ銘柄でも「純米吟醸」「大吟醸」など品名（酒款）が異なれば別の酒になる。日本酒を選ぶ・記録するときの最も基本的な識別単位。',
+      ja: '日本酒の「ブランド名」にあたる呼び名。「新政」「獺祭」「而今」など、蔵元がその酒に付けた固有の名前。一つの蔵元が複数の銘柄を持つこともある。同じ銘柄でも「純米吟醸」「大吟醸」など品名が異なれば別の酒になる。日本酒を選ぶ・記録するときの最も基本的な識別単位。',
       zh: '日本酒的「品牌名稱」。如「新政」「獺祭」「而今」，是蔵元賦予該酒的專屬名稱。同一蔵元可擁有多個銘柄，同一銘柄下又有純米吟釀、大吟釀等不同酒款。銘柄是選酒與記錄時最基本的識別單位。',
       en: 'The brand name of a sake — e.g. Aramasa, Dassai, Jikon. Assigned by the brewery (蔵元). One brewery may produce multiple meigara, and each meigara can have many product lines (junmai ginjo, daiginjo, etc.). The most fundamental unit when identifying, choosing, or recording sake.',
     },

@@ -139,7 +139,7 @@ export default function Profile({ session }) {
           </button>
           <div className="kk-pf-card__text">
             <h2>{shownName}</h2>
-            <p>{L(`記録 ${stats.total} · 公開酒札 ${stats.shared}`, `記錄 ${stats.total} · 公開酒札 ${stats.shared}`, `${stats.total} records · ${stats.shared} public`)}{since && ` · ${since}〜`}</p>
+            <p>{L(`記録 ${stats.total} · 公開中の酒札 ${stats.shared}`, `記錄 ${stats.total} · 公開酒札 ${stats.shared}`, `${stats.total} records · ${stats.shared} public`)}{since && ` · ${since}〜`}</p>
           </div>
         </section>
 
@@ -286,7 +286,7 @@ export default function Profile({ session }) {
             <p>{L('申し込みから 30 日後に、次のものがすべて削除されます。', '申請 30 天後，以下內容將全部刪除。', 'Thirty days after you ask, all of this is deleted:')}</p>
             <ul>
               <li>{L(`記録 ${(entries || []).length} 件（下書きを含む）`, `記錄 ${(entries || []).length} 筆（含草稿）`, `${(entries || []).length} records (drafts included)`)}</li>
-              <li>{L(`うち公開中の ${stats.shared} 件は、すぐに廣場から外れます`, `其中公開中的 ${stats.shared} 筆會立即從廣場移除`, `${stats.shared} shared records leave Discover right away`)}</li>
+              <li>{L(`うち公開中の ${stats.shared} 件は、すぐに広場から外れます`, `其中公開中的 ${stats.shared} 筆會立即從廣場移除`, `${stats.shared} shared records leave Discover right away`)}</li>
               <li>{L('ラベルの写真、飲みたいリスト、プロフの設定', '酒標照片、想喝清單、個人設定', 'Label photos, your want-to-try list and settings')}</li>
             </ul>
             <p className="kk-pf-hint">{L('事典に加わったお酒の情報は残ります（誰が加えたかは残りません）。30 日以内にログインすれば取り消せます。', '加入事典的酒款資料會保留（不會留下是誰加的）。30 天內登入就可以取消。', 'Sake you added to the wiki stays (without your name). Sign in within 30 days to cancel.')}</p>

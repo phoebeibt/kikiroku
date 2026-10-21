@@ -53,7 +53,7 @@ export default function RegionPage({ session }) {
   const active = seg || (!isGuest && own.length ? 'mine' : others.length ? 'public' : 'breweries')
   const segs = [
     ...(isGuest ? [] : [['mine', L('自分の酒札', '我的酒札', 'Mine'), own.length]]),
-    ['public', L('公開酒札', '公開酒札', 'Public'), others.length],
+    ['public', L('公開中の酒札', '公開酒札', 'Public'), others.length],
     ['breweries', L('酒造', '酒造', 'Breweries'), breweries?.length ?? 0],
   ]
   const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/wiki?tab=breweries'))
@@ -70,7 +70,7 @@ export default function RegionPage({ session }) {
             {!isGuest && <div><dd>{ready ? own.length : '…'}</dd><dt>{L('自分の酒札', '我的酒札', 'Your tags')}</dt></div>}
             {!isGuest && <div><dd className="is-text">{topBrewery || '—'}</dd><dt>{L('よく飲む酒造', '最常喝酒造', 'Most recorded')}</dt></div>}
             <div><dd>{breweries ? breweries.length : '…'}</dd><dt>{L('酒造', '酒造', 'Breweries')}</dt></div>
-            <div><dd>{!publicEntries ? '…' : publicError ? '—' : others.length}</dd><dt>{L('公開酒札', '公開酒札', 'Public tags')}</dt></div>
+            <div><dd>{!publicEntries ? '…' : publicError ? '—' : others.length}</dd><dt>{L('公開中の酒札', '公開酒札', 'Public tags')}</dt></div>
           </dl>
         </header>
 
@@ -117,8 +117,8 @@ export default function RegionPage({ session }) {
             ))}
           </ul>
         ) : publicError
-          ? <p className="kk-wdetail__empty" role="alert">{L('公開酒札を読み込めませんでした。通信を確認して、もう一度開いてください。', '無法載入公開酒札，請確認網路後再開一次。', 'Could not load public tags. Check your connection and try again.')}</p>
-          : <p className="kk-wdetail__empty">{L('この産地の公開酒札はまだありません。', '這個產地還沒有公開酒札。', 'No public tags from here yet.')}</p>)}
+          ? <p className="kk-wdetail__empty" role="alert">{L('公開中の酒札を読み込めませんでした。通信を確認して、もう一度開いてください。', '無法載入公開酒札，請確認網路後再開一次。', 'Could not load public tags. Check your connection and try again.')}</p>
+          : <p className="kk-wdetail__empty">{L('この産地の公開中の酒札はまだありません。', '這個產地還沒有公開酒札。', 'No public tags from here yet.')}</p>)}
 
         {ready && active === 'breweries' && (breweryList.length ? (
           <ul className="kk-shelf">

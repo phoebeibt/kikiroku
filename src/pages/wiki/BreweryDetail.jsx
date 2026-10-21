@@ -110,7 +110,7 @@ export default function BreweryDetail({ session }) {
           </>
         )}
 
-        <h2 className="kk-wiki__sec">{L('酒款', '酒款', 'Sakes')}<small>{productTotal}</small></h2>
+        <h2 className="kk-wiki__sec">{L('銘柄', '酒款', 'Sakes')}<small>{productTotal}</small></h2>
         {products.length > 0 ? (
           <ul className="kk-shelf">
             {products.map(p => (
@@ -126,7 +126,7 @@ export default function BreweryDetail({ session }) {
             ))}
           </ul>
         ) : (
-          <p className="kk-wdetail__empty">{L('酒款のデータはまだありません。', '還沒有酒款資料。', 'No sakes in the catalog yet.')}</p>
+          <p className="kk-wdetail__empty">{L('お酒のデータはまだありません。', '還沒有酒款資料。', 'No sakes in the catalog yet.')}</p>
         )}
         {products.length < productTotal && (
           <button type="button" className="kk-btn kk-btn--block kk-wiki__more" onClick={() => setPage(p => p + 1)}>{L('もっと見る', '載入更多', 'Show more')}</button>

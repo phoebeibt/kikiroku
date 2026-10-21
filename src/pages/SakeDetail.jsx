@@ -248,7 +248,7 @@ export default function SakeDetail({ session }) {
       <header className="kk-dv-top">
         <button type="button" className="kk-dv-top__back" onClick={goBack}><span aria-hidden="true">←</span> {
           from === 'ledger' ? L('マイ帳', '酒帳', 'Ledger')
-            : from === 'plaza' ? L('廣場', '廣場', 'Discover')
+            : from === 'plaza' ? L('広場', '廣場', 'Discover')
               : from === 'wishlist' ? L('飲みたい', '想喝', 'Want to try')
                 : L('戻る', '返回', 'Back')}</button>
         <h1 className="kk-dv-top__title">{entry.status === 'draft' ? L('下書き', '草稿', 'Draft') : L('酒の記録', '酒的記錄', 'Sake record')}</h1>
@@ -262,7 +262,7 @@ export default function SakeDetail({ session }) {
         <div className="kk-dv-titles">
           <p className="kk-dv-eyebrow">
             {readingText && <span>{readingText}</span>}
-            {!isOwner && !isGuest && <span>{L(`${entry.contributor_name || '匿名'} の公開酒札`, `${entry.contributor_name || '匿名'} 的公開酒札`, `${entry.contributor_name || 'Someone'}’s public tag`)}</span>}
+            {!isOwner && !isGuest && <span>{L(`${entry.contributor_name || '匿名'} が公開した酒札`, `${entry.contributor_name || '匿名'} 的公開酒札`, `${entry.contributor_name || 'Someone'}’s public tag`)}</span>}
             {isOwner && <span className={`kk-dv-privacy${entry.is_public ? ' is-public' : ''}`}>{entry.is_public ? L('公開中', '公開中', 'Shared') : L('非公開', '不公開', 'Private')}</span>}
           </p>
           <h2 className="kk-dv-title">{title || L('名前のない下書き', '未命名草稿', 'Untitled draft')}</h2>
@@ -289,7 +289,7 @@ export default function SakeDetail({ session }) {
               )}
               {canSeePhoto ? (
                 <div className="kk-dv-switch" role="group" aria-label={L('表示', '顯示', 'View')}>
-                  {[['bottle', L('瓶身', '瓶身', 'Bottle')], ['photo', L('写真', '照片', 'Photo')]].map(([k, label]) => (
+                  {[['bottle', L('ボトル', '瓶身', 'Bottle')], ['photo', L('写真', '照片', 'Photo')]].map(([k, label]) => (
                     <button key={k} type="button" aria-pressed={shownView === k} onClick={() => setView(k)}>{label}</button>
                   ))}
                 </div>
@@ -393,8 +393,8 @@ export default function SakeDetail({ session }) {
           {others.length > 0 && (
             <section className="kk-dv-others" aria-labelledby="kk-others-title">
               <div className="kk-others__head">
-                <h2 id="kk-others-title" className="kk-dv-h2">{L('みんなの瓶身', '大家的瓶身', 'Others’ bottles')}</h2>
-                <span>{L('同じ酒の公開酒札', '同一款酒的公開酒札', 'Public tags of the same sake')}</span>
+                <h2 id="kk-others-title" className="kk-dv-h2">{L('みんなのボトル', '大家的瓶身', 'Others’ bottles')}</h2>
+                <span>{L('同じ酒の公開中の酒札', '同一款酒的公開酒札', 'Public tags of the same sake')}</span>
               </div>
               <ul className="kk-others__list">
                 {visibleOthers.map(o => (
@@ -421,8 +421,8 @@ export default function SakeDetail({ session }) {
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} className="kk-panel--fit kk-action-sheet" label={L('その他の操作', '更多操作', 'More actions')}>
         <ul className="kk-action-list">
           <li><button type="button" onClick={() => { setMenuOpen(false); goEdit() }}>{L('編集', '編輯', 'Edit')}</button></li>
-          {entry.photo_url && <li><button type="button" onClick={() => { setMenuOpen(false); setAdjusting(true) }}>{L('瓶身を調整', '調整瓶身', 'Adjust bottle')}</button></li>}
-          {entry.status !== 'draft' && <li><button type="button" onClick={togglePublic}>{entry.is_public ? L('非公開にする', '改為不公開', 'Make private') : L('廣場に公開する', '公開到廣場', 'Share to Discover')}</button></li>}
+          {entry.photo_url && <li><button type="button" onClick={() => { setMenuOpen(false); setAdjusting(true) }}>{L('ボトルを調整', '調整瓶身', 'Adjust bottle')}</button></li>}
+          {entry.status !== 'draft' && <li><button type="button" onClick={togglePublic}>{entry.is_public ? L('非公開にする', '改為不公開', 'Make private') : L('広場に公開する', '公開到廣場', 'Share to Discover')}</button></li>}
           <li><button type="button" onClick={share}>{L('画像で共有', '分享圖片', 'Share as image')}</button></li>
           <li className="kk-action-list__danger"><button type="button" onClick={() => { setMenuOpen(false); setConfirmDel(true) }}>{L('この記録を削除', '刪除這筆記錄', 'Delete this record')}</button></li>
         </ul>
@@ -439,8 +439,8 @@ export default function SakeDetail({ session }) {
         </div>
       </Sheet>
 
-      <Sheet open={confirmPublic} onClose={() => setConfirmPublic(false)} variant="dialog" label={L('廣場に公開されます', '將公開到廣場', 'This will be shared')}>
-        <h2 className="kk-confirm__title">{L('廣場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
+      <Sheet open={confirmPublic} onClose={() => setConfirmPublic(false)} variant="dialog" label={L('広場に公開されます', '將公開到廣場', 'This will be shared')}>
+        <h2 className="kk-confirm__title">{L('広場に公開されます', '將公開到廣場', 'This will appear in Discover')}</h2>
         <p className="kk-confirm__note">{L('写真・評価・メモがみんなに見えます。あとで非公開に戻せます。', '照片、評分和筆記會讓大家看到；之後可以改回不公開。', 'Photo, rating and notes become visible. You can make it private again later.')}</p>
         <div className="kk-confirm__actions">
           <button type="button" className="kk-btn" onClick={() => setConfirmPublic(false)}>{L('やめる', '取消', 'Cancel')}</button>
@@ -448,7 +448,7 @@ export default function SakeDetail({ session }) {
             const name = entry.contributor_name || session.user.user_metadata?.display_name || session.user.email.split('@')[0]
             if (await patch({ is_public: true, contributor_name: name })) {
               setConfirmPublic(false)
-              setToast({ id: Date.now(), stamp: L('公開', '公開', 'Shared'), message: L('廣場に公開しました', '已公開到廣場', 'Shared to Discover') })
+              setToast({ id: Date.now(), stamp: L('公開', '公開', 'Shared'), message: L('広場に公開しました', '已公開到廣場', 'Shared to Discover') })
             }
           }}>{L('公開する', '公開', 'Share')}</button>
         </div>
